@@ -34,7 +34,7 @@ def health_check():
 @app.get("/team")
 def team_info():
     return {
-        "team": "cloud-team-XX",
+        "team": "Miracle",
         "members": [
             # TODO: 
             {"name": "Debora Intania Subekti", "nim": "10231029", "role": "Lead Backend"},
