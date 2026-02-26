@@ -17,9 +17,9 @@ Sistem TraceIt ini berperan dalam mengatasi permasalahan adanya kekurangan infor
 | :--- | :--- | :--- |
 | Debora Intania Subekti | 10231029 | Lead Backend |
 | Avhilla Catton Andalucia | 10231021 | Lead Container |
-| Chelsy Olivia | 10231025 | Lead CI/CD & Devops |
+| Chelsy Olivia | 10231025 | Lead CI/CD & Deploy |
 | Yosan Pratiwi | 10231091 | Lead Frontend |
-| Betran | 10231023 | Lead QA & Docs | v
+| Betran | 10231023 | Lead QA & Docs | 
 
 ## 🛠️ Tech Stack
 
