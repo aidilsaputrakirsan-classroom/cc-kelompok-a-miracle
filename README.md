@@ -7,6 +7,18 @@ Aplikasi ini ditujukan bagi 2 pengguna. Pertama, adalah civitas akademika Instit
 
 Sistem TraceIt ini berperan dalam mengatasi permasalahan adanya kekurangan informasi terkait penyedia sukarelawan donor darah yang dapat diakses penerima di lingkungan civitas akademika Institut Teknologi Kalimantan. TraceIt hadir sebagai solusi terpusat berbasis cloud yang memungkinkan pengelolaan data secara sistematis, aman, dan dapat diakses kapan saja serta dari berbagai perangkat. Dengan demikian, proses pendataan pendonor sukarelawan menjadi lebih cepat, transparan, dan efisien.
 
+<<<<<<< HEAD
+=======
+## 👥 Team 
+
+| NAMA | NIM | TUGAS |
+| :--- | :--- | :--- |
+| Debora Intania Subekti | 10231029 | Lead Backend |
+| Avhilla Catton Andalucia | 10231021 | Lead Container |
+| Chelsy Olivia | 10231025 | Lead CI/CD & Deploy |
+| Yosan Pratiwi | 10231091 | Lead Frontend |
+| Betran | 10231023 | Lead QA & Docs | 
+>>>>>>> 1b55f43e6d7863847d32716c0acbaae576d6c0d5
 
 ## 🛠️ Tech Stack
 
