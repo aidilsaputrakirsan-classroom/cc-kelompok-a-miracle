@@ -2,12 +2,24 @@
 ## Pengajuan Pendonor Darah
 
 <div align="justify">
+
 TraceIt merupakan aplikasi berbasis web yang dirancang untuk membantu civitas akademika Institut Teknologi Kalimantan dalam mengajukan permohonan data pendonor darah sukarela. Melalui platform ini, pengguna dapat mengunggah data pribadi, berupa nama lengkap, jenis kelamin, berat badan, tinggi badan, golongan darah, usia, tanggal lahir, tanggal terakhir donor, riwayat donor (total donor), alamat dan riwayat kesehatan. Sistem akan menampilkan daftar laporan pendonor sukarela yang dapat difilter berdasarkan nama, jenis kelamin, umur dan golongan darah untuk mempermudah proses verifikasi kesiapan pendonor dalam menjadi pendonor darah.
-
+<br><br> 
 Aplikasi ini ditujukan bagi 2 pengguna. Pertama, adalah civitas akademika Institut Teknologi Kalimantan yang berperan sebagai pendonor sukarela. Kedua, adalah admin yang berperan dalam memantau dan memverifikasi data pendonor yang telah diajukan. 
+<br><br>
+Sistem TraceIt ini berperan dalam mengatasi permasalahan adanya kekurangan informasi terkait penyedia sukarelawan donor darah yang dapat diakses penerima di lingkungan civitas akademika Institut Teknologi Kalimantan. Terkait hal tersebut, TraceIt menjadi solusi terpusat berbasis cloud yang memungkinkan pengelolaan data secara sistematis, aman, dan dapat diakses kapan saja serta dari berbagai perangkat. Dengan demikian, proses pendataan pendonor sukarelawan menjadi lebih cepat, transparan, dan efisien.
 
-Sistem TraceIt ini berperan dalam mengatasi permasalahan adanya kekurangan informasi terkait penyedia sukarelawan donor darah yang dapat diakses penerima di lingkungan civitas akademika Institut Teknologi Kalimantan. TraceIt hadir sebagai solusi terpusat berbasis cloud yang memungkinkan pengelolaan data secara sistematis, aman, dan dapat diakses kapan saja serta dari berbagai perangkat. Dengan demikian, proses pendataan pendonor sukarelawan menjadi lebih cepat, transparan, dan efisien.
 </div>
+
+## 👥 Team 
+
+| NAMA | NIM | TUGAS |
+| :--- | :--- | :--- |
+| Debora Intania Subekti | 10231029 | Lead Backend |
+| Avhilla Catton Andalucia | 10231021 | Lead Container |
+| Chelsy Olivia | 10231025 | Lead CI/CD & Devops |
+| Yosan Pratiwi | 10231091 | Lead Frontend |
+| Betran | 10231023 | Lead QA & Docs | v
 
 ## 🛠️ Tech Stack
 
@@ -137,13 +149,4 @@ cc-kelompok-a-miracle/
 └── README.md
 ```
 
-## 👥 Team 
-
-| NAMA | NIM | TUGAS |
-| :--- | :--- | :--- |
-| Debora Intania Subekti | 10231029 | Lead Backend |
-| Avhilla Catton Andalucia | 10231021 | Lead Container |
-| Chelsy Olivia | 10231025 | Lead CI/CD & Devops |
-| Yosan Pratiwi | 10231091 | Lead Frontend |
-| Betran | 10231023 | Lead QA & Docs | 
 
