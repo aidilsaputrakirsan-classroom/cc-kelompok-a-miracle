@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from database import engine, get_db
-from models import Base
+from models import Base, Item
 from schemas import ItemCreate, ItemUpdate, ItemResponse, ItemListResponse
 import crud
 
@@ -65,16 +65,6 @@ def list_items(
     """
     return crud.get_items(db=db, skip=skip, limit=limit, search=search)
 
-
-@app.get("/items/{item_id}", response_model=ItemResponse)
-def get_item(item_id: int, db: Session = Depends(get_db)):
-    """Ambil satu item berdasarkan ID."""
-    item = crud.get_item(db=db, item_id=item_id)
-    if not item:
-        raise HTTPException(status_code=404, detail=f"Item dengan id={item_id} tidak ditemukan")
-    return item
-
-
 @app.get("/items/stats")
 def items_stats(db: Session = Depends(get_db)):
     """Statistik inventory."""
@@ -90,6 +80,14 @@ def items_stats(db: Session = Depends(get_db)):
         "cheapest": {"name": min(items, key=lambda x: x.price).name,
                     "price": min(items, key=lambda x: x.price).price},
     }
+
+@app.get("/items/{item_id}", response_model=ItemResponse)
+def get_item(item_id: int, db: Session = Depends(get_db)):
+    """Ambil satu item berdasarkan ID."""
+    item = crud.get_item(db=db, item_id=item_id)
+    if not item:
+        raise HTTPException(status_code=404, detail=f"Item dengan id={item_id} tidak ditemukan")
+    return item
 
 
 @app.put("/items/{item_id}", response_model=ItemResponse)
