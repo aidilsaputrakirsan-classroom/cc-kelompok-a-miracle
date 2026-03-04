@@ -94,11 +94,9 @@ npm create vite@latest frontend -- --template react
 cd frontend
 npm install
 ```
-### ▶️Jalankan frontend**
+### ▶️Jalankan frontend
 ``` 
 npm run dev
-
-# Buka browser: http://localhost:5173
 ```
 
 
