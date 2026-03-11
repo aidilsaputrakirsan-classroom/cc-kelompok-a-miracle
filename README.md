@@ -247,3 +247,6 @@ setup.sh adalah file shell script yang digunakan untuk menjalankan serangkaian p
 
 ## Dokumentasi Week 2
 ![alt text](image-2.png)
+
+## Dokumentasi week 3
+![alt text](image-3.png)
