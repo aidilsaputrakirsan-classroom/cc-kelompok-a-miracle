@@ -1,5 +1,4 @@
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000"
-
 // ==================== GET ====================
 
 export async function fetchItems(search = "", skip = 0, limit = 20) {
