@@ -63,7 +63,12 @@ def list_items(
     - **limit**: Jumlah item per halaman (default: 20, max: 100)
     - **search**: Kata kunci pencarian (opsional)
     """
-    return crud.get_items(db=db, skip=skip, limit=limit, search=search)
+    result = crud.get_items(db=db, skip=skip, limit=limit, search=search)
+    # Konversi SQLAlchemy objects ke dict untuk Pydantic validation
+    return {
+        "total": result["total"],
+        "items": [ItemResponse.model_validate(item) for item in result["items"]]
+    }
 
 @app.get("/items/stats")
 def items_stats(db: Session = Depends(get_db)):

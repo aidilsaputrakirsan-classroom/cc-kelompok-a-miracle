@@ -165,6 +165,47 @@ Sistem berhasil menghitung total nilai seluruh item serta menentukan item termah
 
 ---
 
+## 9. GET /items (Pagination Test)
+
+Endpoint ini diuji untuk memastikan fitur pagination (skip & limit) berfungsi dengan benar.
+
+**Test Case 1: skip=0, limit=2**
+- Expected: Menampilkan 2 item pertama dari total 3 items
+- Result: ✅ PASSED
+  - Status Code: 200 OK
+  - Total items: 3
+  - Items returned: 2
+  - Items: Keyboard Mechanical (Rp 1,200,000), Mouse Wireless (Rp 250,000)
+
+**Test Case 2: skip=2, limit=2**
+- Expected: Menampilkan item berikutnya (item ke-3)
+- Result: ✅ PASSED
+  - Status Code: 200 OK
+  - Total items: 3
+  - Items returned: 1
+  - Items: Laptop (Rp 14,000,000)
+
+**Test Case 3: skip=0, limit=100**
+- Expected: Menampilkan semua item (hanya 3 ada)
+- Result: ✅ PASSED
+  - Status Code: 200 OK
+  - Total items: 3
+  - Items returned: 3
+
+### Kesimpulan Pagination
+Fitur pagination berfungsi dengan benar. Parameter `skip` dan `limit` dapat digunakan untuk membatasi dan mengalihkan data item sesuai kebutuhan.
+
+---
+
 # Kesimpulan
 
-Berdasarkan hasil pengujian yang telah dilakukan melalui Swagger UI, seluruh endpoint pada backend dapat berjalan dengan baik. Fitur CRUD (Create, Read, Update, Delete) sudah berfungsi sesuai dengan yang diharapkan. Proses validasi input dan error handling juga berjalan dengan benar, dibuktikan dengan munculnya status code yang sesuai seperti 200, 201, 204, dan 404. Endpoint tambahan untuk menampilkan statistik (/items/stats) juga berhasil menampilkan total item, total nilai keseluruhan, serta item dengan harga tertinggi dan terendah sesuai dengan data yang ada di database. Secara keseluruhan, sistem backend telah memenuhi tugas dan berjalan sesuai dengan kebutuhan yang ditentukan.
+Berdasarkan hasil pengujian yang telah dilakukan, seluruh endpoint pada backend dapat berjalan dengan baik. Fitur CRUD (Create, Read, Update, Delete) sudah berfungsi sesuai dengan yang diharapkan. 
+
+**Fitur yang telah diverifikasi:**
+1. ✅ Pagination - Parameter `skip` dan `limit` berfungsi untuk membatasi dan mengalihkan data
+2. ✅ Statistics - Endpoint `/items/stats` menampilkan statistik kompleks (total items, total value, termahal, termurah)
+3. ✅ Search - Fitur pencarian berdasarkan nama/deskripsi
+4. ✅ Error Handling - Sistem menampilkan status code yang sesuai (200, 201, 204, 404)
+5. ✅ Data Validation - Validasi input berfungsi dengan baik
+
+Secara keseluruhan, sistem backend telah memenuhi seluruh requirement dan berjalan sesuai dengan spesifikasi yang ditentukan.
