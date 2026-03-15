@@ -1,167 +1,172 @@
-import { useState, useEffect, useCallback } from "react"
-import Header from "./components/Header"
-import SearchBar from "./components/SearchBar"
-import ItemForm from "./components/ItemForm"
-import ItemList from "./components/ItemList"
+import { useState, useEffect, useCallback } from "react";
+import { ToastProvider } from "./components/ToastContext";
+import Header from "./components/Header";
+import SearchBar from "./components/SearchBar";
+import ItemForm from "./components/ItemForm";
+import ItemList from "./components/ItemList";
+import Toast from "./components/Toast";
+import { useToast } from "./components/ToastContext";
 import {
   fetchItems,
   createItem,
   updateItem,
   deleteItem,
   checkHealth,
-} from "./services/api"
+} from "./services/api";
 
-function App() {
+function AppContent() {
+  const { toast, showToast, closeToast } = useToast();
+
   // ================= STATE =================
 
-  const [items, setItems] = useState([])
-  const [totalItems, setTotalItems] = useState(0)
-  const [loading, setLoading] = useState(true)
-  const [isConnected, setIsConnected] = useState(false)
-  const [editingItem, setEditingItem] = useState(null)
-  const [searchQuery, setSearchQuery] = useState("")
+  const [items, setItems] = useState([]);
+  const [totalItems, setTotalItems] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [isConnected, setIsConnected] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const [sortBy, setSortBy] = useState("newest")
-  const [filterStock, setFilterStock] = useState("all")
+  const [sortBy, setSortBy] = useState("newest");
+  const [filterStock, setFilterStock] = useState("all");
 
   // ================= LOAD DATA =================
 
   const loadItems = useCallback(async (search = "") => {
-    setLoading(true)
+    setLoading(true);
 
     try {
-      const data = await fetchItems(search)
+      const data = await fetchItems(search);
 
-      setItems(data.items)
-      setTotalItems(data.total)
+      setItems(data.items);
+      setTotalItems(data.total);
     } catch (err) {
-      console.error("Error loading items:", err)
+      console.error("Error loading items:", err);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }, [])
+  }, []);
 
   useEffect(() => {
-    checkHealth().then(setIsConnected)
-    loadItems()
-  }, [loadItems])
+    checkHealth().then(setIsConnected);
+    loadItems();
+  }, [loadItems]);
 
   // ================= STATISTIK =================
 
-  const totalStock = items.reduce((sum, item) => sum + item.quantity, 0)
+  const totalStock = items.reduce((sum, item) => sum + item.quantity, 0);
 
   const totalValue = items.reduce(
     (sum, item) => sum + item.price * item.quantity,
-    0
-  )
+    0,
+  );
 
   // ================= FILTER =================
 
   const filteredItems = items.filter((item) => {
-    if (filterStock === "available") return item.quantity > 0
-    if (filterStock === "empty") return item.quantity === 0
-    return true
-  })
+    if (filterStock === "available") return item.quantity > 0;
+    if (filterStock === "empty") return item.quantity === 0;
+    return true;
+  });
 
   // ================= SORTING =================
 
   const sortedItems = [...filteredItems].sort((a, b) => {
     if (sortBy === "name") {
-      return a.name.localeCompare(b.name)
+      return a.name.localeCompare(b.name);
     }
 
     if (sortBy === "price") {
-      return a.price - b.price
+      return a.price - b.price;
     }
 
     if (sortBy === "newest") {
-      return new Date(b.created_at) - new Date(a.created_at)
+      return new Date(b.created_at) - new Date(a.created_at);
     }
 
-    return 0
-  })
+    return 0;
+  });
 
   // ================= HANDLERS =================
 
   const handleSubmit = async (itemData, editId) => {
-    if (editId) {
-      await updateItem(editId, itemData)
-      setEditingItem(null)
-      alert("Item berhasil diupdate")
-    } else {
-      await createItem(itemData)
-      alert("Item berhasil ditambahkan")
+    try {
+      if (editId) {
+        await updateItem(editId, itemData);
+        setEditingItem(null);
+        showToast("Item berhasil diupdate", "success");
+      } else {
+        await createItem(itemData);
+        showToast("Item berhasil ditambahkan", "success");
+      }
+      loadItems(searchQuery);
+    } catch (err) {
+      showToast("Gagal menyimpan item: " + err.message, "error");
     }
-
-    loadItems(searchQuery)
-  }
+  };
 
   const handleEdit = (item) => {
-    setEditingItem(item)
+    setEditingItem(item);
 
     window.scrollTo({
       top: 0,
       behavior: "smooth",
-    })
-  }
+    });
+  };
 
   const handleDelete = async (id) => {
-    const item = items.find((i) => i.id === id)
+    const item = items.find((i) => i.id === id);
 
-    if (!window.confirm(`Yakin ingin menghapus "${item?.name}"?`)) return
+    if (!window.confirm(`Yakin ingin menghapus "${item?.name}"?`)) return;
 
     try {
-      await deleteItem(id)
-
-      alert("Item berhasil dihapus")
-
-      loadItems(searchQuery)
+      await deleteItem(id);
+      showToast("Item berhasil dihapus", "success");
+      loadItems(searchQuery);
     } catch (err) {
-      alert("Gagal menghapus: " + err.message)
+      showToast("Gagal menghapus: " + err.message, "error");
     }
-  }
+  };
 
   const handleSearch = (query) => {
-    setSearchQuery(query)
-    loadItems(query)
-  }
+    setSearchQuery(query);
+    loadItems(query);
+  };
 
   const handleCancelEdit = () => {
-    setEditingItem(null)
-  }
+    setEditingItem(null);
+  };
 
   // ================= RENDER =================
 
   return (
     <div style={styles.app}>
+      <Toast message={toast.message} type={toast.type} onClose={closeToast} />
       <div style={styles.container}>
         <Header totalItems={totalItems} isConnected={isConnected} />
 
         {/* DASHBOARD STATS */}
         <div style={styles.statsContainer}>
-
-            <div style={{ ...styles.statCard, ...styles.itemCard }}>
-              <p style={styles.statTitle}>📦 Total Item</p>
-              <h2>{totalItems}</h2>
-            </div>
-
-            <div style={{ ...styles.statCard, ...styles.stockCard }}>
-              <p style={styles.statTitle}>📊 Total Stok</p>
-              <h2>{totalStock}</h2>
-            </div>
-
-            <div style={{ ...styles.statCard, ...styles.valueCard }}>
-              <p style={styles.statTitle}>💰 Total Nilai Barang</p>
-              <h2>
-                {new Intl.NumberFormat("id-ID", {
-                  style: "currency",
-                  currency: "IDR",
-                  minimumFractionDigits: 0,
-                }).format(totalValue)}
-              </h2>
-            </div>
-
+          <div style={{ ...styles.statCard, ...styles.itemCard }}>
+            <p style={styles.statTitle}>📦 Total Item</p>
+            <h2>{totalItems}</h2>
           </div>
+
+          <div style={{ ...styles.statCard, ...styles.stockCard }}>
+            <p style={styles.statTitle}>📊 Total Stok</p>
+            <h2>{totalStock}</h2>
+          </div>
+
+          <div style={{ ...styles.statCard, ...styles.valueCard }}>
+            <p style={styles.statTitle}>💰 Total Nilai Barang</p>
+            <h2>
+              {new Intl.NumberFormat("id-ID", {
+                style: "currency",
+                currency: "IDR",
+                minimumFractionDigits: 0,
+              }).format(totalValue)}
+            </h2>
+          </div>
+        </div>
 
         <ItemForm
           onSubmit={handleSubmit}
@@ -231,7 +236,7 @@ function App() {
         />
       </div>
     </div>
-  )
+  );
 }
 
 // ================= STYLES =================
@@ -257,14 +262,14 @@ const styles = {
   },
 
   statCard: {
-  padding: "1.2rem",
-  borderRadius: "12px",
-  textAlign: "center",
-  boxShadow: "0 6px 14px rgba(0,0,0,0.15)",
-  color: "white",
-  background: "linear-gradient(135deg,#5B86E5,#36D1DC)",
+    padding: "1.2rem",
+    borderRadius: "12px",
+    textAlign: "center",
+    boxShadow: "0 6px 14px rgba(0,0,0,0.15)",
+    color: "white",
+    background: "linear-gradient(135deg,#5B86E5,#36D1DC)",
   },
-  
+
   sortContainer: {
     display: "flex",
     gap: "10px",
@@ -299,6 +304,12 @@ const styles = {
     color: "white",
     cursor: "pointer",
   },
-}
+};
 
-export default App
+export default function App() {
+  return (
+    <ToastProvider>
+      <AppContent />
+    </ToastProvider>
+  );
+}
