@@ -44,7 +44,10 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     """Buat JWT access token."""
     to_encode = data.copy()
     expire = datetime.now(timezone.utc) + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
-    to_encode.update({"exp": expire})
+    to_encode.update({"exp": int(expire.timestamp())})  # Convert ke Unix timestamp
+    # PyJWT require 'sub' to be string
+    if "sub" in to_encode:
+        to_encode["sub"] = str(to_encode["sub"])
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
@@ -72,7 +75,7 @@ def get_current_user(
     Gunakan di endpoint yang butuh autentikasi.
     """
     payload = decode_token(token)
-    user_id: int = payload.get("sub")
+    user_id: int = int(payload.get("sub"))  # Convert string to int
 
     if user_id is None:
         raise HTTPException(
