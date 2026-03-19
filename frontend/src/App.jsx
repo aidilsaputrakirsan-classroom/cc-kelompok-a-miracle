@@ -1,24 +1,31 @@
 import { useState, useEffect, useCallback } from "react";
-import { ToastProvider } from "./components/ToastContext";
+import { ToastProvider, useToast } from "./components/ToastContext";
 import Header from "./components/Header";
 import SearchBar from "./components/SearchBar";
 import ItemForm from "./components/ItemForm";
 import ItemList from "./components/ItemList";
 import Toast from "./components/Toast";
-import { useToast } from "./components/ToastContext";
+import LoginPage from "./components/LoginPage";
+
 import {
   fetchItems,
   createItem,
   updateItem,
   deleteItem,
   checkHealth,
+  login,
+  register,
+  clearToken,
 } from "./services/api";
 
 function AppContent() {
   const { toast, showToast, closeToast } = useToast();
 
-  // ================= STATE =================
+  // ================= AUTH =================
+  const [user, setUser] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
+  // ================= STATE =================
   const [items, setItems] = useState([]);
   const [totalItems, setTotalItems] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -30,17 +37,17 @@ function AppContent() {
   const [filterStock, setFilterStock] = useState("all");
 
   // ================= LOAD DATA =================
-
   const loadItems = useCallback(async (search = "") => {
     setLoading(true);
-
     try {
       const data = await fetchItems(search);
-
       setItems(data.items);
       setTotalItems(data.total);
     } catch (err) {
-      console.error("Error loading items:", err);
+      if (err.message === "UNAUTHORIZED") {
+        handleLogout();
+      }
+      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -48,82 +55,101 @@ function AppContent() {
 
   useEffect(() => {
     checkHealth().then(setIsConnected);
-    loadItems();
-  }, [loadItems]);
+  }, []);
 
-  // ================= STATISTIK =================
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadItems();
+    }
+  }, [isAuthenticated, loadItems]);
 
-  const totalStock = items.reduce((sum, item) => sum + item.quantity, 0);
+  // ================= AUTH HANDLER =================
+  const handleLogin = async (email, password) => {
+    try {
+      const data = await login(email, password);
+      setUser(data.user);
+      setIsAuthenticated(true);
+      showToast("Login berhasil 🎉", "success");
+    } catch (err) {
+      showToast("Login gagal: " + err.message, "error");
+    }
+  };
 
+  const handleRegister = async (userData) => {
+    try {
+      await register(userData);
+      await handleLogin(userData.email, userData.password);
+    } catch (err) {
+      showToast("Register gagal: " + err.message, "error");
+    }
+  };
+
+  const handleLogout = () => {
+    clearToken();
+    setUser(null);
+    setIsAuthenticated(false);
+    setItems([]);
+    setTotalItems(0);
+    setEditingItem(null);
+    setSearchQuery("");
+    showToast("Logout berhasil", "success");
+  };
+
+  // ================= STAT =================
+  const totalStock = items.reduce((sum, i) => sum + i.quantity, 0);
   const totalValue = items.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0,
+    (sum, i) => sum + i.price * i.quantity,
+    0
   );
 
   // ================= FILTER =================
-
   const filteredItems = items.filter((item) => {
     if (filterStock === "available") return item.quantity > 0;
     if (filterStock === "empty") return item.quantity === 0;
     return true;
   });
 
-  // ================= SORTING =================
-
+  // ================= SORT =================
   const sortedItems = [...filteredItems].sort((a, b) => {
-    if (sortBy === "name") {
-      return a.name.localeCompare(b.name);
-    }
-
-    if (sortBy === "price") {
-      return a.price - b.price;
-    }
-
-    if (sortBy === "newest") {
-      return new Date(b.created_at) - new Date(a.created_at);
-    }
-
-    return 0;
+    if (sortBy === "name") return a.name.localeCompare(b.name);
+    if (sortBy === "price") return a.price - b.price;
+    return new Date(b.created_at) - new Date(a.created_at);
   });
 
-  // ================= HANDLERS =================
-
+  // ================= CRUD =================
   const handleSubmit = async (itemData, editId) => {
     try {
       if (editId) {
         await updateItem(editId, itemData);
         setEditingItem(null);
-        showToast("Item berhasil diupdate", "success");
+        showToast("Item diupdate", "success");
       } else {
         await createItem(itemData);
-        showToast("Item berhasil ditambahkan", "success");
+        showToast("Item ditambahkan", "success");
       }
       loadItems(searchQuery);
     } catch (err) {
-      showToast("Gagal menyimpan item: " + err.message, "error");
+      if (err.message === "UNAUTHORIZED") handleLogout();
+      else showToast("Error: " + err.message, "error");
     }
   };
 
   const handleEdit = (item) => {
     setEditingItem(item);
-
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleDelete = async (id) => {
     const item = items.find((i) => i.id === id);
-
-    if (!window.confirm(`Yakin ingin menghapus "${item?.name}"?`)) return;
+    if (!window.confirm(`Hapus "${item?.name}"?`)) return;
 
     try {
       await deleteItem(id);
-      showToast("Item berhasil dihapus", "success");
+      showToast("Item dihapus", "success");
       loadItems(searchQuery);
     } catch (err) {
-      showToast("Gagal menghapus: " + err.message, "error");
+      if (err.message === "UNAUTHORIZED") handleLogout();
+      else showToast("Gagal hapus", "error");
     }
   };
 
@@ -132,37 +158,40 @@ function AppContent() {
     loadItems(query);
   };
 
-  const handleCancelEdit = () => {
-    setEditingItem(null);
-  };
+  // ================= LOGIN PAGE =================
+  if (!isAuthenticated) {
+    return <LoginPage onLogin={handleLogin} onRegister={handleRegister} />;
+  }
 
-  // ================= RENDER =================
-
+  // ================= UI =================
   return (
     <div style={styles.app}>
       <Toast message={toast.message} type={toast.type} onClose={closeToast} />
-      <div style={styles.container}>
-        <Header totalItems={totalItems} isConnected={isConnected} />
 
-        {/* DASHBOARD STATS */}
-        <div style={styles.statsContainer}>
-          <div style={{ ...styles.statCard, ...styles.itemCard }}>
-            <p style={styles.statTitle}>📦 Total Item</p>
+      <div style={styles.container}>
+        <Header
+          totalItems={totalItems}
+          isConnected={isConnected}
+          user={user}
+          onLogout={handleLogout}
+        />
+
+        {/* STATS */}
+        <div style={styles.stats}>
+          <div style={styles.card}>
+            <p>Total Item</p>
             <h2>{totalItems}</h2>
           </div>
-
-          <div style={{ ...styles.statCard, ...styles.stockCard }}>
-            <p style={styles.statTitle}>📊 Total Stok</p>
+          <div style={styles.card}>
+            <p>Total Stok</p>
             <h2>{totalStock}</h2>
           </div>
-
-          <div style={{ ...styles.statCard, ...styles.valueCard }}>
-            <p style={styles.statTitle}>💰 Total Nilai Barang</p>
+          <div style={styles.card}>
+            <p>Total Nilai</p>
             <h2>
               {new Intl.NumberFormat("id-ID", {
                 style: "currency",
                 currency: "IDR",
-                minimumFractionDigits: 0,
               }).format(totalValue)}
             </h2>
           </div>
@@ -171,61 +200,23 @@ function AppContent() {
         <ItemForm
           onSubmit={handleSubmit}
           editingItem={editingItem}
-          onCancelEdit={handleCancelEdit}
+          onCancelEdit={() => setEditingItem(null)}
         />
 
         <SearchBar onSearch={handleSearch} />
 
-        {/* SORTING */}
-        <div style={styles.sortContainer}>
-          <span style={styles.sortLabel}>Urutkan:</span>
-
-          <button
-            style={sortBy === "newest" ? styles.activeBtn : styles.btn}
-            onClick={() => setSortBy("newest")}
-          >
-            Terbaru
-          </button>
-
-          <button
-            style={sortBy === "name" ? styles.activeBtn : styles.btn}
-            onClick={() => setSortBy("name")}
-          >
-            Nama
-          </button>
-
-          <button
-            style={sortBy === "price" ? styles.activeBtn : styles.btn}
-            onClick={() => setSortBy("price")}
-          >
-            Harga
-          </button>
+        {/* SORT */}
+        <div>
+          <button onClick={() => setSortBy("newest")}>Terbaru</button>
+          <button onClick={() => setSortBy("name")}>Nama</button>
+          <button onClick={() => setSortBy("price")}>Harga</button>
         </div>
 
-        {/* FILTER STOK */}
-        <div style={styles.filterContainer}>
-          <span style={styles.sortLabel}>Filter Stok:</span>
-
-          <button
-            style={filterStock === "all" ? styles.activeBtn : styles.btn}
-            onClick={() => setFilterStock("all")}
-          >
-            Semua
-          </button>
-
-          <button
-            style={filterStock === "available" ? styles.activeBtn : styles.btn}
-            onClick={() => setFilterStock("available")}
-          >
-            Ada Stok
-          </button>
-
-          <button
-            style={filterStock === "empty" ? styles.activeBtn : styles.btn}
-            onClick={() => setFilterStock("empty")}
-          >
-            Habis
-          </button>
+        {/* FILTER */}
+        <div>
+          <button onClick={() => setFilterStock("all")}>Semua</button>
+          <button onClick={() => setFilterStock("available")}>Ada</button>
+          <button onClick={() => setFilterStock("empty")}>Habis</button>
         </div>
 
         <ItemList
@@ -239,70 +230,28 @@ function AppContent() {
   );
 }
 
-// ================= STYLES =================
-
 const styles = {
   app: {
     minHeight: "100vh",
-    background: "linear-gradient(135deg,#eef2f7,#dbe9f6)",
+    background: "#f5f7fa",
     padding: "2rem",
-    fontFamily: "'Segoe UI', Arial, sans-serif",
   },
-
   container: {
     maxWidth: "900px",
     margin: "0 auto",
   },
-
-  statsContainer: {
+  stats: {
     display: "grid",
     gridTemplateColumns: "repeat(3,1fr)",
     gap: "1rem",
     marginBottom: "1rem",
   },
-
-  statCard: {
-    padding: "1.2rem",
-    borderRadius: "12px",
-    textAlign: "center",
-    boxShadow: "0 6px 14px rgba(0,0,0,0.15)",
-    color: "white",
-    background: "linear-gradient(135deg,#5B86E5,#36D1DC)",
-  },
-
-  sortContainer: {
-    display: "flex",
-    gap: "10px",
-    alignItems: "center",
-    marginBottom: "0.5rem",
-  },
-
-  filterContainer: {
-    display: "flex",
-    gap: "10px",
-    alignItems: "center",
-    marginBottom: "1rem",
-  },
-
-  sortLabel: {
-    fontWeight: "bold",
-  },
-
-  btn: {
-    padding: "6px 12px",
-    borderRadius: "20px",
-    border: "1px solid #ccc",
-    background: "white",
-    cursor: "pointer",
-  },
-
-  activeBtn: {
-    padding: "6px 12px",
-    borderRadius: "20px",
-    border: "none",
+  card: {
     background: "#2E75B6",
     color: "white",
-    cursor: "pointer",
+    padding: "1rem",
+    borderRadius: "10px",
+    textAlign: "center",
   },
 };
 
