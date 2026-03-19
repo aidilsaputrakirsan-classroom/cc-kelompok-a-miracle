@@ -1,6 +1,7 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr, field_validator
 from typing import Optional
 from datetime import datetime
+import re
 
 
 # === BASE SCHEMA ===
@@ -46,3 +47,62 @@ class ItemListResponse(BaseModel):
     """Schema untuk response list items dengan total count."""
     total: int
     items: list[ItemResponse]
+
+class UserCreate(BaseModel):
+    """Schema untuk registrasi user baru."""
+    email: EmailStr = Field(..., examples=["intan@student.itk.ac.id"])
+    name: str = Field(..., min_length=2, max_length=100, examples=["Aidil Saputra"])
+    password: str = Field(..., min_length=8, examples=["Password123!"])
+
+    @field_validator("password")
+    def validate_password_strength(cls, v):
+        """
+        Validasi password strength:
+        - Minimal 8 karakter (sudah via min_length)
+        - Minimal 1 huruf besar
+        - Minimal 1 huruf kecil
+        - Minimal 1 angka
+        - Minimal 1 karakter spesial
+        """
+        if not re.search(r"[A-Z]", v):
+            raise ValueError("Password harus mengandung minimal 1 huruf besar")
+        if not re.search(r"[a-z]", v):
+            raise ValueError("Password harus mengandung minimal 1 huruf kecil")
+        if not re.search(r"[0-9]", v):
+            raise ValueError("Password harus mengandung minimal 1 angka")
+        if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", v):
+            raise ValueError("Password harus mengandung minimal 1 karakter spesial (!@#$%^&*)")
+        return v
+
+
+class UserResponse(BaseModel):
+    """Schema untuk response user (tanpa password)."""
+    id: int
+    email: str
+    name: str
+    is_active: bool
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class LoginRequest(BaseModel):
+    """Schema untuk login request."""
+    email: str = Field(..., examples=["user@student.itk.ac.id"])
+    password: str = Field(..., examples=["password123"])
+
+
+class TokenResponse(BaseModel):
+    """Schema untuk response setelah login berhasil."""
+    access_token: str
+    token_type: str = "bearer"
+    user: UserResponse
+
+
+class ItemStatsResponse(BaseModel):
+    """Schema untuk response statistik items."""
+    total_items: int
+    total_quantity: int
+    total_value: float
+    average_price: float
