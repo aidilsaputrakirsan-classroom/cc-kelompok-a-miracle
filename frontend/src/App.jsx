@@ -3,13 +3,7 @@ import Header from "./components/Header"
 import SearchBar from "./components/SearchBar"
 import ItemForm from "./components/ItemForm"
 import ItemList from "./components/ItemList"
-import {
-  fetchItems,
-  createItem,
-  updateItem,
-  deleteItem,
-  checkHealth,
-} from "./services/api"
+import {fetchItems, createItem, updateItem, deleteItem, checkHealth,} from "./services/api"
 
 function App() {
   // ================= STATE =================
