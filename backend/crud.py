@@ -100,32 +100,3 @@ def authenticate_user(db: Session, email: str, password: str) -> User | None:
     return user
 
 
-def get_items_stats(db: Session):
-    """
-    Ambil statistik items.
-    - total_items: jumlah item
-    - total_quantity: total stok semua item
-    - total_value: nilai total inventory (price * quantity)
-    - average_price: harga rata-rata item
-    """
-    items = db.query(Item).all()
-    
-    if not items:
-        return {
-            "total_items": 0,
-            "total_quantity": 0,
-            "total_value": 0,
-            "average_price": 0,
-        }
-    
-    total_items = len(items)
-    total_quantity = sum(item.quantity for item in items)
-    total_value = sum(item.price * item.quantity for item in items)
-    average_price = sum(item.price for item in items) / total_items
-    
-    return {
-        "total_items": total_items,
-        "total_quantity": total_quantity,
-        "total_value": total_value,
-        "average_price": round(average_price, 2),
-    }
