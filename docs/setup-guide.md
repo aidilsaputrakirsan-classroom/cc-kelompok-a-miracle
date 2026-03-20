@@ -73,8 +73,9 @@ copy .env.example .env
 ```
 
 5. Isi file .env:
-
+```bash
 VITE_API_URL=http://localhost:8000
+```
 
 ## ▶️ 6. Run Frontend
 ```bash
