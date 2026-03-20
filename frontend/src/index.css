@@ -67,7 +67,7 @@
 
 .loading-overlay {
   opacity: 0.6;
-  pointer-events: none; /* Mencegah user klik tombol berkali-kali */
+  pointer-events: none; 
   transition: all 0.3s ease;
 }
 
