@@ -9,7 +9,6 @@ function ItemForm({ onSubmit, editingItem, onCancelEdit }) {
   })
   const [error, setError] = useState("")
 
-  // Jika editingItem berubah, isi form dengan datanya
   useEffect(() => {
     if (editingItem) {
       setFormData({
