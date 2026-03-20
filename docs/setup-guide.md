@@ -10,16 +10,20 @@ Pastikan sudah install:
 
 ## 📥 2. Clone Repository
 git clone https://github.com/aidilsaputrakirsan-classroom/cc-kelompok-a-miracle.git
+
 cd cc-kelompok-a-miracle
 
 ## 💡3. Setup Backend
 1. Masuk ke folder backend:
+
 cd .
 
 2. Install dependencies:
+
 pip install -r requirements.txt
 
 3. Jalankan backend:
+
 uvicorn main:app --reload
 
 ## 🗄️ 4. Setup Database
@@ -27,15 +31,19 @@ Database akan otomatis dibuat saat backend dijalankan.
 
 ## 🌐 5. Setup Frontend
 1. Masuk ke folder frontend:
+
 cd frontend
 
 2. Install dependencies:
+
 npm install
 
 3. Setup environment variable:
+
 copy .env.example .env
 
 isi .env:
+
 VITE_API_URL=http://localhost:8000
 
 ## ▶️ 6. Run Frontend
