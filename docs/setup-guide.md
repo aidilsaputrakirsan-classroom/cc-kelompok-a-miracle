@@ -27,7 +27,7 @@ cd cc-kelompok-a-miracle
     cd backend
 ```
 
-2. Install dependencies:
+2. Install dependencies (React + Vite):
 ```bash
 pip install -r requirements.txt
 ```
