@@ -1,23 +1,20 @@
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000"
 
-// ==================== TOKEN MANAGEMENT ====================
-
-// SIMPAN TOKEN KE LOCAL STORAGE
+// MENYIMPAN TOKEN KE LOCAL STORAGE
 export function setToken(token) {
   localStorage.setItem("token", token)
 }
 
-// AMBIL TOKEN
+// MENGAMBIL TOKEN
 export function getToken() {
   return localStorage.getItem("token")
 }
 
-// HAPUS TOKEN
+// MENGHAPUS TOKEN
 export function clearToken() {
   localStorage.removeItem("token")
 }
 
-// ==================== HEADER AUTH ====================
 
 function authHeaders() {
   const headers = {
@@ -32,14 +29,10 @@ function authHeaders() {
   return headers
 }
 
-// ==================== HANDLE RESPONSE ====================
 
 async function handleResponse(response) {
   if (response.status === 401) {
     clearToken()
-
-    // Optional: auto redirect ke login
-    // window.location.href = "/login"
 
     throw new Error("UNAUTHORIZED")
   }
@@ -54,7 +47,6 @@ async function handleResponse(response) {
   return response.json()
 }
 
-// ==================== AUTH API ====================
 
 export async function register(userData) {
   const response = await fetch(`${API_URL}/auth/register`, {
@@ -79,7 +71,7 @@ export async function login(email, password) {
 
   const data = await handleResponse(response)
 
-  // SIMPAN TOKEN DI SINI
+  // MENYIMPAN TOKEN 
   setToken(data.access_token)
 
   console.log("TOKEN DISIMPAN:", data.access_token)
@@ -95,7 +87,6 @@ export async function getMe() {
   return handleResponse(response)
 }
 
-// ==================== ITEMS API ====================
 
 export async function fetchItems(search = "", skip = 0, limit = 20) {
   const params = new URLSearchParams()
@@ -142,7 +133,6 @@ export async function deleteItem(id) {
   return handleResponse(response)
 }
 
-// ==================== HEALTH CHECK ====================
 
 export async function checkHealth() {
   try {

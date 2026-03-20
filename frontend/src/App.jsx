@@ -21,14 +21,13 @@ import {
 function AppContent() {
   const { toast, showToast, closeToast } = useToast();
 
-  // ================= AUTH =================
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  // ================= STATE =================
   const [items, setItems] = useState([]);
   const [totalItems, setTotalItems] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); 
+  const [isSubmitting, setIsSubmitting] = useState(false); 
   const [isConnected, setIsConnected] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -36,7 +35,7 @@ function AppContent() {
   const [sortBy, setSortBy] = useState("newest");
   const [filterStock, setFilterStock] = useState("all");
 
-  // ================= LOAD DATA =================
+
   const loadItems = useCallback(async (search = "") => {
     setLoading(true);
     try {
@@ -63,7 +62,7 @@ function AppContent() {
     }
   }, [isAuthenticated, loadItems]);
 
-  // ================= AUTH HANDLER =================
+
   const handleLogin = async (email, password) => {
     try {
       const data = await login(email, password);
@@ -95,42 +94,51 @@ function AppContent() {
     showToast("Logout berhasil", "success");
   };
 
-  // ================= STAT =================
+
   const totalStock = items.reduce((sum, i) => sum + i.quantity, 0);
   const totalValue = items.reduce(
     (sum, i) => sum + i.price * i.quantity,
     0
   );
 
-  // ================= FILTER =================
+
   const filteredItems = items.filter((item) => {
     if (filterStock === "available") return item.quantity > 0;
     if (filterStock === "empty") return item.quantity === 0;
     return true;
   });
 
-  // ================= SORT =================
+
   const sortedItems = [...filteredItems].sort((a, b) => {
     if (sortBy === "name") return a.name.localeCompare(b.name);
     if (sortBy === "price") return a.price - b.price;
     return new Date(b.created_at) - new Date(a.created_at);
   });
 
-  // ================= CRUD =================
-  const handleSubmit = async (itemData, editId) => {
+    const handleSubmit = async (itemData, editId) => {
+    setIsSubmitting(true); 
+    
     try {
       if (editId) {
         await updateItem(editId, itemData);
-        setEditingItem(null);
-        showToast("Item diupdate", "success");
+        setEditingItem(null); 
+        showToast("Item berhasil diperbarui", "success");
       } else {
         await createItem(itemData);
-        showToast("Item ditambahkan", "success");
+        showToast("Item berhasil ditambahkan", "success");
       }
-      loadItems(searchQuery);
+      await loadItems(searchQuery); 
+      
     } catch (err) {
-      if (err.message === "UNAUTHORIZED") handleLogout();
-      else showToast("Error: " + err.message, "error");
+
+      if (err.message === "UNAUTHORIZED") {
+        handleLogout(); 
+      } else {
+        showToast("Kesalahan: " + err.message, "error");
+      }
+    } finally {
+     
+      setIsSubmitting(false); 
     }
   };
 
@@ -145,11 +153,14 @@ function AppContent() {
 
     try {
       await deleteItem(id);
-      showToast("Item dihapus", "success");
+      showToast("Item berhasil dihapus 🗑️", "success");
       loadItems(searchQuery);
     } catch (err) {
-      if (err.message === "UNAUTHORIZED") handleLogout();
-      else showToast("Gagal hapus", "error");
+      if (err.message === "UNAUTHORIZED") {
+        handleLogout();
+      } else {
+        showToast("Gagal menghapus item: " + err.message, "error");
+      }
     }
   };
 
@@ -158,12 +169,11 @@ function AppContent() {
     loadItems(query);
   };
 
-  // ================= LOGIN PAGE =================
+  
   if (!isAuthenticated) {
     return <LoginPage onLogin={handleLogin} onRegister={handleRegister} />;
   }
 
-  // ================= UI =================
   return (
     <div style={styles.app}>
       <Toast message={toast.message} type={toast.type} onClose={closeToast} />
@@ -176,7 +186,7 @@ function AppContent() {
           onLogout={handleLogout}
         />
 
-        {/* STATS */}
+        
         <div style={styles.stats}>
           <div style={styles.card}>
             <p>Total Item</p>
@@ -197,28 +207,53 @@ function AppContent() {
           </div>
         </div>
 
-        <ItemForm
-          onSubmit={handleSubmit}
-          editingItem={editingItem}
-          onCancelEdit={() => setEditingItem(null)}
-        />
+        
+        <div className={isSubmitting ? "loading-overlay" : ""}>
+          <ItemForm
+            onSubmit={handleSubmit}
+            editingItem={editingItem}
+            onCancelEdit={() => setEditingItem(null)}
+            isSubmitting={isSubmitting} 
+          />
+        </div>
 
         <SearchBar onSearch={handleSearch} />
 
-        {/* SORT */}
-        <div>
-          <button onClick={() => setSortBy("newest")}>Terbaru</button>
-          <button onClick={() => setSortBy("name")}>Nama</button>
-          <button onClick={() => setSortBy("price")}>Harga</button>
+        <div style={styles.filterSection}>
+          <div style={styles.buttonGroup}>
+            <span style={styles.label}>Urutkan: </span>
+            <button 
+              style={sortBy === "newest" ? styles.btnActive : styles.btn} 
+              onClick={() => setSortBy("newest")}
+            >Terbaru</button>
+            <button 
+              style={sortBy === "name" ? styles.btnActive : styles.btn} 
+              onClick={() => setSortBy("name")}
+            >Nama</button>
+            <button 
+              style={sortBy === "price" ? styles.btnActive : styles.btn} 
+              onClick={() => setSortBy("price")}
+            >Harga</button>
+          </div>
+
+          <div style={styles.buttonGroup}>
+            <span style={styles.label}>Stok: </span>
+            <button 
+              style={filterStock === "all" ? styles.btnActive : styles.btn} 
+              onClick={() => setFilterStock("all")}
+            >Semua</button>
+            <button 
+              style={filterStock === "available" ? styles.btnActive : styles.btn} 
+              onClick={() => setFilterStock("available")}
+            >Ada</button>
+            <button 
+              style={filterStock === "empty" ? styles.btnActive : styles.btn} 
+              onClick={() => setFilterStock("empty")}
+            >Habis</button>
+          </div>
         </div>
 
-        {/* FILTER */}
-        <div>
-          <button onClick={() => setFilterStock("all")}>Semua</button>
-          <button onClick={() => setFilterStock("available")}>Ada</button>
-          <button onClick={() => setFilterStock("empty")}>Habis</button>
-        </div>
-
+        {/* LIST ITEMS DENGAN SPINNER LOADING */}
         <ItemList
           items={sortedItems}
           onEdit={handleEdit}
@@ -235,6 +270,7 @@ const styles = {
     minHeight: "100vh",
     background: "#f5f7fa",
     padding: "2rem",
+    fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
   },
   container: {
     maxWidth: "900px",
@@ -242,9 +278,9 @@ const styles = {
   },
   stats: {
     display: "grid",
-    gridTemplateColumns: "repeat(3,1fr)",
+    gridTemplateColumns: "repeat(3, 1fr)",
     gap: "1rem",
-    marginBottom: "1rem",
+    marginBottom: "1.5rem",
   },
   card: {
     background: "#2E75B6",
@@ -252,9 +288,46 @@ const styles = {
     padding: "1rem",
     borderRadius: "10px",
     textAlign: "center",
+    boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+  },
+  filterSection: {
+    display: "flex",
+    justifyContent: "space-between",
+    marginBottom: "1rem",
+    flexWrap: "wrap",
+    gap: "1rem",
+  },
+  buttonGroup: {
+    display: "flex",
+    alignItems: "center",
+    gap: "0.5rem",
+  },
+  label: {
+    fontSize: "0.9rem",
+    fontWeight: "bold",
+    color: "#555",
+  },
+  btn: {
+    padding: "0.4rem 0.8rem",
+    border: "1px solid #2E75B6",
+    background: "white",
+    color: "#2E75B6",
+    borderRadius: "5px",
+    cursor: "pointer",
+    fontSize: "0.85rem",
+  },
+  btnActive: {
+    padding: "0.4rem 0.8rem",
+    border: "1px solid #2E75B6",
+    background: "#2E75B6",
+    color: "white",
+    borderRadius: "5px",
+    cursor: "pointer",
+    fontSize: "0.85rem",
   },
 };
 
+// Wrapper utama dengan Context Provider
 export default function App() {
   return (
     <ToastProvider>
