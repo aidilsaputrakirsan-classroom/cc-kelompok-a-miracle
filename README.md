@@ -239,7 +239,123 @@ setup.sh adalah file shell script yang digunakan untuk menjalankan serangkaian p
 ```
 ./setup.sh
 ```
+<br><br>
 
+## Authentication
+
+#### 1. GET /health
+* Expected: 200, status healthy
+
+#### 2. POST /auth/register
+Respones
+```
+{
+  "email": "intan@student.itk.ac.id",
+  "name": "Aidil Saputra",
+  "password": "Password123!"
+}
+```
+* Expected: 201, data user kembali
+
+#### 3. POST /auth/login
+Response
+```
+{
+  "email": "betran39@student.itk.ac.id",
+  "password": "Password123!"
+}
+```
+* Expected: 200 dapat akses_token
+
+#### 4. GET /auth/me
+* Input no parameter
+* Expected: 401, "detail": "Not authenticated"
+* Menandakan proteksi auth berjalan benar
+
+#### 5. POST /items
+```
+{u 9
+  "name": "Laptop",
+  "description": "Laptop untuk cloud computing",
+  "price": 15000000,
+  "quantity": 10
+}
+```
+* Expected 201 Detail item diperlihatkan
+
+#### 6. GET /items 
+```
+{
+  "total": 0,
+  "items": [
+    {
+      "name": "Laptop",
+      "description": "Laptop untuk cloud computing",
+      "price": 15000000,
+      "quantity": 10,
+      "id": 0,
+      "created_at": "2026-03-22T15:48:48.608Z",
+      "updated_at": "2026-03-22T15:48:48.608Z"
+    }
+  ]
+}
+```
+* Expected 200, detail item dikembalikan
+
+#### 7. GET /items/1
+* Header: Authorization: Bearer TOKEN_DARI_LOGIN
+* Expected: 200 atau 404 jika id tidak ada
+
+#### 8. PUT /items/1
+* Header: Authorization: Bearer TOKEN_DARI_LOGIN
+* Body:
+```
+{
+"price": 15500000,
+"quantity": 8
+}
+```
+* Expected: 200, updated_at terisi
+
+#### 9. DELETE /items/1
+* Header: Authorization: Bearer TOKEN_DARI_LOGIN
+* Expected: 204 tanpa body
+
+#### 10. GET /items/stats/all
+* Header: Authorization: Bearer TOKEN_DARI_LOGIN
+* Expected: 200, field total_items, total_quantity, total_value, average_price
+
+#### 11. GET /team
+* Expected: 200, info anggota tim
+
+## Curl Windows
+* Register
+curl.exe -X POST "http://127.0.0.1:8000/auth/register" -H "Content-Type: application/json" -d "{"email":"betran@student.itk.ac.id","name":"Betran","password":"Password123!"}"
+
+* Login
+curl.exe -X POST "http://127.0.0.1:8000/auth/login" -H "Content-Type: application/json" -d "{"email":"betran@student.itk.ac.id","password":"Password123!"}"
+
+* Get me
+curl.exe -X GET "http://127.0.0.1:8000/auth/me" -H "Authorization: Bearer TOKEN_DARI_LOGIN"
+
+* Create item
+curl.exe -X POST "http://127.0.0.1:8000/items" -H "Authorization: Bearer TOKEN_DARI_LOGIN" -H "Content-Type: application/json" -d "{"name":"Laptop","description":"Laptop untuk cloud computing","price":15000000,"quantity":10}"
+
+## Note Bug
+
+#### Swagger Authorize OAuth2 masih error 422
+* Gejala: popup Authorize mengembalikan Unprocessable Content
+* Penyebab: endpoint login menerima JSON email dan password, sedangkan popup OAuth2 Swagger mengirim format form username/password
+* Referensi implementasi: main.py, auth.py
+
+#### Dokumentasi stats endpoint masih tidak sinkron
+* Di beberapa dokumen lama masih tertulis /items/stats atau bentuk response lama
+* Endpoint aktual: GET /items/stats/all
+* Referensi endpoint aktual: main.py
+* Dokumen yang perlu disesuaikan: README.md, api-test-results.md
+#### Penulisan beberapa route di README masih typo
+* Contoh: DELETE/items{items_id} perlu jadi DELETE /items/{item_id}
+* Lokasi: README.md
 
 ## Dokumentasi Week 1
 ![alt text](image-1.png)
