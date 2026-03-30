@@ -1,6 +1,6 @@
 ## DOKUMENTASI SEMUA ENDPOINT
 
-# Method
+## Method
 ### POST /auth/register
 #### Deskripsi : Pada bagian ini untuk register akun baru
 ![alt text](image-16.png)
@@ -147,7 +147,7 @@ Successful Response 204
 #### Auth Required? : YES
 
 
-# Contoh Crul Command
+## Contoh Crul Command
 #### crul : 
 ```
 curl -X 'GET' \
