@@ -278,7 +278,7 @@ export const DonorRegistration = () => {
                         onChange={(e) => setFormData({...formData, tanggal_terakhir_donor: e.target.value})}
                       />
                     </div>
-                    <p className="text-[10px] text-slate-400 ml-1">Kosongkan jika belum pernah donor.</p>
+                    <p className="text-[10px] text-slate-400 ml-1">Kosongkan jika belum pernah donor</p>
                   </div>
 
                   <div className="space-y-2">
