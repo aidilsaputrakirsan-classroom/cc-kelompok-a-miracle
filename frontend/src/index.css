@@ -1,59 +1,9 @@
-.toast {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  min-width: 300px;
-  padding: 16px 20px;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  animation: slideIn 0.3s ease-out;
-  z-index: 1000;
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 }
 
-.toast-success {
-  background-color: #10b981;
-  color: white;
-  border-left: 4px solid #059669;
-}
-
-.toast-error {
-  background-color: #ef4444;
-  color: white;
-  border-left: 4px solid #dc2626;
-}
-
-.toast-content {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.toast-icon {
-  font-size: 20px;
-  font-weight: bold;
-  flex-shrink: 0;
-}
-
-.toast-message {
-  font-size: 14px;
-  line-height: 1.5;
-}
-
-@keyframes slideIn {
-  from {
-    transform: translateX(400px);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
-
-@media (max-width: 640px) {
-  .toast {
-    min-width: auto;
-    left: 10px;
-    right: 10px;
-  }
+body {
+  @apply bg-slate-50 text-slate-900 font-sans;
 }

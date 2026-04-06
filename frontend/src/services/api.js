@@ -1,76 +1,50 @@
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000"
-// ==================== GET ====================
+import axios from 'axios';
 
-export async function fetchItems(search = "", skip = 0, limit = 20) {
-  const params = new URLSearchParams()
-  if (search) params.append("search", search)
-  params.append("skip", skip)
-  params.append("limit", limit)
+const API_BASE_URL = '/api'; // Sesuaikan dengan URL backend Anda
 
-  const response = await fetch(`${API_URL}/items?${params}`)
-  if (!response.ok) throw new Error("Gagal mengambil data items")
-  return response.json()
-}
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
 
-export async function fetchItem(id) {
-  const response = await fetch(`${API_URL}/items/${id}`)
-  if (!response.ok) throw new Error(`Item ${id} tidak ditemukan`)
-  return response.json()
-}
-
-// ==================== POST ====================
-
-export async function createItem(itemData) {
-  const response = await fetch(`${API_URL}/items`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(itemData),
-  })
-  if (!response.ok) {
-    const error = await response.json()
-    throw new Error(error.detail || "Gagal membuat item")
+// Interceptor untuk menyisipkan token JWT ke setiap request admin
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('admin_token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
-  return response.json()
-}
+  return config;
+});
 
-// ==================== PUT ====================
+export const apiService = {
+  // Auth Admin
+  loginAdmin: (email, password) => api.post('/auth/admin/login', { email, password }),
+  registerAdmin: (data) => api.post('/auth/admin/register', data),
 
-export async function updateItem(id, itemData) {
-  const response = await fetch(`${API_URL}/items/${id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(itemData),
-  })
-  if (!response.ok) {
-    const error = await response.json()
-    throw new Error(error.detail || "Gagal mengupdate item")
-  }
-  return response.json()
-}
+  // Pendonor
+  registerPendonor: (data) => api.post('/auth/pendonor/register', data),
+  getPendonorList: (params) => api.get('/pendonor', { params }),
+  getPendonorById: (id) => api.get(`/pendonor/${id}`),
+  updatePendonor: (id, data) => api.put(`/pendonor/${id}`, data),
+  deletePendonor: (id) => api.delete(`/pendonor/${id}`),
 
-// ==================== DELETE ====================
+  // Riwayat Donor
+  createRiwayatDonor: (data) => api.post('/riwayat-donor', data),
+  getRiwayatDonorByPendonor: (pendonorId, params) => api.get(`/riwayat-donor/pendonor/${pendonorId}`, { params }),
+  getPendingVerifications: (params) => api.get('/riwayat-donor/pending', { params }),
+  verifyRiwayatDonor: (id, data) => api.post(`/riwayat-donor/${id}/verifikasi`, data),
 
-export async function deleteItem(id) {
-  const response = await fetch(`${API_URL}/items/${id}`, {
-    method: "DELETE",   
-  })
+  // Riwayat Kesehatan
+  createRiwayatKesehatan: (data) => api.post('/riwayat-kesehatan', data),
+  getRiwayatKesehatanByPendonor: (pendonorId) => api.get(`/riwayat-kesehatan/pendonor/${pendonorId}`),
+  updateRiwayatKesehatan: (id, keterangan) => api.put(`/riwayat-kesehatan/${id}`, { keterangan }),
+  deleteRiwayatKesehatan: (id) => api.delete(`/riwayat-kesehatan/${id}`),
 
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({}))
-    throw new Error(error.detail || `Gagal menghapus item ${id}`)
-  }
+  // Gamifikasi & Stats
+  getGamifikasi: (pendonorId) => api.get(`/pendonor/${pendonorId}/gamifikasi`),
+  getStats: () => api.get('/stats/pendonor'),
+};
 
-  return true
-}
-
-// ==================== HEALTH ====================
-
-export async function checkHealth() {
-  try {
-    const response = await fetch(`${API_URL}/health`)
-    const data = await response.json()
-    return data.status === "healthy"
-  } catch {
-    return false
-  }
-}
+export default api;
