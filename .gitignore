@@ -20,5 +20,3 @@ cat .gitignore | grep .env
 # Harus ada baris: .env
 
 .github/
-
-.venv/
