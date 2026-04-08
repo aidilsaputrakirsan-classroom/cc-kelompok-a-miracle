@@ -1,14 +1,15 @@
 import { motion } from 'framer-motion';
 import { 
-  Droplets, 
   Heart, 
   ArrowRight,
   Search,
   Users,
   ShieldCheck,
-  Globe
+  Globe,
+  Droplets
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { Header } from '../components/Header';
 
 const FeatureCard = ({ icon: Icon, title, desc, color = "text-[#660000]" }) => (
   <div className="bg-white p-8 rounded-xl shadow-sm hover:shadow-md transition-all text-center flex flex-col items-center group">
@@ -23,24 +24,9 @@ const FeatureCard = ({ icon: Icon, title, desc, color = "text-[#660000]" }) => (
 export const LandingPage = () => {
   return (
     <div className="min-h-screen bg-white font-sans">
-      <div className="bg-[#660000] text-white">
-        {/* Navbar */}
-        <nav className="max-w-7xl mx-auto px-6 py-6 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Droplets className="w-8 h-8 text-white" />
-            <span className="text-2xl font-black tracking-tighter text-white uppercase">TraceIt</span>
-            <span className="text-xs font-bold text-[#660000] bg-white px-2 py-0.5 rounded-full">by Miracle</span>
-          </div>
-          <div className="hidden lg:flex items-center gap-8">
-            <a href="#" className="text-white/80 text-sm font-medium hover:text-white transition-colors">Beranda</a>
-            <a href="#about" className="text-white/80 text-sm font-medium hover:text-white transition-colors">Tentang</a>
-            <a href="#features" className="text-white/80 text-sm font-medium hover:text-white transition-colors">Fitur</a>
-            <Link to="/login" className="bg-white text-[#660000] px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all shadow-lg shadow-black/20">
-              Portal Admin
-            </Link>
-          </div>
-        </nav>
+      <Header />
 
+      <div className="bg-[#660000] text-white">
         {/* Hero Section */}
         <section className="relative overflow-hidden pt-12 pb-24 lg:pt-20 lg:pb-32 px-6">
           <div className="max-w-3xl mx-auto text-center">

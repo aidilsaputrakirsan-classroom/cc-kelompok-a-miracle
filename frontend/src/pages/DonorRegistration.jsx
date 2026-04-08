@@ -15,6 +15,14 @@ import {
 import { Link, useNavigate } from 'react-router-dom';
 import { apiService } from '../services/api';
 
+const InputWrapper = ({ label, error, children }) => (
+  <div className="space-y-2">
+    <label className="text-sm font-semibold text-slate-700 ml-1">{label}</label>
+    {children}
+    {error && <p className="text-xs text-red-500 ml-1 font-medium">{error}</p>}
+  </div>
+);
+
 export const DonorRegistration = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
@@ -30,14 +38,52 @@ export const DonorRegistration = () => {
     no_telepon: '',
     tanggal_terakhir_donor: '',
     riwayat_donor_count: '0',
-    riwayat_kesehatan: ''
+    riwayat_kesehatan: '',
+    never_donated: false
   });
+
+  const [errors, setErrors] = useState({});
+
+  const validateStep = (currentStep) => {
+    const newErrors = {};
+    if (currentStep === 1) {
+      if (!formData.nama_lengkap.trim()) newErrors.nama_lengkap = 'Nama lengkap wajib diisi';
+      if (!formData.no_telepon.trim()) {
+        newErrors.no_telepon = 'Nomor telepon wajib diisi';
+      } else if (formData.no_telepon.trim().length < 11) {
+        newErrors.no_telepon = 'Nomor telepon minimal 11 digit';
+      }
+      if (!formData.tanggal_lahir.trim()) newErrors.tanggal_lahir = 'Tanggal lahir wajib diisi';
+      if (!formData.alamat.trim()) newErrors.alamat = 'Alamat wajib diisi';
+    }
+    if (currentStep === 2) {
+      if (!formData.berat_badan) newErrors.berat_badan = 'Berat badan wajib diisi';
+      if (!formData.tinggi_badan) newErrors.tinggi_badan = 'Tinggi badan wajib diisi';
+      if (!formData.usia) newErrors.usia = 'Usia wajib diisi';
+    }
+    if (currentStep === 3) {
+      if (!formData.never_donated && !formData.tanggal_terakhir_donor) newErrors.tanggal_terakhir_donor = 'Tanggal terakhir donor wajib diisi';
+      if (formData.riwayat_donor_count === '') newErrors.riwayat_donor_count = 'Total donor wajib diisi';
+      if (!formData.riwayat_kesehatan.trim()) newErrors.riwayat_kesehatan = 'Riwayat kesehatan wajib diisi';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleNextStep = (next) => {
+    if (validateStep(step)) {
+      setStep(next);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!validateStep(3)) return;
     try {
       await apiService.registerPendonor({
         ...formData,
+        tanggal_terakhir_donor: formData.never_donated ? null : formData.tanggal_terakhir_donor,
         berat_badan: parseFloat(formData.berat_badan),
         tinggi_badan: parseFloat(formData.tinggi_badan),
         usia: parseInt(formData.usia),
@@ -78,38 +124,42 @@ export const DonorRegistration = () => {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-sm font-semibold text-slate-700 ml-1">Nama Lengkap</label>
+                  <InputWrapper label="Nama Lengkap" error={errors.nama_lengkap}>
                     <div className="relative">
                       <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
                       <input 
                         type="text" 
                         required
                         placeholder="Contoh: Budi Santoso"
-                        className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-[#660000] transition-all"
+                        className={`w-full pl-12 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-[#660000] transition-all ${errors.nama_lengkap ? 'ring-2 ring-red-500/50' : ''}`}
                         value={formData.nama_lengkap}
-                        onChange={(e) => setFormData({...formData, nama_lengkap: e.target.value})}
+                        onChange={(e) => {
+                          setFormData({...formData, nama_lengkap: e.target.value});
+                          if(errors.nama_lengkap) setErrors({...errors, nama_lengkap: null});
+                        }}
                       />
                     </div>
-                  </div>
+                  </InputWrapper>
 
-                  <div className="space-y-2">
-                    <label className="text-sm font-semibold text-slate-700 ml-1">No. Telepon</label>
+                  <InputWrapper label="No. Telepon" error={errors.no_telepon}>
                     <div className="relative">
                       <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
                       <input 
                         type="tel" 
                         required
+                        minLength={11}
                         placeholder="0812..."
-                        className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-[#660000] transition-all"
+                        className={`w-full pl-12 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-[#660000] transition-all ${errors.no_telepon ? 'ring-2 ring-red-500/50' : ''}`}
                         value={formData.no_telepon}
-                        onChange={(e) => setFormData({...formData, no_telepon: e.target.value})}
+                        onChange={(e) => {
+                          setFormData({...formData, no_telepon: e.target.value});
+                          if(errors.no_telepon) setErrors({...errors, no_telepon: null});
+                        }}
                       />
                     </div>
-                  </div>
+                  </InputWrapper>
 
-                  <div className="space-y-2">
-                    <label className="text-sm font-semibold text-slate-700 ml-1">Jenis Kelamin</label>
+                  <InputWrapper label="Jenis Kelamin">
                     <select 
                       className="w-full px-4 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-[#660000] transition-all"
                       value={formData.jenis_kelamin}
@@ -118,40 +168,44 @@ export const DonorRegistration = () => {
                       <option value="Laki-laki">Laki-laki</option>
                       <option value="Perempuan">Perempuan</option>
                     </select>
-                  </div>
+                  </InputWrapper>
 
-                  <div className="space-y-2">
-                    <label className="text-sm font-semibold text-slate-700 ml-1">Tanggal Lahir</label>
+                  <InputWrapper label="Tanggal Lahir" error={errors.tanggal_lahir}>
                     <div className="relative">
                       <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
                       <input 
                         type="date" 
                         required
-                        className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-[#660000] transition-all"
+                        className={`w-full pl-12 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-[#660000] transition-all ${errors.tanggal_lahir ? 'ring-2 ring-red-500/50' : ''}`}
                         value={formData.tanggal_lahir}
-                        onChange={(e) => setFormData({...formData, tanggal_lahir: e.target.value})}
+                        onChange={(e) => {
+                          setFormData({...formData, tanggal_lahir: e.target.value});
+                          if(errors.tanggal_lahir) setErrors({...errors, tanggal_lahir: null});
+                        }}
                       />
                     </div>
-                  </div>
+                  </InputWrapper>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-slate-700 ml-1">Alamat Domisili</label>
+                <InputWrapper label="Alamat Domisili" error={errors.alamat}>
                   <div className="relative">
                     <MapPin className="absolute left-4 top-4 text-slate-400 w-5 h-5" />
                     <textarea 
                       required
                       rows={3}
                       placeholder="Alamat lengkap di Balikpapan..."
-                      className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-[#660000] transition-all"
+                      className={`w-full pl-12 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-[#660000] transition-all ${errors.alamat ? 'ring-2 ring-red-500/50' : ''}`}
                       value={formData.alamat}
-                      onChange={(e) => setFormData({...formData, alamat: e.target.value})}
+                      onChange={(e) => {
+                        setFormData({...formData, alamat: e.target.value});
+                        if(errors.alamat) setErrors({...errors, alamat: null});
+                      }}
                     />
                   </div>
-                </div>
+                </InputWrapper>
 
                 <button 
-                  onClick={() => setStep(2)}
+                  onClick={() => handleNextStep(2)}
                   className="w-full bg-slate-900 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-slate-800 transition-all"
                 >
                   Lanjutkan
@@ -172,38 +226,41 @@ export const DonorRegistration = () => {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-sm font-semibold text-slate-700 ml-1">Berat Badan (kg)</label>
+                  <InputWrapper label="Berat Badan (kg)" error={errors.berat_badan}>
                     <div className="relative">
                       <Scale className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
                       <input 
                         type="number" 
                         required
                         placeholder="Contoh: 65"
-                        className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-[#660000] transition-all"
+                        className={`w-full pl-12 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-[#660000] transition-all ${errors.berat_badan ? 'ring-2 ring-red-500/50' : ''}`}
                         value={formData.berat_badan}
-                        onChange={(e) => setFormData({...formData, berat_badan: e.target.value})}
+                        onChange={(e) => {
+                          setFormData({...formData, berat_badan: e.target.value});
+                          if(errors.berat_badan) setErrors({...errors, berat_badan: null});
+                        }}
                       />
                     </div>
-                  </div>
+                  </InputWrapper>
 
-                  <div className="space-y-2">
-                    <label className="text-sm font-semibold text-slate-700 ml-1">Tinggi Badan (cm)</label>
+                  <InputWrapper label="Tinggi Badan (cm)" error={errors.tinggi_badan}>
                     <div className="relative">
                       <Ruler className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
                       <input 
                         type="number" 
                         required
                         placeholder="Contoh: 170"
-                        className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-[#660000] transition-all"
+                        className={`w-full pl-12 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-[#660000] transition-all ${errors.tinggi_badan ? 'ring-2 ring-red-500/50' : ''}`}
                         value={formData.tinggi_badan}
-                        onChange={(e) => setFormData({...formData, tinggi_badan: e.target.value})}
+                        onChange={(e) => {
+                          setFormData({...formData, tinggi_badan: e.target.value});
+                          if(errors.tinggi_badan) setErrors({...errors, tinggi_badan: null});
+                        }}
                       />
                     </div>
-                  </div>
+                  </InputWrapper>
 
-                  <div className="space-y-2">
-                    <label className="text-sm font-semibold text-slate-700 ml-1">Golongan Darah</label>
+                  <InputWrapper label="Golongan Darah">
                     <div className="relative">
                       <Droplets className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
                       <select 
@@ -221,20 +278,22 @@ export const DonorRegistration = () => {
                         <option value="AB-">AB-</option>
                       </select>
                     </div>
-                  </div>
+                  </InputWrapper>
 
-                  <div className="space-y-2">
-                    <label className="text-sm font-semibold text-slate-700 ml-1">Usia</label>
+                  <InputWrapper label="Usia" error={errors.usia}>
                     <input 
                       type="number" 
                       required
-                      min={18}
+                      min={17}
                       placeholder="Contoh: 20"
-                      className="w-full px-4 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-[#660000] transition-all"
+                      className={`w-full px-4 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-[#660000] transition-all ${errors.usia ? 'ring-2 ring-red-500/50' : ''}`}
                       value={formData.usia}
-                      onChange={(e) => setFormData({...formData, usia: e.target.value})}
+                      onChange={(e) => {
+                        setFormData({...formData, usia: e.target.value});
+                        if(errors.usia) setErrors({...errors, usia: null});
+                      }}
                     />
-                  </div>
+                  </InputWrapper>
                 </div>
 
                 <div className="flex gap-4">
@@ -245,7 +304,7 @@ export const DonorRegistration = () => {
                     Kembali
                   </button>
                   <button 
-                    onClick={() => setStep(3)}
+                    onClick={() => handleNextStep(3)}
                     className="flex-[2] bg-slate-900 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-slate-800 transition-all"
                   >
                     Lanjutkan
@@ -267,42 +326,71 @@ export const DonorRegistration = () => {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-sm font-semibold text-slate-700 ml-1">Tanggal Terakhir Donor</label>
+                  <InputWrapper label="Tanggal Terakhir Donor" error={errors.tanggal_akhir_donor}>
                     <div className="relative">
                       <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
                       <input 
                         type="date" 
-                        className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-[#660000] transition-all"
+                        required={!formData.never_donated}
+                        disabled={formData.never_donated}
+                        className={`w-full pl-12 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-[#660000] transition-all ${formData.never_donated ? 'opacity-50 cursor-not-allowed' : ''} ${errors.tanggal_akhir_donor ? 'ring-2 ring-red-500/50' : ''}`}
                         value={formData.tanggal_terakhir_donor}
-                        onChange={(e) => setFormData({...formData, tanggal_terakhir_donor: e.target.value})}
+                        onChange={(e) => {
+                          setFormData({...formData, tanggal_terakhir_donor: e.target.value});
+                          if(errors.tanggal_terakhir_donor) setErrors({...errors, tanggal_terakhir_donor: null});
+                        }}
                       />
                     </div>
-                    <p className="text-[10px] text-slate-400 ml-1">Kosongkan jika belum pernah donor</p>
-                  </div>
+                    <div className="flex items-center gap-2 mt-2 ml-1">
+                      <input 
+                        type="checkbox" 
+                        id="never_donated"
+                        className="w-4 h-4 rounded border-slate-300 text-[#660000] focus:ring-[#660000]"
+                        checked={formData.never_donated}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setFormData({
+                            ...formData, 
+                            never_donated: checked,
+                            tanggal_terakhir_donor: checked ? '' : formData.tanggal_terakhir_donor,
+                            riwayat_donor_count: checked ? '0' : formData.riwayat_donor_count
+                          });
+                          if(checked && errors.tanggal_akhir_donor) setErrors({...errors, tanggal_akhir_donor: null});
+                        }}
+                      />
+                      <label htmlFor="never_donated" className="text-xs text-slate-600 font-medium cursor-pointer">Belum pernah mendonor sama sekali</label>
+                    </div>
+                  </InputWrapper>
 
-                  <div className="space-y-2">
-                    <label className="text-sm font-semibold text-slate-700 ml-1">Total Donor (Kali)</label>
+                  <InputWrapper label="Total Donor (Kali)" error={errors.riwayat_donor_count}>
                     <input 
                       type="number" 
+                      required
                       min={0}
-                      className="w-full px-4 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-[#660000] transition-all"
+                      disabled={formData.never_donated}
+                      className={`w-full px-4 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-[#660000] transition-all ${formData.never_donated ? 'opacity-50 cursor-not-allowed' : ''} ${errors.riwayat_donor_count ? 'ring-2 ring-red-500/50' : ''}`}
                       value={formData.riwayat_donor_count}
-                      onChange={(e) => setFormData({...formData, riwayat_donor_count: e.target.value})}
+                      onChange={(e) => {
+                        setFormData({...formData, riwayat_donor_count: e.target.value});
+                        if(errors.riwayat_donor_count) setErrors({...errors, riwayat_donor_count: null});
+                      }}
                     />
-                  </div>
+                  </InputWrapper>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-slate-700 ml-1">Riwayat Kesehatan</label>
+                <InputWrapper label="Riwayat Kesehatan" error={errors.riwayat_kesehatan}>
                   <textarea 
                     rows={3}
+                    required
                     placeholder="Contoh: Tidak ada penyakit bawaan, alergi obat tertentu, dsb."
-                    className="w-full px-4 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-[#660000] transition-all"
+                    className={`w-full px-4 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-[#660000] transition-all ${errors.riwayat_kesehatan ? 'ring-2 ring-red-500/50' : ''}`}
                     value={formData.riwayat_kesehatan}
-                    onChange={(e) => setFormData({...formData, riwayat_kesehatan: e.target.value})}
+                    onChange={(e) => {
+                      setFormData({...formData, riwayat_kesehatan: e.target.value});
+                      if(errors.riwayat_kesehatan) setErrors({...errors, riwayat_kesehatan: null});
+                    }}
                   />
-                </div>
+                </InputWrapper>
 
                 <div className="flex gap-4">
                   <button 
