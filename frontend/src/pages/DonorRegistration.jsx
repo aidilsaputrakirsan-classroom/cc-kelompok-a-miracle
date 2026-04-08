@@ -228,7 +228,7 @@ export const DonorRegistration = () => {
                     <input 
                       type="number" 
                       required
-                      min={17}
+                      min={18}
                       placeholder="Contoh: 20"
                       className="w-full px-4 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-[#660000] transition-all"
                       value={formData.usia}

@@ -27,10 +27,24 @@ export const DonorList = () => {
   const fetchDonors = async () => {
     setLoading(true);
     try {
-      const params = {
-        nama: searchTerm,
-        ...filters
-      };
+      const params = {};
+
+      if (searchTerm.trim()) {
+        params.nama = searchTerm.trim();
+      }
+      if (filters.golongan_darah) {
+        params.golongan_darah = filters.golongan_darah;
+      }
+      if (filters.jenis_kelamin) {
+        params.jenis_kelamin = filters.jenis_kelamin;
+      }
+      if (filters.usia_min !== '') {
+        params.usia_min = Number(filters.usia_min);
+      }
+      if (filters.usia_max !== '') {
+        params.usia_max = Number(filters.usia_max);
+      }
+
       const res = await apiService.getPendonorList(params);
       setDonors(res.data.pendonor);
     } catch (err) {
@@ -107,6 +121,7 @@ export const DonorList = () => {
                 <input 
                   type="number" 
                   placeholder="Min Umur"
+                  min={18}
                   className="w-20 px-3 py-2.5 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-[#660000] transition-all text-sm"
                   value={filters.usia_min}
                   onChange={(e) => setFilters({...filters, usia_min: e.target.value})}
@@ -115,6 +130,7 @@ export const DonorList = () => {
                 <input 
                   type="number" 
                   placeholder="Max Umur"
+                  min={18}
                   className="w-20 px-3 py-2.5 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-[#660000] transition-all text-sm"
                   value={filters.usia_max}
                   onChange={(e) => setFilters({...filters, usia_max: e.target.value})}
