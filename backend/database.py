@@ -5,7 +5,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 # Load environment variables dari .env
-load_dotenv()
+# override=True memastikan nilai dari file .env dipakai saat development.
+load_dotenv(override=True)
 
 # Ambil DATABASE_URL dari environment
 DATABASE_URL = os.getenv("DATABASE_URL")

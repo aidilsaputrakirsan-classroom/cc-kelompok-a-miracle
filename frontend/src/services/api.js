@@ -1,145 +1,50 @@
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000"
+import axios from 'axios';
 
-// MENYIMPAN TOKEN KE LOCAL STORAGE
-export function setToken(token) {
-  localStorage.setItem("token", token)
-}
+const API_BASE_URL = '/api'; // Sesuaikan dengan URL backend Anda
 
-// MENGAMBIL TOKEN
-export function getToken() {
-  return localStorage.getItem("token")
-}
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
 
-// MENGHAPUS TOKEN
-export function clearToken() {
-  localStorage.removeItem("token")
-}
-
-
-function authHeaders() {
-  const headers = {
-    "Content-Type": "application/json",
-  }
-
-  const token = getToken()
+// Interceptor untuk menyisipkan token JWT ke setiap request admin
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('admin_token');
   if (token) {
-    headers["Authorization"] = `Bearer ${token}`
+    config.headers.Authorization = `Bearer ${token}`;
   }
+  return config;
+});
 
-  return headers
-}
+export const apiService = {
+  // Auth Admin
+  loginAdmin: (email, password) => api.post('/auth/admin/login', { email, password }),
+  registerAdmin: (data) => api.post('/auth/admin/register', data),
 
+  // Pendonor
+  registerPendonor: (data) => api.post('/auth/pendonor/register', data),
+  getPendonorList: (params) => api.get('/pendonor', { params }),
+  getPendonorById: (id) => api.get(`/pendonor/${id}`),
+  updatePendonor: (id, data) => api.put(`/pendonor/${id}`, data),
+  deletePendonor: (id) => api.delete(`/pendonor/${id}`),
 
-async function handleResponse(response) {
-  if (response.status === 401) {
-    clearToken()
+  // Riwayat Donor
+  createRiwayatDonor: (data) => api.post('/riwayat-donor', data),
+  getRiwayatDonorByPendonor: (pendonorId, params) => api.get(`/riwayat-donor/pendonor/${pendonorId}`, { params }),
+  getPendingVerifications: (params) => api.get('/riwayat-donor/pending', { params }),
+  verifyRiwayatDonor: (id, data) => api.post(`/riwayat-donor/${id}/verifikasi`, data),
 
-    throw new Error("UNAUTHORIZED")
-  }
+  // Riwayat Kesehatan
+  createRiwayatKesehatan: (data) => api.post('/riwayat-kesehatan', data),
+  getRiwayatKesehatanByPendonor: (pendonorId) => api.get(`/riwayat-kesehatan/pendonor/${pendonorId}`),
+  updateRiwayatKesehatan: (id, keterangan) => api.put(`/riwayat-kesehatan/${id}`, { keterangan }),
+  deleteRiwayatKesehatan: (id) => api.delete(`/riwayat-kesehatan/${id}`),
 
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({}))
-    throw new Error(error.detail || `Request gagal (${response.status})`)
-  }
+  // Gamifikasi & Stats
+  getGamifikasi: (pendonorId) => api.get(`/pendonor/${pendonorId}/gamifikasi`),
+  getStats: () => api.get('/stats/pendonor'),
+};
 
-  if (response.status === 204) return null
-
-  return response.json()
-}
-
-
-export async function register(userData) {
-  const response = await fetch(`${API_URL}/auth/register`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(userData),
-  })
-
-  return handleResponse(response)
-}
-
-export async function login(email, password) {
-  const response = await fetch(`${API_URL}/auth/login`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ email, password }),
-  })
-
-  const data = await handleResponse(response)
-
-  // MENYIMPAN TOKEN 
-  setToken(data.access_token)
-
-  console.log("TOKEN DISIMPAN:", data.access_token)
-
-  return data
-}
-
-export async function getMe() {
-  const response = await fetch(`${API_URL}/auth/me`, {
-    headers: authHeaders(),
-  })
-
-  return handleResponse(response)
-}
-
-
-export async function fetchItems(search = "", skip = 0, limit = 20) {
-  const params = new URLSearchParams()
-
-  if (search) params.append("search", search)
-  params.append("skip", skip)
-  params.append("limit", limit)
-
-  console.log("TOKEN DI FETCH:", getToken())
-
-  const response = await fetch(`${API_URL}/items?${params}`, {
-    headers: authHeaders(),
-  })
-
-  return handleResponse(response)
-}
-
-export async function createItem(itemData) {
-  const response = await fetch(`${API_URL}/items`, {
-    method: "POST",
-    headers: authHeaders(),
-    body: JSON.stringify(itemData),
-  })
-
-  return handleResponse(response)
-}
-
-export async function updateItem(id, itemData) {
-  const response = await fetch(`${API_URL}/items/${id}`, {
-    method: "PUT",
-    headers: authHeaders(),
-    body: JSON.stringify(itemData),
-  })
-
-  return handleResponse(response)
-}
-
-export async function deleteItem(id) {
-  const response = await fetch(`${API_URL}/items/${id}`, {
-    method: "DELETE",
-    headers: authHeaders(),
-  })
-
-  return handleResponse(response)
-}
-
-
-export async function checkHealth() {
-  try {
-    const response = await fetch(`${API_URL}/health`)
-    const data = await response.json()
-    return data.status === "healthy"
-  } catch {
-    return false
-  }
-}
+export default api;
