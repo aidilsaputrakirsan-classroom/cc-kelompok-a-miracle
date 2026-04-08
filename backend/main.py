@@ -15,7 +15,7 @@ from schemas import (
 from auth import create_access_token, get_current_user, get_current_admin
 import crud
 
-load_dotenv()
+load_dotenv(override=True)
 
 # Buat semua tabel
 Base.metadata.create_all(bind=engine)
