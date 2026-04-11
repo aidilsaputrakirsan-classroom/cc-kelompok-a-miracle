@@ -23,7 +23,7 @@ Base.metadata.create_all(bind=engine)
 app = FastAPI(
     title="TraceIt API - Sistem Manajemen Pendonor Darah",
     description="REST API untuk aplikasi TraceIt ITK - membantu civitas akademika dalam pendataan donor darah sukarela",
-    version="1.0.0",
+    version="0.5.0",
 )
 
 # ==================== CORS ====================

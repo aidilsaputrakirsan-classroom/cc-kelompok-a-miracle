@@ -6,9 +6,18 @@ venv/
 .env
 
 # Python cache
-__pycache__/
+__pycache__
 *.pyc
 *.pyo
+*.pyd
+.env
+.env.*
+.git
+.gitignore
+node_modules/
+dist/
+build/
+*.log
 
 # IDE
 .vscode/
