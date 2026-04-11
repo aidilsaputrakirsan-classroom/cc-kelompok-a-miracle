@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Droplets, Mail, Lock, ArrowRight, AlertCircle, ChevronLeft } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
@@ -43,7 +43,7 @@ export const Login = () => {
           <div className="w-16 h-16 bg-[#660000] rounded-2xl flex items-center justify-center text-white mx-auto mb-6 shadow-lg shadow-black/10">
             <Droplets className="w-10 h-10" />
           </div>
-          <h1 className="text-3xl font-bold text-slate-900">TraceIt</h1>
+          <h1 className="text-3xl font-bold text-slate-900">TRACELT</h1>
           <p className="text-slate-500 mt-2">Masuk ke dashboard manajemen pendonor ITK.</p>
         </div>
 

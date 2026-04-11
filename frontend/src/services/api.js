@@ -24,7 +24,7 @@ export const apiService = {
   registerAdmin: (data) => api.post('/auth/admin/register', data),
 
   // Pendonor
-  registerPendonor: (data) => api.post('/auth/pendonor/register', data),
+  registerPendonor: (data) => api.post('/pendonor', data),
   getPendonorList: (params) => api.get('/pendonor', { params }),
   getPendonorById: (id) => api.get(`/pendonor/${id}`),
   updatePendonor: (id, data) => api.put(`/pendonor/${id}`, data),
@@ -33,7 +33,7 @@ export const apiService = {
   // Riwayat Donor
   createRiwayatDonor: (data) => api.post('/riwayat-donor', data),
   getRiwayatDonorByPendonor: (pendonorId, params) => api.get(`/riwayat-donor/pendonor/${pendonorId}`, { params }),
-  getPendingVerifications: (params) => api.get('/riwayat-donor/pending', { params }),
+  getPendingVerifications: (params) => api.get('/riwayat-donor', { params: { ...params, status_verifikasi: false } }),
   verifyRiwayatDonor: (id, data) => api.post(`/riwayat-donor/${id}/verifikasi`, data),
 
   // Riwayat Kesehatan

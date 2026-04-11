@@ -1,12 +1,12 @@
 import { motion } from 'framer-motion';
 import { 
+  Droplets,
   Heart, 
   ArrowRight,
   Search,
   Users,
   ShieldCheck,
-  Globe,
-  Droplets
+  Globe
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Header } from '../components/Header';
@@ -25,10 +25,9 @@ export const LandingPage = () => {
   return (
     <div className="min-h-screen bg-white font-sans">
       <Header />
-
       <div className="bg-[#660000] text-white">
         {/* Hero Section */}
-        <section className="relative overflow-hidden pt-12 pb-24 lg:pt-20 lg:pb-32 px-6">
+        <section className="relative overflow-hidden pt-32 pb-24 lg:pt-48 lg:pb-32 px-6">
           <div className="max-w-3xl mx-auto text-center">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -40,7 +39,7 @@ export const LandingPage = () => {
                 PENGUJUAN PENDONOR DARAH
               </div>
               <h1 className="text-5xl lg:text-7xl font-black leading-[1.1] text-white mb-8">
-                TraceIt <span className="text-white/80">ITK</span>
+                TRACELT <span className="text-white/80">ITK</span>
               </h1>
               <p className="text-xl text-white/90 leading-relaxed mb-10 mx-auto max-w-2xl">
                 Aplikasi berbasis web yang dirancang untuk membantu civitas akademika <strong>Institut Teknologi Kalimantan</strong> dalam mengajukan permohonan data pendonor darah sukarela.
@@ -64,7 +63,7 @@ export const LandingPage = () => {
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-3xl font-black text-slate-900 mb-8">Solusi Terpusat Berbasis Cloud</h2>
           <p className="text-lg text-slate-600 leading-relaxed mb-12">
-            TraceIt hadir sebagai solusi terpusat berbasis cloud yang memungkinkan pengelolaan data secara sistematis, aman, dan dapat diakses kapan saja serta dari berbagai perangkat. Dengan demikian, proses pendataan pendonor sukarelawan menjadi lebih cepat, transparan, dan efisien.
+            TRACELT hadir sebagai solusi terpusat berbasis cloud yang memungkinkan pengelolaan data secara sistematis, aman, dan dapat diakses kapan saja serta dari berbagai perangkat. Dengan demikian, proses pendataan pendonor sukarelawan menjadi lebih cepat, transparan, dan efisien.
           </p>
           <div className="grid md:grid-cols-3 gap-8">
             <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
@@ -87,18 +86,30 @@ export const LandingPage = () => {
       <section id="features" className="py-24 px-6">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-black text-slate-900 mb-4">Fitur Utama TraceIt</h2>
+            <h2 className="text-3xl font-black text-slate-900 mb-4">Fitur Utama TRACELT</h2>
             <p className="text-slate-500 max-w-2xl mx-auto">
               Platform yang dirancang khusus untuk mempermudah civitas akademika ITK.
             </p>
           </div>
           
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-8 mb-24">
             <FeatureCard 
               icon={Users}
               title="Data Pendonor"
               desc="Unggah data pribadi lengkap mulai dari fisik hingga riwayat kesehatan."
             />
+            <Link to="/stock" className="group">
+              <div className="bg-white p-8 rounded-xl shadow-sm hover:shadow-md transition-all text-center flex flex-col items-center h-full border-2 border-transparent hover:border-[#660000]/20">
+                <div className="w-16 h-16 bg-[#660000]/10 rounded-full flex items-center justify-center text-[#660000] mb-6 group-hover:scale-110 transition-transform">
+                  <Droplets className="w-8 h-8" />
+                </div>
+                <h3 className="text-lg font-bold text-slate-900 mb-3">Stok Darah</h3>
+                <p className="text-slate-500 text-sm leading-relaxed mb-4">Pantau ketersediaan stok darah di ITK secara real-time dan transparan.</p>
+                <div className="mt-auto text-[#660000] text-xs font-bold flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  Lihat Detail <ArrowRight className="w-3 h-3" />
+                </div>
+              </div>
+            </Link>
             <FeatureCard 
               icon={Search}
               title="Filter Cerdas"
@@ -124,7 +135,7 @@ export const LandingPage = () => {
           <div className="flex flex-col md:flex-row justify-between items-center gap-8 mb-12">
             <div className="flex items-center gap-2">
               <Droplets className="w-8 h-8 text-[#660000]" />
-              <span className="text-2xl font-black tracking-tighter uppercase">TraceIt</span>
+              <span className="text-2xl font-black tracking-tighter uppercase">TRACELT</span>
             </div>
             <div className="flex gap-8 text-sm font-medium text-slate-400">
               <a href="#" className="hover:text-white transition-colors">Beranda</a>
@@ -134,7 +145,7 @@ export const LandingPage = () => {
             </div>
           </div>
           <div className="pt-8 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4 text-slate-500 text-xs">
-            <p>TraceIt by Miracle. Institut Teknologi Kalimantan.</p>
+            <p>TRACELT by Miracle. Institut Teknologi Kalimantan.</p>
             <p>Dibuat dengan ❤️ untuk kemanusiaan.</p>
           </div>
         </div>

@@ -1,4 +1,3 @@
-import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { LandingPage } from './pages/LandingPage';
 import { Login } from './pages/Login';
@@ -6,6 +5,7 @@ import { AdminDashboard } from './pages/AdminDashboard';
 import { DonorList } from './pages/DonorList';
 import { VerificationQueue } from './pages/VerificationQueue';
 import { DonorRegistration } from './pages/DonorRegistration';
+import { PublicStock } from './pages/PublicStock';
 import { AdminLayout } from './components/AdminLayout';
 
 const ProtectedRoute = ({ children }) => {
@@ -21,6 +21,7 @@ export default function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<DonorRegistration />} />
+        <Route path="/stock" element={<PublicStock />} />
 
         <Route path="/admin" element={
           <ProtectedRoute>

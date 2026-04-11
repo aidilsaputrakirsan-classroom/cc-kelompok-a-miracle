@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   CheckCircle2, 
   XCircle, 
@@ -30,9 +30,10 @@ export const VerificationQueue = () => {
 
   const handleVerify = async (id, status) => {
     try {
+      // status 'approved' -> true, 'rejected' -> false
+      const isApproved = status === 'approved';
       await apiService.verifyRiwayatDonor(id, { 
-        status_verifikasi: status, 
-        catatan: "Diverifikasi oleh admin" 
+        status_verifikasi: isApproved
       });
       setQueue(prev => prev.filter(item => item.id_riwayat !== id));
     } catch (err) {

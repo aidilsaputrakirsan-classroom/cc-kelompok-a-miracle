@@ -1,144 +1,152 @@
 import React, { useState, useEffect } from 'react';
-import { Droplets, Menu, X, LogOut, LayoutDashboard } from 'lucide-react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Droplets, Menu, X } from 'lucide-react';
 
 export const Header = () => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const navigate = useNavigate();
-  const location = useLocation();
 
   useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
+    window.addEventListener('scroll', handleScroll);
+    
+    // Check auth status
     const token = localStorage.getItem('admin_token');
     setIsLoggedIn(!!token);
-  }, [location]);
 
-  const handleLogout = () => {
-    localStorage.removeItem('admin_token');
-    setIsLoggedIn(false);
-    setIsMenuOpen(false);
-    navigate('/');
-  };
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const navLinks = [
-    { name: 'Beranda', href: '/#' },
+    { name: 'Beranda', href: '/' },
     { name: 'Tentang', href: '/#about' },
     { name: 'Fitur', href: '/#features' },
   ];
 
   return (
-    <div className="sticky top-0 z-50 bg-[#660000] text-white shadow-lg">
-      <nav className="max-w-7xl mx-auto px-6 py-4 lg:py-6 flex items-center justify-between">
+    <header 
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        isScrolled 
+          ? 'bg-white shadow-md py-4' 
+          : 'bg-transparent py-6'
+      }`}
+    >
+      <nav className="max-w-7xl mx-auto px-6 flex items-center justify-between">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2 group">
-          <Droplets className="w-8 h-8 text-white group-hover:scale-110 transition-transform" />
-          <div className="flex flex-col lg:flex-row lg:items-center lg:gap-2">
-            <span className="text-xl lg:text-2xl font-black tracking-tighter text-white uppercase">TraceIt</span>
-            <span className="text-[10px] lg:text-xs font-bold text-[#660000] bg-white px-2 py-0.5 rounded-full w-fit">by Miracle</span>
-          </div>
+          <Droplets className={`w-8 h-8 transition-colors ${isScrolled ? 'text-[#660000]' : 'text-white'}`} />
+          <span className={`text-2xl font-black tracking-tighter uppercase transition-colors ${isScrolled ? 'text-[#660000]' : 'text-white'}`}>
+            TRACELT
+          </span>
+          <span className={`text-xs font-bold px-2 py-0.5 rounded-full transition-all ${
+            isScrolled 
+              ? 'bg-[#660000] text-white' 
+              : 'bg-white text-[#660000]'
+          }`}>
+            by Miracle
+          </span>
         </Link>
 
-        {/* Desktop Navigation */}
+        {/* Desktop Nav */}
         <div className="hidden lg:flex items-center gap-8">
           {navLinks.map((link) => (
-            <a 
-              key={link.name}
-              href={link.href} 
-              className="text-white/80 text-sm font-medium hover:text-white transition-colors"
-            >
-              {link.name}
-            </a>
-          ))}
-          
-          {isLoggedIn ? (
-            <div className="flex items-center gap-4">
+            link.href.startsWith('/#') || link.href.startsWith('#') ? (
+              <a 
+                key={link.name}
+                href={link.href} 
+                className={`text-sm font-medium transition-colors ${
+                  isScrolled 
+                    ? 'text-slate-600 hover:text-[#660000]' 
+                    : 'text-white/80 hover:text-white'
+                }`}
+              >
+                {link.name}
+              </a>
+            ) : (
               <Link 
-                to="/admin" 
-                className="flex items-center gap-2 bg-white/10 hover:bg-white/20 px-4 py-2 rounded-xl text-sm font-bold transition-all"
+                key={link.name}
+                to={link.href} 
+                className={`text-sm font-medium transition-colors ${
+                  isScrolled 
+                    ? 'text-slate-600 hover:text-[#660000]' 
+                    : 'text-white/80 hover:text-white'
+                }`}
               >
-                <LayoutDashboard className="w-4 h-4" />
-                Dashboard
+                {link.name}
               </Link>
-              <button 
-                onClick={handleLogout}
-                className="text-white/70 hover:text-white p-2 transition-colors"
-                title="Keluar"
-              >
-                <LogOut className="w-5 h-5" />
-              </button>
-            </div>
-          ) : (
-            <Link 
-              to="/login" 
-              className="bg-white text-[#660000] px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all shadow-lg shadow-black/20"
-            >
-              Portal Admin
-            </Link>
-          )}
+            )
+          ))}
+          <Link 
+            to={isLoggedIn ? "/admin" : "/login"} 
+            className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all shadow-lg ${
+              isScrolled 
+                ? 'bg-[#660000] text-white hover:bg-[#550000] shadow-[#660000]/20' 
+                : 'bg-white text-[#660000] hover:bg-slate-50 shadow-black/20'
+            }`}
+          >
+            {isLoggedIn ? 'Dashboard' : 'Portal Admin'}
+          </Link>
         </div>
 
-        {/* Mobile Menu Button */}
+        {/* Mobile Menu Toggle */}
         <button 
-          className="lg:hidden p-2 text-white hover:bg-white/10 rounded-lg transition-colors"
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
+          className="lg:hidden p-2 rounded-lg transition-colors"
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
         >
-          {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          {isMobileMenuOpen ? (
+            <X className={`w-6 h-6 ${isScrolled ? 'text-slate-900' : 'text-white'}`} />
+          ) : (
+            <Menu className={`w-6 h-6 ${isScrolled ? 'text-slate-900' : 'text-white'}`} />
+          )}
         </button>
       </nav>
 
-      {/* Mobile Navigation Overlay */}
+      {/* Mobile Menu Overlay */}
       <AnimatePresence>
-        {isMenuOpen && (
+        {isMobileMenuOpen && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="lg:hidden bg-[#550000] border-t border-white/10 overflow-hidden"
+            className="lg:hidden bg-white border-t border-slate-100 overflow-hidden"
           >
             <div className="px-6 py-8 flex flex-col gap-6">
               {navLinks.map((link) => (
-                <a 
-                  key={link.name}
-                  href={link.href} 
-                  className="text-lg font-bold text-white/90 hover:text-white"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  {link.name}
-                </a>
-              ))}
-              <hr className="border-white/10" />
-              {isLoggedIn ? (
-                <div className="flex flex-col gap-4">
+                link.href.startsWith('/#') || link.href.startsWith('#') ? (
+                  <a 
+                    key={link.name}
+                    href={link.href} 
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="text-lg font-semibold text-slate-900 hover:text-[#660000] transition-colors"
+                  >
+                    {link.name}
+                  </a>
+                ) : (
                   <Link 
-                    to="/admin" 
-                    className="flex items-center justify-center gap-2 bg-white text-[#660000] py-4 rounded-2xl font-bold"
-                    onClick={() => setIsMenuOpen(false)}
+                    key={link.name}
+                    to={link.href} 
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="text-lg font-semibold text-slate-900 hover:text-[#660000] transition-colors"
                   >
-                    <LayoutDashboard className="w-5 h-5" />
-                    Ke Dashboard Admin
+                    {link.name}
                   </Link>
-                  <button 
-                    onClick={handleLogout}
-                    className="flex items-center justify-center gap-2 text-white/70 font-medium py-2"
-                  >
-                    <LogOut className="w-5 h-5" />
-                    Keluar dari Akun
-                  </button>
-                </div>
-              ) : (
-                <Link 
-                  to="/login" 
-                  className="bg-white text-[#660000] py-4 rounded-2xl font-bold text-center shadow-xl"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Portal Admin
-                </Link>
-              )}
+                )
+              ))}
+              <Link 
+                to={isLoggedIn ? "/admin" : "/login"}
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="bg-[#660000] text-white px-6 py-4 rounded-2xl font-bold text-center shadow-lg shadow-[#660000]/20"
+              >
+                {isLoggedIn ? 'Dashboard' : 'Portal Admin'}
+              </Link>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </header>
   );
 };

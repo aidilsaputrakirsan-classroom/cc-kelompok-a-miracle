@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { 
   Users, 
   Droplets, 
@@ -78,7 +78,7 @@ export const AdminDashboard = () => {
           >
             <ArrowLeft className="w-6 h-6" />
           </Link>
-          <div className="text-2xl font-black tracking-tighter uppercase">TraceIt ADMIN</div>
+          <div className="text-2xl font-black tracking-tighter uppercase">TRACELT ADMIN</div>
         </div>
         <h1 className="text-3xl lg:text-4xl font-black mb-2">Ringkasan Sistem</h1>
         <p className="text-white/80 font-medium">Pantau data pendonor dan statistik donor darah secara real-time.</p>

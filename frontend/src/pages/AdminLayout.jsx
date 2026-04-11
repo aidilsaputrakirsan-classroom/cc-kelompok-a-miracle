@@ -1,15 +1,5 @@
-import React from 'react';
-import { motion } from 'framer-motion';
-import { 
-  Users, 
-  Droplets, 
-  CheckCircle, 
-  Clock, 
-  LayoutDashboard, 
-  LogOut,
-  Menu,
-  X
-} from 'lucide-react';
+import React, { useState } from 'react';
+import { Users, Droplets, CheckCircle, LayoutDashboard, LogOut,Menu,X} from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -36,11 +26,11 @@ const SidebarItem = ({ icon: Icon, label, path, active }) => (
 export const AdminLayout = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const menuItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/admin' },
-    { icon: Users, label: 'Daftar Pendonor', path: '/admin/donors' },
+    { icon: Users, label: 'Dashboard Pendonor', path: '/admin/donors' },
     { icon: CheckCircle, label: 'Verifikasi', path: '/admin/verify' },
   ];
 
@@ -55,7 +45,7 @@ export const AdminLayout = ({ children }) => {
       <aside className="hidden lg:flex flex-col w-64 bg-white border-r border-slate-200 p-6 fixed h-full">
         <div className="flex items-center gap-3 mb-10 px-2">
           <Droplets className="w-8 h-8 text-[#660000]" />
-          <span className="text-2xl font-black tracking-tighter text-slate-900 uppercase">TraceIt</span>
+          <span className="text-2xl font-black tracking-tighter text-slate-900 uppercase">TRACELT</span>
         </div>
 
         <nav className="flex-1 flex flex-col gap-2">
@@ -81,7 +71,7 @@ export const AdminLayout = ({ children }) => {
       <div className="lg:hidden fixed top-0 left-0 right-0 bg-white border-b border-slate-200 z-50 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Droplets className="w-6 h-6 text-[#660000]" />
-          <span className="font-black text-lg text-slate-900 uppercase tracking-tighter">TraceIt</span>
+          <span className="font-black text-lg text-slate-900 uppercase tracking-tighter">TRACELT</span>
         </div>
         <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
           {isMobileMenuOpen ? <X /> : <Menu />}
