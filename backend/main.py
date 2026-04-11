@@ -1,5 +1,4 @@
 import os
-from dotenv import load_dotenv
 from fastapi import FastAPI, Depends, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
@@ -8,12 +7,10 @@ from models import Base, Admin, Pendonor
 from schemas import (
     AdminCreate, AdminResponse, PendonorCreate, PendonorUpdate, PendonorResponse, PendonorListResponse,
     RiwayatDonorCreate, RiwayatDonorVerifikasi, RiwayatDonorResponse, RiwayatDonorListResponse,
-    LoginRequest, TokenResponse,
+    LoginRequest, TokenResponse, PublicBloodStockResponse,
 )
 from auth import create_access_token, get_current_admin
 import crud
-
-load_dotenv(override=True)
 
 # Buat semua tabel
 Base.metadata.create_all(bind=engine)
@@ -42,6 +39,11 @@ app.add_middleware(
 @app.get("/health")
 def health_check():
     return {"status": "healthy", "service": "TraceIt API", "version": "1.0.0"}
+
+
+@app.get("/api/public/blood-stock", response_model=PublicBloodStockResponse)
+def get_public_blood_stock(db: Session = Depends(get_db)):
+    return crud.get_public_blood_stock(db=db)
 
 
 # ==================== AUTH ENDPOINTS (PUBLIC) ====================

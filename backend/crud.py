@@ -1,7 +1,7 @@
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 from auth import hash_password, verify_password
-from models import Admin, Pendonor, RiwayatDonor
+from models import Admin, Pendonor, RiwayatDonor, GolonganDarahEnum
 from schemas import AdminCreate, PendonorCreate, PendonorUpdate, RiwayatDonorCreate, RiwayatDonorVerifikasi
 
 
@@ -172,3 +172,26 @@ def get_pendonor_stats(db: Session) -> dict:
         "pendonor_by_golongan_darah": {str(k): v for k, v in darah_stats},
         "pendonor_by_jenis_kelamin": {str(k): v for k, v in kelamin_stats},
     }
+
+
+def get_public_blood_stock(db: Session) -> dict:
+    darah_stats = (
+        db.query(Pendonor.golongan_darah, func.count(Pendonor.id_pendonor))
+        .group_by(Pendonor.golongan_darah)
+        .all()
+    )
+
+    darah_count_map = {
+        (golongan.value if hasattr(golongan, "value") else str(golongan)): total
+        for golongan, total in darah_stats
+    }
+
+    stock_list = [
+        {
+            "golongan_darah": golongan.value,
+            "jumlah_stok": darah_count_map.get(golongan.value, 0),
+        }
+        for golongan in GolonganDarahEnum
+    ]
+
+    return {"blood_stock": stock_list}

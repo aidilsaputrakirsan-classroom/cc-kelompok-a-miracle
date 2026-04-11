@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 """Test apakah backend bisa connect ke PostgreSQL database."""
 
+from sqlalchemy import text
 from database import SessionLocal
-from models import Item
+from models import Admin, Pendonor, RiwayatDonor
 
 print("=" * 60)
 print("Testing Backend Database Connection")
@@ -12,17 +13,20 @@ try:
     # Test 1: Connect
     db = SessionLocal()
     print("\n✓ Successfully connected to PostgreSQL!")
-    
-    # Test 2: Query items
-    items = db.query(Item).all()
-    print(f"✓ Found {len(items)} items in database")
-    
-    if items:
-        print("\nItems in database:")
-        for item in items:
-            print(f"  - {item.id}: {item.name} (Rp {item.price:,})")
-    else:
-        print("⚠ WARNING: Database is EMPTY!")
+
+    # Test 2: Basic query
+    db.execute(text("SELECT 1"))
+    print("✓ SQL query test passed")
+
+    # Test 3: Count existing app tables
+    total_admin = db.query(Admin).count()
+    total_pendonor = db.query(Pendonor).count()
+    total_riwayat = db.query(RiwayatDonor).count()
+
+    print("\nData summary:")
+    print(f"  - Admin: {total_admin}")
+    print(f"  - Pendonor: {total_pendonor}")
+    print(f"  - Riwayat donor: {total_riwayat}")
     
     db.close()
     
@@ -33,5 +37,5 @@ except Exception as e:
     print("\nPossible causes:")
     print("  - PostgreSQL is not running")
     print("  - Wrong username/password in .env")
-    print("  - Database 'miracle' doesn't exist")
+    print("  - Database in DATABASE_URL doesn't exist")
     print("  - psycopg2 driver not installed")

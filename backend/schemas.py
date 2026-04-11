@@ -133,3 +133,12 @@ class PendonorListResponse(BaseModel):
 class RiwayatDonorListResponse(BaseModel):
     total: int
     riwayat_donor: list[RiwayatDonorResponse]
+
+
+class BloodStockItem(BaseModel):
+    golongan_darah: str
+    jumlah_stok: int
+
+
+class PublicBloodStockResponse(BaseModel):
+    blood_stock: list[BloodStockItem]
