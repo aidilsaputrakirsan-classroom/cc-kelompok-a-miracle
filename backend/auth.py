@@ -1,16 +1,14 @@
 import os
 from datetime import datetime, timedelta, timezone
 from typing import Optional
-
 from dotenv import load_dotenv
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
-
 from database import get_db
-from models import Admin, Pendonor
+from models import Admin
 
 load_dotenv()
 
@@ -88,52 +86,4 @@ def get_current_admin(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Admin tidak ditemukan",
         )
-
-    if not admin.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Akun admin tidak aktif",
-        )
-
     return admin
-
-
-def get_current_user(
-    token: str = Depends(oauth2_scheme),
-    db: Session = Depends(get_db),
-):
-    """
-    Dependency injection: ambil current user (bisa admin atau pendonor) dari JWT token.
-    Gunakan di endpoint yang butuh autentikasi umum.
-    """
-    payload = decode_token(token)
-    user_id: int = payload.get("sub")
-    user_type: str = payload.get("user_type")
-
-    if user_id is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token tidak valid",
-        )
-
-    if user_type == "admin":
-        user = db.query(Admin).filter(Admin.id_admin == user_id).first()
-        if not user or not user.is_active:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Admin tidak ditemukan atau tidak aktif",
-            )
-    elif user_type == "pendonor":
-        user = db.query(Pendonor).filter(Pendonor.id_pendonor == user_id).first()
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Pendonor tidak ditemukan",
-            )
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User type tidak valid",
-        )
-
-    return user
