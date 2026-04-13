@@ -33,8 +33,8 @@ ENV PATH="/opt/venv/bin:$PATH"
 # Copy code
 COPY . .
 
-# Pastikan startup script executable
-RUN chmod +x /app/scripts/wait-for-db.sh
+# Fix Windows line endings (CRLF -> LF) dan pastikan executable
+RUN sed -i 's/\r$//' /app/scripts/wait-for-db.sh && chmod +x /app/scripts/wait-for-db.sh
 
 # Non-root user
 RUN adduser -D appuser && chown -R appuser /app
