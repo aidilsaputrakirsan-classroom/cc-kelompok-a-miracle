@@ -91,3 +91,7 @@ Contoh: backend mengakses database menggunakan hostname `tracelt-db` di dalam ne
 | `tracelt-frontend` | `v1-fe` | 93.8 MB |
 
 Frontend menggunakan multi-stage build (Node.js untuk build, Nginx untuk serve), sehingga ukuran image jauh lebih kecil dibanding menggunakan Node.js penuh (~1 GB).
+
+## ERD 
+
+![alt text](CCMiracle.png)
