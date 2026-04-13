@@ -1,13 +1,16 @@
-# Stage 1: Build
-FROM node:18-alpine AS builder
+# ============================================================
+# Stage 1: Build — Install deps & build React app
+# ============================================================
+FROM node:20-slim AS builder
 
 WORKDIR /app
 
-# Copy dependency files
+# Copy package files
 COPY package.json package-lock.json* ./
 
-# Install dependencies
-RUN npm ci
+# Gunakan npm install (bukan ci) untuk membiarkan npm mendeteksi 
+# binary native yang benar untuk Linux (amd64)
+RUN npm install
 
 # Copy source code
 COPY . .
@@ -16,10 +19,12 @@ COPY . .
 ARG VITE_API_URL=http://localhost:3000
 ENV VITE_API_URL=$VITE_API_URL
 
-# Build React app
+# Build React app → output di /app/dist/
 RUN npm run build
 
-# Stage 2: Production
+# ============================================================
+# Stage 2: Production — Serve dengan Nginx
+# ============================================================
 FROM nginx:alpine
 
 # Copy build output dari stage 1
@@ -31,5 +36,5 @@ COPY nginx.conf /etc/nginx/nginx.conf
 # Nginx default port
 EXPOSE 80
 
-# Jalankan Nginx
+# Nginx berjalan di foreground
 CMD ["nginx", "-g", "daemon off;"]
