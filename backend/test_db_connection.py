@@ -3,7 +3,7 @@
 
 from sqlalchemy import text
 from database import SessionLocal
-from models import Admin, Pendonor, RiwayatDonor
+from models import Admin, Pengguna, Pendonor, RiwayatDonor
 
 print("=" * 60)
 print("Testing Backend Database Connection")
@@ -20,11 +20,13 @@ try:
 
     # Test 3: Count existing app tables
     total_admin = db.query(Admin).count()
+    total_pengguna = db.query(Pengguna).count()
     total_pendonor = db.query(Pendonor).count()
     total_riwayat = db.query(RiwayatDonor).count()
 
     print("\nData summary:")
     print(f"  - Admin: {total_admin}")
+    print(f"  - Pengguna: {total_pengguna}")
     print(f"  - Pendonor: {total_pendonor}")
     print(f"  - Riwayat donor: {total_riwayat}")
     

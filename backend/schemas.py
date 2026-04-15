@@ -45,6 +45,32 @@ class AdminResponse(BaseModel):
         from_attributes = True
 
 
+class PenggunaCreate(BaseModel):
+    nama_pengguna: str = Field(..., min_length=2, max_length=100, examples=["Budi Santoso"])
+    email: EmailStr = Field(..., examples=["pengguna@example.com"])
+    password: str = Field(..., min_length=8, examples=["UserPass123!"])
+
+    @field_validator("password")
+    def validate_password_strength(cls, value: str) -> str:
+        if not re.search(r"[A-Z]", value):
+            raise ValueError("Password harus mengandung minimal 1 huruf besar")
+        if not re.search(r"[a-z]", value):
+            raise ValueError("Password harus mengandung minimal 1 huruf kecil")
+        if not re.search(r"[0-9]", value):
+            raise ValueError("Password harus mengandung minimal 1 angka")
+        return value
+
+
+class PenggunaResponse(BaseModel):
+    id_pengguna: int
+    nama_pengguna: str
+    email: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
 class LoginRequest(BaseModel):
     email: str = Field(..., examples=["admin@itk.ac.id"])
     password: str = Field(..., examples=["AdminPass123!"])
@@ -111,6 +137,11 @@ class RiwayatDonorCreate(BaseModel):
     golongan_darah: Optional[GolonganDarahEnum] = None
 
 
+class RiwayatDonorUpdate(BaseModel):
+    id_pendonor: Optional[int] = None
+    golongan_darah: Optional[GolonganDarahEnum] = None
+
+
 class RiwayatDonorVerifikasi(BaseModel):
     status_verifikasi: bool
 
@@ -118,6 +149,7 @@ class RiwayatDonorVerifikasi(BaseModel):
 class RiwayatDonorResponse(BaseModel):
     id_riwayat: int
     id_pendonor: int
+    id_pengguna: Optional[int] = None
     golongan_darah: str
     status_verifikasi: bool
 

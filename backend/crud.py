@@ -1,8 +1,16 @@
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 from auth import hash_password, verify_password
-from models import Admin, Pendonor, RiwayatDonor, GolonganDarahEnum
-from schemas import AdminCreate, PendonorCreate, PendonorUpdate, RiwayatDonorCreate, RiwayatDonorVerifikasi
+from models import Admin, Pengguna, Pendonor, RiwayatDonor, GolonganDarahEnum
+from schemas import (
+    AdminCreate,
+    PenggunaCreate,
+    PendonorCreate,
+    PendonorUpdate,
+    RiwayatDonorCreate,
+    RiwayatDonorUpdate,
+    RiwayatDonorVerifikasi,
+)
 
 
 def create_admin(db: Session, admin_data: AdminCreate) -> Admin | None:
@@ -21,6 +29,22 @@ def create_admin(db: Session, admin_data: AdminCreate) -> Admin | None:
     return db_admin
 
 
+def create_pengguna(db: Session, pengguna_data: PenggunaCreate) -> Pengguna | None:
+    existing = db.query(Pengguna).filter(Pengguna.email == pengguna_data.email).first()
+    if existing:
+        return None
+
+    db_pengguna = Pengguna(
+        nama_pengguna=pengguna_data.nama_pengguna,
+        email=pengguna_data.email,
+        password=hash_password(pengguna_data.password),
+    )
+    db.add(db_pengguna)
+    db.commit()
+    db.refresh(db_pengguna)
+    return db_pengguna
+
+
 def authenticate_admin(db: Session, email: str, password: str) -> Admin | None:
     admin = db.query(Admin).filter(Admin.email == email).first()
     if not admin:
@@ -30,8 +54,21 @@ def authenticate_admin(db: Session, email: str, password: str) -> Admin | None:
     return admin
 
 
+def authenticate_pengguna(db: Session, email: str, password: str) -> Pengguna | None:
+    pengguna = db.query(Pengguna).filter(Pengguna.email == email).first()
+    if not pengguna:
+        return None
+    if not verify_password(password, pengguna.password):
+        return None
+    return pengguna
+
+
 def get_admin(db: Session, admin_id: int) -> Admin | None:
     return db.query(Admin).filter(Admin.id_admin == admin_id).first()
+
+
+def get_pengguna(db: Session, pengguna_id: int) -> Pengguna | None:
+    return db.query(Pengguna).filter(Pengguna.id_pengguna == pengguna_id).first()
 
 
 def create_pendonor(db: Session, pendonor_data: PendonorCreate) -> Pendonor:
@@ -98,7 +135,11 @@ def delete_pendonor(db: Session, pendonor_id: int) -> bool:
     return True
 
 
-def create_riwayat_donor(db: Session, riwayat_data: RiwayatDonorCreate) -> RiwayatDonor | None:
+def create_riwayat_donor(
+    db: Session,
+    riwayat_data: RiwayatDonorCreate,
+    id_pengguna: int | None = None,
+) -> RiwayatDonor | None:
     pendonor = db.query(Pendonor).filter(Pendonor.id_pendonor == riwayat_data.id_pendonor).first()
     if not pendonor:
         return None
@@ -107,10 +148,42 @@ def create_riwayat_donor(db: Session, riwayat_data: RiwayatDonorCreate) -> Riway
 
     db_riwayat = RiwayatDonor(
         id_pendonor=riwayat_data.id_pendonor,
+        id_pengguna=id_pengguna,
         golongan_darah=donor_golongan_darah,
         status_verifikasi=False,
     )
     db.add(db_riwayat)
+    db.commit()
+    db.refresh(db_riwayat)
+    return db_riwayat
+
+
+def update_riwayat_donor(
+    db: Session,
+    riwayat_id: int,
+    riwayat_data: RiwayatDonorUpdate,
+    id_pengguna: int | None = None,
+) -> RiwayatDonor | None:
+    query = db.query(RiwayatDonor).filter(RiwayatDonor.id_riwayat == riwayat_id)
+    if id_pengguna is not None:
+        query = query.filter(RiwayatDonor.id_pengguna == id_pengguna)
+
+    db_riwayat = query.first()
+    if not db_riwayat:
+        return None
+
+    update_data = riwayat_data.model_dump(exclude_unset=True)
+    if "id_pendonor" in update_data:
+        pendonor = db.query(Pendonor).filter(Pendonor.id_pendonor == update_data["id_pendonor"]).first()
+        if not pendonor:
+            return None
+
+    for field, value in update_data.items():
+        setattr(db_riwayat, field, value)
+
+    if "id_pendonor" in update_data and "golongan_darah" not in update_data:
+        db_riwayat.golongan_darah = pendonor.golongan_darah
+
     db.commit()
     db.refresh(db_riwayat)
     return db_riwayat
@@ -135,6 +208,24 @@ def get_riwayat_donor_by_pendonor(db: Session, pendonor_id: int, skip: int = 0, 
     total = query.count()
     riwayat = query.order_by(RiwayatDonor.id_riwayat.desc()).offset(skip).limit(limit).all()
     return {"total": total, "riwayat_donor": riwayat}
+
+
+def get_riwayat_donor_by_pengguna(db: Session, pengguna_id: int, skip: int = 0, limit: int = 20):
+    query = db.query(RiwayatDonor).filter(RiwayatDonor.id_pengguna == pengguna_id)
+    total = query.count()
+    riwayat = query.order_by(RiwayatDonor.id_riwayat.desc()).offset(skip).limit(limit).all()
+    return {"total": total, "riwayat_donor": riwayat}
+
+
+def get_riwayat_donor_milik_pengguna(db: Session, riwayat_id: int, pengguna_id: int) -> RiwayatDonor | None:
+    return (
+        db.query(RiwayatDonor)
+        .filter(
+            RiwayatDonor.id_riwayat == riwayat_id,
+            RiwayatDonor.id_pengguna == pengguna_id,
+        )
+        .first()
+    )
 
 
 def verifikasi_riwayat_donor(db: Session, riwayat_id: int, verifikasi_data: RiwayatDonorVerifikasi) -> RiwayatDonor | None:

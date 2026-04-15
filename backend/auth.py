@@ -8,7 +8,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from database import get_db
-from models import Admin
+from models import Admin, Pengguna
 
 load_dotenv()
 
@@ -59,6 +59,13 @@ def decode_token(token: str) -> dict:
         )
 
 
+def _parse_subject_id(subject: object) -> int | None:
+    try:
+        return int(subject)
+    except (TypeError, ValueError):
+        return None
+
+
 # ==================== DEPENDENCY ====================
 
 def get_current_admin(
@@ -70,7 +77,7 @@ def get_current_admin(
     Gunakan di endpoint yang hanya bisa diakses admin.
     """
     payload = decode_token(token)
-    admin_id: int = payload.get("sub")
+    admin_id = _parse_subject_id(payload.get("sub"))
     user_type: str = payload.get("user_type")
 
     if user_type != "admin" or admin_id is None:
@@ -87,3 +94,31 @@ def get_current_admin(
             detail="Admin tidak ditemukan",
         )
     return admin
+
+
+def get_current_pengguna(
+    token: str = Depends(oauth2_scheme),
+    db: Session = Depends(get_db),
+) -> Pengguna:
+    """
+    Dependency injection: ambil current pengguna dari JWT token.
+    Gunakan di endpoint yang hanya bisa diakses pengguna.
+    """
+    payload = decode_token(token)
+    pengguna_id = _parse_subject_id(payload.get("sub"))
+    user_type: str = payload.get("user_type")
+
+    if user_type != "pengguna" or pengguna_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Hanya pengguna yang bisa akses endpoint ini",
+        )
+
+    pengguna = db.query(Pengguna).filter(Pengguna.id_pengguna == pengguna_id).first()
+
+    if pengguna is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Pengguna tidak ditemukan",
+        )
+    return pengguna

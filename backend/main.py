@@ -3,13 +3,15 @@ from fastapi import FastAPI, Depends, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from database import engine, get_db
-from models import Base, Admin, Pendonor
+from models import Base, Admin, Pengguna, Pendonor
 from schemas import (
-    AdminCreate, AdminResponse, PendonorCreate, PendonorUpdate, PendonorResponse, PendonorListResponse,
+    AdminCreate, AdminResponse, PenggunaCreate, PenggunaResponse,
+    PendonorCreate, PendonorUpdate, PendonorResponse, PendonorListResponse,
     RiwayatDonorCreate, RiwayatDonorVerifikasi, RiwayatDonorResponse, RiwayatDonorListResponse,
+    RiwayatDonorUpdate,
     LoginRequest, TokenResponse, PublicBloodStockResponse,
 )
-from auth import create_access_token, get_current_admin
+from auth import create_access_token, get_current_admin, get_current_pengguna
 import crud
 
 # Buat semua tabel
@@ -17,7 +19,7 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="TraceIt API",
-    description="REST API backend sesuai ERD: admin, pendonor, riwayat_donor",
+    description="REST API backend sesuai ERD: admin, pengguna, pendonor, riwayat_donor",
     version="1.0.0",
 )
 
@@ -67,6 +69,28 @@ def login_admin(login_data: LoginRequest, db: Session = Depends(get_db)):
         "access_token": token,
         "token_type": "bearer",
         "user_type": "admin",
+    }
+
+
+@app.post("/auth/pengguna/register", response_model=PenggunaResponse, status_code=201)
+def register_pengguna(pengguna_data: PenggunaCreate, db: Session = Depends(get_db)):
+    pengguna = crud.create_pengguna(db=db, pengguna_data=pengguna_data)
+    if not pengguna:
+        raise HTTPException(status_code=400, detail="Email pengguna sudah terdaftar")
+    return pengguna
+
+
+@app.post("/auth/pengguna/login", response_model=TokenResponse)
+def login_pengguna(login_data: LoginRequest, db: Session = Depends(get_db)):
+    pengguna = crud.authenticate_pengguna(db=db, email=login_data.email, password=login_data.password)
+    if not pengguna:
+        raise HTTPException(status_code=401, detail="Email atau password pengguna salah")
+
+    token = create_access_token(data={"sub": pengguna.id_pengguna, "user_type": "pengguna"})
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "user_type": "pengguna",
     }
 
 
@@ -146,6 +170,90 @@ def create_riwayat_donor(
     return riwayat
 
 
+@app.get("/pengguna/me", response_model=PenggunaResponse)
+def get_current_pengguna_profile(current_pengguna: Pengguna = Depends(get_current_pengguna)):
+    return current_pengguna
+
+
+@app.post("/pengguna/riwayat-donor", response_model=RiwayatDonorResponse, status_code=201)
+def create_riwayat_donor_pengguna(
+    riwayat_data: RiwayatDonorCreate,
+    current_pengguna: Pengguna = Depends(get_current_pengguna),
+    db: Session = Depends(get_db),
+):
+    riwayat = crud.create_riwayat_donor(
+        db=db,
+        riwayat_data=riwayat_data,
+        id_pengguna=current_pengguna.id_pengguna,
+    )
+    if not riwayat:
+        raise HTTPException(status_code=404, detail=f"Pendonor {riwayat_data.id_pendonor} tidak ditemukan")
+    return riwayat
+
+
+@app.get("/pengguna/riwayat-donor", response_model=RiwayatDonorListResponse)
+def get_riwayat_donor_pengguna(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(20, ge=1, le=100),
+    current_pengguna: Pengguna = Depends(get_current_pengguna),
+    db: Session = Depends(get_db),
+):
+    return crud.get_riwayat_donor_by_pengguna(
+        db=db,
+        pengguna_id=current_pengguna.id_pengguna,
+        skip=skip,
+        limit=limit,
+    )
+
+
+@app.get("/pengguna/riwayat-donor/{riwayat_id}", response_model=RiwayatDonorResponse)
+def get_riwayat_donor_detail_pengguna(
+    riwayat_id: int,
+    current_pengguna: Pengguna = Depends(get_current_pengguna),
+    db: Session = Depends(get_db),
+):
+    riwayat = crud.get_riwayat_donor_milik_pengguna(
+        db=db,
+        riwayat_id=riwayat_id,
+        pengguna_id=current_pengguna.id_pengguna,
+    )
+    if not riwayat:
+        raise HTTPException(status_code=404, detail=f"Riwayat donor {riwayat_id} tidak ditemukan")
+    return riwayat
+
+
+@app.put("/pengguna/riwayat-donor/{riwayat_id}", response_model=RiwayatDonorResponse)
+def update_riwayat_donor_pengguna(
+    riwayat_id: int,
+    riwayat_data: RiwayatDonorUpdate,
+    current_pengguna: Pengguna = Depends(get_current_pengguna),
+    db: Session = Depends(get_db),
+):
+    riwayat_milik_pengguna = crud.get_riwayat_donor_milik_pengguna(
+        db=db,
+        riwayat_id=riwayat_id,
+        pengguna_id=current_pengguna.id_pengguna,
+    )
+    if not riwayat_milik_pengguna:
+        raise HTTPException(status_code=404, detail=f"Riwayat donor {riwayat_id} tidak ditemukan")
+
+    if riwayat_milik_pengguna.status_verifikasi:
+        raise HTTPException(
+            status_code=400,
+            detail="Riwayat donor yang sudah diverifikasi admin tidak dapat diupdate",
+        )
+
+    updated = crud.update_riwayat_donor(
+        db=db,
+        riwayat_id=riwayat_id,
+        riwayat_data=riwayat_data,
+        id_pengguna=current_pengguna.id_pengguna,
+    )
+    if not updated:
+        raise HTTPException(status_code=404, detail=f"Riwayat donor {riwayat_id} tidak ditemukan")
+    return updated
+
+
 @app.get("/riwayat-donor", response_model=RiwayatDonorListResponse)
 def get_riwayat_donor_all(
     skip: int = Query(0, ge=0),
@@ -198,11 +306,13 @@ def verifikasi_riwayat_donor(
 def system_info():
     return {
         "sistem": "TraceIt",
-        "deskripsi": "Backend manajemen pendonor darah sesuai ERD terbaru",
+        "deskripsi": "Backend manajemen pendonor darah sesuai ERD terbaru dengan autentikasi admin dan pengguna",
         "version": "1.0.0",
         "fitur_utama": [
             "Registrasi data pendonor",
             "Pencatatan riwayat donor",
+            "Registrasi dan login pengguna dengan JWT",
+            "Riwayat input data milik pengguna",
             "Verifikasi data oleh admin",
             "Filter pendonor (nama, golongan darah, umur, jenis kelamin)",
         ],

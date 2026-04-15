@@ -29,6 +29,18 @@ class Admin(Base):
     password = Column(String(255), nullable=False)
 
 
+class Pengguna(Base):
+    __tablename__ = "pengguna"
+
+    id_pengguna = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    nama_pengguna = Column(String(100), nullable=False)
+    email = Column(String(255), unique=True, nullable=False, index=True)
+    password = Column(String(255), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    riwayat_donor = relationship("RiwayatDonor", back_populates="pengguna")
+
+
 class Pendonor(Base):
     __tablename__ = "pendonor"
 
@@ -55,7 +67,9 @@ class RiwayatDonor(Base):
 
     id_riwayat = Column(Integer, primary_key=True, index=True, autoincrement=True)
     id_pendonor = Column(Integer, ForeignKey("pendonor.id_pendonor"), nullable=False, index=True)
+    id_pengguna = Column(Integer, ForeignKey("pengguna.id_pengguna"), nullable=True, index=True)
     golongan_darah = Column(Enum(GolonganDarahEnum), nullable=False)
     status_verifikasi = Column(Boolean, nullable=False, default=False)
 
     pendonor = relationship("Pendonor", back_populates="riwayat_donor")
+    pengguna = relationship("Pengguna", back_populates="riwayat_donor")
