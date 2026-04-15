@@ -340,7 +340,7 @@ export const DonorList = () => {
                     </div>
                     <div>
                       <p className="text-xs text-slate-500 mb-1">Total Donor</p>
-                      <p className="font-bold text-slate-900">{selectedDonor.riwayat_donor_count} Kali</p>
+                      <p className="font-bold text-slate-900">{selectedDonor.total_donor} Kali</p>
                     </div>
                   </div>
                 </div>

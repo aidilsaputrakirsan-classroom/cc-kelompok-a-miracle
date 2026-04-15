@@ -5,7 +5,8 @@ import {
   Clock, 
   FileText,
   User,
-  ArrowLeft
+  ArrowLeft,
+  Droplets
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { apiService } from '../services/api';
@@ -77,16 +78,10 @@ export const VerificationQueue = () => {
                     <span>ID Pendonor: {item.id_pendonor}</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <Clock className="w-3.5 h-3.5" />
-                    <span>Tanggal Donor: {item.tanggal_donor}</span>
+                    <Droplets className="w-3.5 h-3.5" />
+                    <span>Golongan Darah: {item.golongan_darah}</span>
                   </div>
                 </div>
-                {item.catatan && (
-                  <div className="mt-3 p-3 bg-slate-50 rounded-lg text-sm text-slate-600 flex items-start gap-2 italic">
-                    <FileText className="w-4 h-4 text-slate-400 mt-0.5" />
-                    "{item.catatan}"
-                  </div>
-                )}
               </div>
             </div>
 

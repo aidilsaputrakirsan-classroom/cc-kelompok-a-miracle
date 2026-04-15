@@ -17,7 +17,12 @@ export const PublicStock = () => {
     const fetchStock = async () => {
       try {
         const response = await apiService.getPublicBloodStock();
-        setStockData(response.data);
+        // Convert array to object for easier access
+        const stockMap = {};
+        response.data.blood_stock.forEach(item => {
+          stockMap[item.golongan_darah] = item.jumlah_stok;
+        });
+        setStockData(stockMap);
       } catch (err) {
         console.error('Error fetching blood stock:', err);
       } finally {

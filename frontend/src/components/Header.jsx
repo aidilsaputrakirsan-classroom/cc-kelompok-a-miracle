@@ -7,6 +7,7 @@ export const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -15,8 +16,10 @@ export const Header = () => {
     window.addEventListener('scroll', handleScroll);
     
     // Check auth status
-    const token = localStorage.getItem('admin_token');
-    setIsLoggedIn(!!token);
+    const adminToken = localStorage.getItem('admin_token');
+    const userToken = localStorage.getItem('user_token');
+    setIsLoggedIn(!!(adminToken || userToken));
+    setIsAdmin(!!adminToken);
 
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -80,16 +83,42 @@ export const Header = () => {
               </Link>
             )
           ))}
-          <Link 
-            to={isLoggedIn ? "/admin" : "/login"} 
-            className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all shadow-lg ${
-              isScrolled 
-                ? 'bg-[#660000] text-white hover:bg-[#550000] shadow-[#660000]/20' 
-                : 'bg-white text-[#660000] hover:bg-slate-50 shadow-black/20'
-            }`}
-          >
-            {isLoggedIn ? 'Dashboard' : 'Portal Admin'}
-          </Link>
+          
+          {!isLoggedIn ? (
+            <>
+              <Link 
+                to="/login" 
+                className={`text-sm font-medium transition-colors ${
+                  isScrolled 
+                    ? 'text-slate-600 hover:text-[#660000]' 
+                    : 'text-white/80 hover:text-white'
+                }`}
+              >
+                Masuk
+              </Link>
+              <Link 
+                to="/login?type=admin" 
+                className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all shadow-lg ${
+                  isScrolled 
+                    ? 'bg-[#660000] text-white hover:bg-[#550000] shadow-[#660000]/20' 
+                    : 'bg-white text-[#660000] hover:bg-slate-50 shadow-black/20'
+                }`}
+              >
+                Portal Admin
+              </Link>
+            </>
+          ) : (
+            <Link 
+              to={isAdmin ? "/admin" : "/user/dashboard"} 
+              className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all shadow-lg ${
+                isScrolled 
+                  ? 'bg-[#660000] text-white hover:bg-[#550000] shadow-[#660000]/20' 
+                  : 'bg-white text-[#660000] hover:bg-slate-50 shadow-black/20'
+              }`}
+            >
+              Dashboard
+            </Link>
+          )}
         </div>
 
         {/* Mobile Menu Toggle */}

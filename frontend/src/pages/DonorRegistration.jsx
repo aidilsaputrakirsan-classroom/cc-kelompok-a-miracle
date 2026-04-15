@@ -31,7 +31,7 @@ export const DonorRegistration = () => {
     alamat: '',
     no_telepon: '',
     tanggal_terakhir_donor: '',
-    riwayat_donor_count: '0',
+    total_donor: '0',
     riwayat_kesehatan: ''
   });
 
@@ -48,7 +48,7 @@ export const DonorRegistration = () => {
       if (!formData.umur) newErrors.umur = 'Usia wajib diisi';
     } else if (currentStep === 3) {
       if (!neverDonated && !formData.tanggal_terakhir_donor) newErrors.tanggal_terakhir_donor = 'Tanggal terakhir donor wajib diisi';
-      if (!formData.riwayat_donor_count && formData.riwayat_donor_count !== 0) newErrors.riwayat_donor_count = 'Total donor wajib diisi';
+      if (!formData.total_donor && formData.total_donor !== 0) newErrors.total_donor = 'Total donor wajib diisi';
       if (!formData.riwayat_kesehatan) newErrors.riwayat_kesehatan = 'Riwayat kesehatan wajib diisi (isi "Tidak ada" jika tidak ada)';
     }
     setErrors(newErrors);
@@ -71,7 +71,8 @@ export const DonorRegistration = () => {
         berat_badan: parseFloat(formData.berat_badan),
         tinggi_badan: parseFloat(formData.tinggi_badan),
         umur: parseInt(formData.umur),
-        riwayat_donor_count: parseInt(formData.riwayat_donor_count),
+        total_donor: parseInt(formData.total_donor),
+        no_telepon: parseInt(formData.no_telepon),
         tanggal_terakhir_donor: neverDonated ? null : formData.tanggal_terakhir_donor
       });
       setStep(4);
@@ -87,12 +88,12 @@ export const DonorRegistration = () => {
       setFormData({
         ...formData,
         tanggal_terakhir_donor: '',
-        riwayat_donor_count: '0'
+        total_donor: '0'
       });
       // Clear error for these fields if they existed
       const newErrors = { ...errors };
       delete newErrors.tanggal_terakhir_donor;
-      delete newErrors.riwayat_donor_count;
+      delete newErrors.total_donor;
       setErrors(newErrors);
     }
   };
@@ -402,14 +403,14 @@ export const DonorRegistration = () => {
                         min={0}
                         disabled={neverDonated}
                         placeholder="0"
-                        className={`w-full px-4 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-[#660000] transition-all ${errors.riwayat_donor_count ? 'ring-2 ring-red-500' : ''}`}
-                        value={formData.riwayat_donor_count}
+                        className={`w-full px-4 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-[#660000] transition-all ${errors.total_donor ? 'ring-2 ring-red-500' : ''}`}
+                        value={formData.total_donor}
                         onChange={(e) => {
-                          setFormData({...formData, riwayat_donor_count: e.target.value});
-                          if (errors.riwayat_donor_count) setErrors({...errors, riwayat_donor_count: ''});
+                          setFormData({...formData, total_donor: e.target.value});
+                          if (errors.total_donor) setErrors({...errors, total_donor: ''});
                         }}
                       />
-                      {errors.riwayat_donor_count && <p className="text-xs text-red-500 ml-1">{errors.riwayat_donor_count}</p>}
+                      {errors.total_donor && <p className="text-xs text-red-500 ml-1">{errors.total_donor}</p>}
                     </div>
                   </div>
 
