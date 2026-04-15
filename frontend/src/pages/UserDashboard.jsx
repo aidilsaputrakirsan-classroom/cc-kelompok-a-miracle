@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Droplets, 
-  Plus, 
   History, 
   Calendar, 
   MapPin, 
@@ -10,6 +9,7 @@ import {
   CheckCircle2, 
   Clock, 
   Edit2, 
+  Trash2,
   X,
   ChevronRight,
   LogOut,
@@ -100,6 +100,17 @@ export const UserDashboard = () => {
     setIsModalOpen(true);
   };
 
+  const handleDelete = async (itemId) => {
+    if (window.confirm('Apakah Anda yakin ingin menghapus riwayat ini?')) {
+      try {
+        await apiService.deleteRiwayatDonorPengguna(itemId);
+        fetchHistory();
+      } catch (err) {
+        alert(err.response?.data?.detail || 'Gagal menghapus riwayat.');
+      }
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50">
       <Header />
@@ -114,22 +125,6 @@ export const UserDashboard = () => {
             <p className="text-slate-500">Selamat datang di dashboard TRACELT Anda.</p>
           </div>
           <div className="flex items-center gap-3">
-            <button 
-              onClick={() => {
-                setEditingItem(null);
-                setFormData({
-                  id_pendonor: '',
-                  tanggal_donor: format(new Date(), 'yyyy-MM-dd'),
-                  tempat_donor: '',
-                  catatan: ''
-                });
-                setIsModalOpen(true);
-              }}
-              className="flex items-center gap-2 bg-[#660000] text-white px-6 py-3 rounded-2xl font-bold hover:bg-[#550000] transition-all shadow-lg shadow-black/10"
-            >
-              <Plus className="w-5 h-5" />
-              Input Riwayat
-            </button>
             <button 
               onClick={handleLogout}
               className="flex items-center gap-2 bg-white text-slate-600 px-6 py-3 rounded-2xl font-bold border border-slate-200 hover:bg-slate-50 transition-all"
@@ -225,12 +220,22 @@ export const UserDashboard = () => {
                       </td>
                       <td className="px-8 py-5 text-right">
                         {!item.status_verifikasi && (
-                          <button 
-                            onClick={() => openEditModal(item)}
-                            className="p-2 text-slate-400 hover:text-[#660000] hover:bg-[#660000]/5 rounded-xl transition-all"
-                          >
-                            <Edit2 className="w-5 h-5" />
-                          </button>
+                          <div className="flex items-center justify-end gap-2">
+                            <button 
+                              onClick={() => openEditModal(item)}
+                              className="p-2 text-slate-400 hover:text-[#660000] hover:bg-[#660000]/5 rounded-xl transition-all"
+                              title="Edit"
+                            >
+                              <Edit2 className="w-5 h-5" />
+                            </button>
+                            <button 
+                              onClick={() => handleDelete(item.id)}
+                              className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                              title="Hapus"
+                            >
+                              <Trash2 className="w-5 h-5" />
+                            </button>
+                          </div>
                         )}
                       </td>
                     </tr>

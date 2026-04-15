@@ -1,25 +1,21 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Droplets, Mail, Lock, ArrowRight, AlertCircle, ChevronLeft, User, ShieldCheck, Eye, EyeOff } from 'lucide-react';
+import { Droplets, Mail, Lock, ArrowRight, AlertCircle, ChevronLeft, Eye, EyeOff } from 'lucide-react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { apiService } from '../services/api';
 
 export const Login = () => {
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
-  const initialType = queryParams.get('type') === 'admin' ? 'admin' : 'user';
+  const isAdminLogin = queryParams.get('type') === 'admin';
+  const loginType = isAdminLogin ? 'admin' : 'user';
 
-  const [loginType, setLoginType] = useState(initialType);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    setLoginType(initialType);
-  }, [initialType]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

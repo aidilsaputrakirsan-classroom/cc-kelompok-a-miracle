@@ -3,7 +3,6 @@ import {
   Users, 
   Droplets, 
   CheckCircle, 
-  LayoutDashboard, 
   LogOut,
   Menu,
   X
@@ -38,7 +37,6 @@ export const AdminLayout = ({ children }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const menuItems = [
-    { icon: LayoutDashboard, label: 'Dashboard', path: '/admin' },
     { icon: Users, label: 'Dashboard Pendonor', path: '/admin/donors' },
     { icon: CheckCircle, label: 'Verifikasi', path: '/admin/verify' },
   ];

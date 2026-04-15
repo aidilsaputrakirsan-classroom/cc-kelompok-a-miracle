@@ -119,6 +119,19 @@ export const UserRegister = () => {
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
+              <div className="mt-3 p-4 bg-blue-50 rounded-2xl border border-blue-100">
+                <p className="text-xs font-semibold text-blue-900 mb-2 flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4" />
+                  Standar Kata Sandi yang Kuat:
+                </p>
+                <ul className="text-xs text-blue-800 space-y-1">
+                  <li>✓ Minimal 8 karakter</li>
+                  <li>✓ Mengandung huruf besar (A-Z)</li>
+                  <li>✓ Mengandung huruf kecil (a-z)</li>
+                  <li>✓ Mengandung angka (0-9)</li>
+                  <li>✓ Mengandung karakter khusus (!@#$%^&*)</li>
+                </ul>
+              </div>
             </div>
 
             <div className="space-y-2">

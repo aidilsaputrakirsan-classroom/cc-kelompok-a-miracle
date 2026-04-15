@@ -13,7 +13,9 @@ import {
   Ruler,
   Droplets,
   Heart,
-  Activity
+  Activity,
+  AlertCircle,
+  Trash2
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { apiService } from '../services/api';
@@ -24,6 +26,10 @@ export const DonorList = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDonor, setSelectedDonor] = useState(null);
+  const [isEditingDonor, setIsEditingDonor] = useState(false);
+  const [editFormData, setEditFormData] = useState({});
+  const [unverifiedRiwayat, setUnverifiedRiwayat] = useState(null);
+  const [errorMessage, setErrorMessage] = useState('');
   const [filters, setFilters] = useState({
     golongan_darah: '',
     jenis_kelamin: '',
@@ -35,10 +41,19 @@ export const DonorList = () => {
     setLoading(true);
     try {
       const params = {
-        nama: searchTerm,
-        ...filters
+        nama: searchTerm || undefined,
+        golongan_darah: filters.golongan_darah || undefined,
+        jenis_kelamin: filters.jenis_kelamin || undefined,
+        umur_min: filters.umur_min || undefined,
+        umur_max: filters.umur_max || undefined
       };
-      const res = await apiService.getPendonorList(params);
+      
+      // Filter out undefined values
+      const cleanParams = Object.fromEntries(
+        Object.entries(params).filter(([, value]) => value !== undefined)
+      );
+      
+      const res = await apiService.getPendonorList(cleanParams);
       setDonors(res.data.pendonor);
     } catch (err) {
       console.error('Gagal mengambil data pendonor:', err);
@@ -50,6 +65,66 @@ export const DonorList = () => {
   useEffect(() => {
     fetchDonors();
   }, [searchTerm, filters]);
+
+  const checkUnverifiedRiwayat = async (donorId) => {
+    try {
+      const res = await apiService.getRiwayatDonorByPendonor(donorId, { status_verifikasi: false });
+      const unverified = res.data.riwayat_donor && res.data.riwayat_donor.length > 0 
+        ? res.data.riwayat_donor[0] 
+        : null;
+      setUnverifiedRiwayat(unverified);
+    } catch (err) {
+      console.error('Error checking riwayat:', err);
+      setUnverifiedRiwayat(null);
+    }
+  };
+
+  const handleOpenDonorDetail = async (donor) => {
+    setSelectedDonor(donor);
+    setEditFormData({
+      nama_lengkap: donor.nama_lengkap,
+      jenis_kelamin: donor.jenis_kelamin,
+      umur: donor.umur,
+      tanggal_lahir: donor.tanggal_lahir,
+      berat_badan: donor.berat_badan,
+      tinggi_badan: donor.tinggi_badan,
+      no_telepon: donor.no_telepon,
+      alamat: donor.alamat,
+      golongan_darah: donor.golongan_darah,
+      riwayat_kesehatan: donor.riwayat_kesehatan
+    });
+    setIsEditingDonor(false);
+    setErrorMessage('');
+    await checkUnverifiedRiwayat(donor.id_pendonor);
+  };
+
+  const handleUpdateDonor = async (e) => {
+    e.preventDefault();
+    setErrorMessage('');
+    try {
+      await apiService.updatePendonor(selectedDonor.id_pendonor, editFormData);
+      setIsEditingDonor(false);
+      fetchDonors();
+      alert('Data pendonor berhasil diperbarui!');
+    } catch (err) {
+      setErrorMessage(err.response?.data?.detail || 'Gagal memperbarui data pendonor.');
+    }
+  };
+
+  const handleDeleteDonor = async () => {
+    if (!window.confirm('Apakah Anda yakin ingin menghapus data pendonor ini? Tindakan ini tidak dapat dibatalkan.')) {
+      return;
+    }
+    setErrorMessage('');
+    try {
+      await apiService.deletePendonor(selectedDonor.id_pendonor);
+      setSelectedDonor(null);
+      fetchDonors();
+      alert('Data pendonor berhasil dihapus!');
+    } catch (err) {
+      setErrorMessage(err.response?.data?.detail || 'Gagal menghapus data pendonor.');
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -202,7 +277,7 @@ export const DonorList = () => {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <button 
-                      onClick={() => setSelectedDonor(donor)}
+                      onClick={() => handleOpenDonorDetail(donor)}
                       className="p-2 text-slate-400 hover:text-[#660000] hover:bg-[#660000]/10 rounded-lg transition-all"
                       title="Lihat Detail"
                     >
@@ -357,12 +432,203 @@ export const DonorList = () => {
                 </div>
               </div>
 
-              <div className="p-6 bg-slate-50 border-t border-slate-100">
+              <div className="p-6 bg-slate-50 border-t border-slate-100 flex gap-3">
+                {unverifiedRiwayat && (
+                  <>
+                    <button 
+                      onClick={() => setIsEditingDonor(true)}
+                      className="flex-1 py-4 bg-[#660000] text-white rounded-2xl font-bold hover:bg-[#550000] transition-all shadow-lg shadow-black/10"
+                    >
+                      Perbarui Data
+                    </button>
+                    <button 
+                      onClick={handleDeleteDonor}
+                      className="flex-1 py-4 bg-red-500 text-white rounded-2xl font-bold hover:bg-red-600 transition-all shadow-lg shadow-black/10 flex items-center justify-center gap-2"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                      Hapus
+                    </button>
+                  </>
+                )}
                 <button 
                   onClick={() => setSelectedDonor(null)}
-                  className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-slate-800 transition-all shadow-lg shadow-black/10"
+                  className={`flex-1 py-4 bg-slate-200 text-slate-900 rounded-2xl font-bold hover:bg-slate-300 transition-all ${unverifiedRiwayat ? '' : 'col-span-2'}`}
                 >
                   Tutup Detail
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Edit Modal */}
+      <AnimatePresence>
+        {isEditingDonor && selectedDonor && (
+          <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 sm:p-6">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsEditingDonor(false)}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-2xl bg-white rounded-[2rem] shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
+            >
+              <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                <h2 className="text-xl font-bold text-slate-900">Perbarui Data Pendonor</h2>
+                <button 
+                  onClick={() => setIsEditingDonor(false)}
+                  className="p-2 hover:bg-slate-200 rounded-full transition-colors"
+                >
+                  <X className="w-6 h-6 text-slate-500" />
+                </button>
+              </div>
+
+              <form id="donorEditForm" onSubmit={handleUpdateDonor} className="p-8 overflow-y-auto custom-scrollbar space-y-6">
+                {errorMessage && (
+                  <div className="p-4 bg-red-50 text-red-700 rounded-2xl text-sm flex items-center gap-3 border border-red-100">
+                    <AlertCircle className="w-5 h-5 shrink-0" />
+                    <span>{errorMessage}</span>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">Nama Lengkap</label>
+                    <input 
+                      type="text"
+                      required
+                      value={editFormData.nama_lengkap || ''}
+                      onChange={(e) => setEditFormData({...editFormData, nama_lengkap: e.target.value})}
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#660000] transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">No. Telepon</label>
+                    <input 
+                      type="text"
+                      required
+                      value={editFormData.no_telepon || ''}
+                      onChange={(e) => setEditFormData({...editFormData, no_telepon: e.target.value})}
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#660000] transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">Jenis Kelamin</label>
+                    <select 
+                      required
+                      value={editFormData.jenis_kelamin || ''}
+                      onChange={(e) => setEditFormData({...editFormData, jenis_kelamin: e.target.value})}
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#660000] transition-all"
+                    >
+                      <option value="">Pilih Jenis Kelamin</option>
+                      <option value="Laki-laki">Laki-laki</option>
+                      <option value="Perempuan">Perempuan</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">Golongan Darah</label>
+                    <select 
+                      required
+                      value={editFormData.golongan_darah || ''}
+                      onChange={(e) => setEditFormData({...editFormData, golongan_darah: e.target.value})}
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#660000] transition-all"
+                    >
+                      <option value="">Pilih Golongan Darah</option>
+                      <option value="O+">O+</option>
+                      <option value="O-">O-</option>
+                      <option value="A+">A+</option>
+                      <option value="A-">A-</option>
+                      <option value="B+">B+</option>
+                      <option value="B-">B-</option>
+                      <option value="AB+">AB+</option>
+                      <option value="AB-">AB-</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">Tanggal Lahir</label>
+                    <input 
+                      type="date"
+                      required
+                      value={editFormData.tanggal_lahir || ''}
+                      onChange={(e) => setEditFormData({...editFormData, tanggal_lahir: e.target.value})}
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#660000] transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">Usia</label>
+                    <input 
+                      type="number"
+                      required
+                      min="17"
+                      value={editFormData.umur || ''}
+                      onChange={(e) => setEditFormData({...editFormData, umur: parseInt(e.target.value)})}
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#660000] transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">Berat Badan (kg)</label>
+                    <input 
+                      type="number"
+                      required
+                      min="40"
+                      value={editFormData.berat_badan || ''}
+                      onChange={(e) => setEditFormData({...editFormData, berat_badan: parseInt(e.target.value)})}
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#660000] transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">Tinggi Badan (cm)</label>
+                    <input 
+                      type="number"
+                      required
+                      min="140"
+                      value={editFormData.tinggi_badan || ''}
+                      onChange={(e) => setEditFormData({...editFormData, tinggi_badan: parseInt(e.target.value)})}
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#660000] transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">Alamat Domisili</label>
+                  <textarea 
+                    required
+                    value={editFormData.alamat || ''}
+                    onChange={(e) => setEditFormData({...editFormData, alamat: e.target.value})}
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#660000] transition-all min-h-[100px]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">Riwayat Kesehatan</label>
+                  <textarea 
+                    value={editFormData.riwayat_kesehatan || ''}
+                    onChange={(e) => setEditFormData({...editFormData, riwayat_kesehatan: e.target.value})}
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#660000] transition-all min-h-[80px]"
+                    placeholder="Contoh: Alergi tertentu, penyakit bawaan, dll"
+                  />
+                </div>
+              </form>
+
+              <div className="p-6 bg-slate-50 border-t border-slate-100 flex gap-3">
+                <button 
+                  type="submit"
+                  form="donorEditForm"
+                  className="flex-1 py-4 bg-[#660000] text-white rounded-2xl font-bold hover:bg-[#550000] transition-all shadow-lg shadow-black/10"
+                >
+                  Simpan Perubahan
+                </button>
+                <button 
+                  onClick={() => setIsEditingDonor(false)}
+                  className="flex-1 py-4 bg-slate-200 text-slate-900 rounded-2xl font-bold hover:bg-slate-300 transition-all"
+                >
+                  Batal
                 </button>
               </div>
             </motion.div>

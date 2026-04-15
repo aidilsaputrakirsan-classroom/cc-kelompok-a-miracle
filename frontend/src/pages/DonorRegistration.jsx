@@ -10,7 +10,8 @@ import {
   Droplets,
   ArrowRight,
   CheckCircle2,
-  ChevronLeft
+  ChevronLeft,
+  Mail
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { apiService } from '../services/api';
@@ -22,6 +23,7 @@ export const DonorRegistration = () => {
   const [errors, setErrors] = useState({});
   const [formData, setFormData] = useState({
     nama_lengkap: '',
+    email: '',
     jenis_kelamin: 'Laki-laki',
     berat_badan: '',
     tinggi_badan: '',
@@ -39,6 +41,8 @@ export const DonorRegistration = () => {
     const newErrors = {};
     if (currentStep === 1) {
       if (!formData.nama_lengkap) newErrors.nama_lengkap = 'Nama lengkap wajib diisi';
+      if (!formData.email) newErrors.email = 'Email wajib diisi';
+      if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = 'Format email tidak valid';
       if (!formData.no_telepon) newErrors.no_telepon = 'Nomor telepon wajib diisi';
       if (!formData.tanggal_lahir) newErrors.tanggal_lahir = 'Tanggal lahir wajib diisi';
       if (!formData.alamat) newErrors.alamat = 'Alamat domisili wajib diisi';
@@ -167,6 +171,35 @@ export const DonorRegistration = () => {
                       />
                     </div>
                     {errors.no_telepon && <p className="text-xs text-red-500 ml-1">{errors.no_telepon}</p>}
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-slate-700 ml-1 flex justify-between">
+                      Email <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
+                      <input 
+                        type="email" 
+                        required
+                        placeholder="Contoh: budi@student.itk.ac.id"
+                        className={`w-full pl-12 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-[#660000] transition-all ${errors.email ? 'ring-2 ring-red-500' : ''}`}
+                        value={formData.email}
+                        onChange={(e) => {
+                          setFormData({...formData, email: e.target.value});
+                          if (errors.email) setErrors({...errors, email: ''});
+                        }}
+                      />
+                    </div>
+                    {errors.email && <p className="text-xs text-red-500 ml-1">{errors.email}</p>}
+                  </div>
+
+                  <div className="bg-blue-50 p-3 rounded-xl border border-blue-100 col-span-1 md:col-span-2 flex items-start gap-3">
+                    <div className="w-1 h-full bg-blue-500 rounded-full mt-0.5" />
+                    <div>
+                      <p className="text-xs font-semibold text-blue-900">💡 Cara Kerja Email</p>
+                      <p className="text-xs text-blue-800 mt-1">Gunakan email yang akan Anda gunakan untuk login. Ketika Anda login nanti dengan email yang sama, riwayat donor Anda akan otomatis ditampilkan di dashboard. Pastikan email sudah terdaftar sebelum login!</p>
+                    </div>
                   </div>
 
                   <div className="space-y-2">
