@@ -42,28 +42,43 @@ export const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-[#660000]/5 flex items-center justify-center p-6 relative overflow-hidden">
+      {/* Background decorative elements */}
+      <div className="absolute top-20 left-10 w-72 h-72 bg-[#660000]/10 rounded-full blur-3xl"></div>
+      <div className="absolute bottom-20 right-10 w-96 h-96 bg-blue-100/10 rounded-full blur-3xl"></div>
+      
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md"
+        transition={{ duration: 0.5 }}
+        className="w-full max-w-md relative z-10"
       >
-        <Link to="/" className="inline-flex items-center gap-2 text-slate-500 hover:text-slate-900 mb-8 font-medium transition-colors">
-          <ChevronLeft className="w-4 h-4" />
+        <Link to="/" className="inline-flex items-center gap-2 text-slate-600 hover:text-[#660000] mb-8 font-semibold transition-colors group">
+          <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
           Kembali ke Beranda
         </Link>
 
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-[#660000] rounded-2xl flex items-center justify-center text-white mx-auto mb-6 shadow-lg shadow-black/10">
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.4 }}
+            className="w-16 h-16 bg-gradient-to-br from-[#660000] to-[#440000] rounded-2xl flex items-center justify-center text-white mx-auto mb-6 shadow-2xl shadow-[#660000]/30"
+          >
             <Droplets className="w-10 h-10" />
-          </div>
-          <h1 className="text-3xl font-bold text-slate-900">TRACELT</h1>
-          <p className="text-slate-500 mt-2">
-            {loginType === 'admin' ? 'Masuk sebagai Administrator' : 'Masuk sebagai Pengguna'}
+          </motion.div>
+          <h1 className="text-4xl font-black text-slate-900 mb-2">TRACELT</h1>
+          <p className="text-slate-600 font-medium">
+            {loginType === 'admin' ? '🔐 Login Administrator' : '👤 Login Pengguna'}
           </p>
         </div>
 
-        <div className="bg-white p-8 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="bg-white p-8 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 backdrop-blur-xl"
+        >
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
               <div className="p-4 bg-[#660000]/5 text-[#660000] rounded-2xl text-sm flex items-center gap-3 border border-[#660000]/10">
@@ -73,14 +88,16 @@ export const Login = () => {
             )}
 
             <div className="space-y-2">
-              <label className="text-sm font-semibold text-slate-700 ml-1">Email <span className="text-red-500">*</span></label>
-              <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
+              <label className="text-sm font-semibold text-slate-700 ml-1 flex items-center gap-1">
+                <Mail className="w-4 h-4" />
+                Email <span className="text-red-500">*</span>
+              </label>
+              <div className="relative group">
                 <input 
                   type="email" 
                   required
-                  placeholder={loginType === 'admin' ? "Contoh: admin@itk.ac.id" : "Contoh: budi@student.itk.ac.id"}
-                  className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-[#660000] transition-all text-slate-900"
+                  placeholder={loginType === 'admin' ? "admin@itk.ac.id" : "budi@student.itk.ac.id"}
+                  className="w-full px-4 py-3.5 bg-slate-100 border-2 border-transparent rounded-2xl focus:outline-none focus:bg-white focus:border-[#660000] focus:ring-4 focus:ring-[#660000]/10 transition-all text-slate-900 font-medium"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
@@ -88,48 +105,66 @@ export const Login = () => {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-semibold text-slate-700 ml-1">Kata Sandi <span className="text-red-500">*</span></label>
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
+              <label className="text-sm font-semibold text-slate-700 ml-1 flex items-center gap-1">
+                <Lock className="w-4 h-4" />
+                Kata Sandi <span className="text-red-500">*</span>
+              </label>
+              <div className="relative group">
                 <input 
                   type={showPassword ? "text" : "password"} 
                   required
-                  placeholder="Masukkan kata sandi Anda"
-                  className="w-full pl-12 pr-12 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-[#660000] transition-all text-slate-900"
+                  placeholder="••••••••"
+                  className="w-full px-4 py-3.5 bg-slate-100 border-2 border-transparent rounded-2xl focus:outline-none focus:bg-white focus:border-[#660000] focus:ring-4 focus:ring-[#660000]/10 transition-all text-slate-900 font-medium pr-12"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
                 <button 
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700 transition-colors p-1 hover:bg-slate-200 rounded-lg"
                 >
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
             </div>
 
-            <button 
+            <motion.button 
               type="submit"
               disabled={loading}
-              className="w-full bg-[#660000] text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-[#550000] transition-all shadow-lg shadow-black/10 disabled:opacity-70"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="w-full bg-gradient-to-r from-[#660000] to-[#8b0000] text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:shadow-xl shadow-lg shadow-[#660000]/30 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
             >
-              {loading ? 'Memproses...' : 'Login'}
-              <ArrowRight className="w-5 h-5" />
-            </button>
+              {loading ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Memproses...
+                </>
+              ) : (
+                <>
+                  Masuk
+                  <ArrowRight className="w-5 h-5" />
+                </>
+              )}
+            </motion.button>
           </form>
 
           {loginType === 'user' && (
-            <div className="mt-8 pt-6 border-t border-slate-100 text-center">
-              <p className="text-slate-500 text-sm">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="mt-8 pt-6 border-t border-slate-100 text-center"
+            >
+              <p className="text-slate-600 text-sm font-medium">
                 Belum punya akun?{' '}
-                <Link to="/user/register" className="text-[#660000] font-bold hover:underline">
+                <Link to="/user/register" className="text-[#660000] font-bold hover:text-[#8b0000] transition-colors underline-offset-2 hover:underline">
                   Daftar Sekarang
                 </Link>
               </p>
-            </div>
+            </motion.div>
           )}
-        </div>
+        </motion.div>
       </motion.div>
     </div>
   );

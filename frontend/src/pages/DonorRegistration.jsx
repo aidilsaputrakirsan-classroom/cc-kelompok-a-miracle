@@ -194,14 +194,6 @@ export const DonorRegistration = () => {
                     {errors.email && <p className="text-xs text-red-500 ml-1">{errors.email}</p>}
                   </div>
 
-                  <div className="bg-blue-50 p-3 rounded-xl border border-blue-100 col-span-1 md:col-span-2 flex items-start gap-3">
-                    <div className="w-1 h-full bg-blue-500 rounded-full mt-0.5" />
-                    <div>
-                      <p className="text-xs font-semibold text-blue-900">💡 Cara Kerja Email</p>
-                      <p className="text-xs text-blue-800 mt-1">Gunakan email yang akan Anda gunakan untuk login. Ketika Anda login nanti dengan email yang sama, riwayat donor Anda akan otomatis ditampilkan di dashboard. Pastikan email sudah terdaftar sebelum login!</p>
-                    </div>
-                  </div>
-
                   <div className="space-y-2">
                     <label className="text-sm font-semibold text-slate-700 ml-1">Jenis Kelamin</label>
                     <select 
