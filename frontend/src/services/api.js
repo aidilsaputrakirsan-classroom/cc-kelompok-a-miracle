@@ -37,8 +37,6 @@ export const apiService = {
   registerPendonor: (data) => api.post('/pendonor', data),
   getPendonorList: (params) => api.get('/pendonor', { params }),
   getPendonorById: (id) => api.get(`/pendonor/${id}`),
-  updatePendonor: (id, data) => api.put(`/pendonor/${id}`, data),
-  deletePendonor: (id) => api.delete(`/pendonor/${id}`),
 
   // Public
   getPublicBloodStock: () => api.get('/public/blood-stock'),
@@ -54,7 +52,7 @@ export const apiService = {
   createRiwayatDonorPengguna: (data) => api.post('/pengguna/riwayat-donor', data),
   getRiwayatDonorPengguna: (params) => api.get('/pengguna/riwayat-donor', { params }),
   getRiwayatDonorDetailPengguna: (id) => api.get(`/pengguna/riwayat-donor/${id}`),
-  updateRiwayatDonorPengguna: (id, data) => api.put(`/pengguna/riwayat-donor/${id}`, data),
+
 
   // Stats (Admin Dashboard)
   getStats: async () => {

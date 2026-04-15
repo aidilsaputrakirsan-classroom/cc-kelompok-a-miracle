@@ -14,7 +14,6 @@ class GolonganDarahEnum(str, enum.Enum):
     AB_POSITIF = "AB+"
     AB_NEGATIF = "AB-"
 
-
 class JenisKelaminEnum(str, enum.Enum):
     LAKI_LAKI = "Laki-laki"
     PEREMPUAN = "Perempuan"
@@ -55,7 +54,8 @@ class Pendonor(Base):
     tanggal_terakhir_donor = Column(Date, nullable=True)
     total_donor = Column(Integer, nullable=False, default=0)
     alamat = Column(Text, nullable=False)
-    no_telepon = Column(Integer, nullable=False)
+    email = Column(String(255), nullable=False, index=True)
+    no_telepon = Column(String(30), nullable=False)
     riwayat_kesehatan = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 

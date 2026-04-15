@@ -13,14 +13,23 @@ from schemas import (
 )
 
 
+def _normalize_email(email: str) -> str:
+    return email.strip().lower()
+
+
 def create_admin(db: Session, admin_data: AdminCreate) -> Admin | None:
-    existing = db.query(Admin).filter(Admin.email == admin_data.email).first()
+    existing_admin = db.query(Admin).first()
+    if existing_admin:
+        return None
+
+    normalized_email = _normalize_email(admin_data.email)
+    existing = db.query(Admin).filter(Admin.email == normalized_email).first()
     if existing:
         return None
 
     db_admin = Admin(
         nama_admin=admin_data.nama_admin,
-        email=admin_data.email,
+        email=normalized_email,
         password=hash_password(admin_data.password),
     )
     db.add(db_admin)
@@ -30,23 +39,50 @@ def create_admin(db: Session, admin_data: AdminCreate) -> Admin | None:
 
 
 def create_pengguna(db: Session, pengguna_data: PenggunaCreate) -> Pengguna | None:
-    existing = db.query(Pengguna).filter(Pengguna.email == pengguna_data.email).first()
+    normalized_email = _normalize_email(pengguna_data.email)
+    existing = db.query(Pengguna).filter(Pengguna.email == normalized_email).first()
     if existing:
         return None
 
     db_pengguna = Pengguna(
         nama_pengguna=pengguna_data.nama_pengguna,
-        email=pengguna_data.email,
+        email=normalized_email,
         password=hash_password(pengguna_data.password),
     )
     db.add(db_pengguna)
+    db.flush()
+
+    # Hubungkan data pendonor publik yang sudah lebih dulu diinput dengan akun pengguna ber-email sama.
+    pendonor_list = db.query(Pendonor).filter(Pendonor.email == normalized_email).all()
+    for pendonor in pendonor_list:
+        existing_riwayat = (
+            db.query(RiwayatDonor)
+            .filter(
+                RiwayatDonor.id_pendonor == pendonor.id_pendonor,
+                RiwayatDonor.id_pengguna == db_pengguna.id_pengguna,
+            )
+            .first()
+        )
+        if existing_riwayat:
+            continue
+
+        db.add(
+            RiwayatDonor(
+                id_pendonor=pendonor.id_pendonor,
+                id_pengguna=db_pengguna.id_pengguna,
+                golongan_darah=pendonor.golongan_darah,
+                status_verifikasi=False,
+            )
+        )
+
     db.commit()
     db.refresh(db_pengguna)
     return db_pengguna
 
 
 def authenticate_admin(db: Session, email: str, password: str) -> Admin | None:
-    admin = db.query(Admin).filter(Admin.email == email).first()
+    normalized_email = _normalize_email(email)
+    admin = db.query(Admin).filter(Admin.email == normalized_email).first()
     if not admin:
         return None
     if not verify_password(password, admin.password):
@@ -55,7 +91,8 @@ def authenticate_admin(db: Session, email: str, password: str) -> Admin | None:
 
 
 def authenticate_pengguna(db: Session, email: str, password: str) -> Pengguna | None:
-    pengguna = db.query(Pengguna).filter(Pengguna.email == email).first()
+    normalized_email = _normalize_email(email)
+    pengguna = db.query(Pengguna).filter(Pengguna.email == normalized_email).first()
     if not pengguna:
         return None
     if not verify_password(password, pengguna.password):
@@ -72,8 +109,26 @@ def get_pengguna(db: Session, pengguna_id: int) -> Pengguna | None:
 
 
 def create_pendonor(db: Session, pendonor_data: PendonorCreate) -> Pendonor:
-    db_pendonor = Pendonor(**pendonor_data.model_dump())
+    payload = pendonor_data.model_dump()
+    payload["email"] = _normalize_email(payload["email"])
+    payload["no_telepon"] = str(payload["no_telepon"]).strip()
+
+    db_pendonor = Pendonor(**payload)
     db.add(db_pendonor)
+    db.flush()
+
+    # Jika email pendonor sudah punya akun pengguna, otomatis tampilkan pada dashboard pengguna itu.
+    pengguna = db.query(Pengguna).filter(Pengguna.email == db_pendonor.email).first()
+    if pengguna:
+        db.add(
+            RiwayatDonor(
+                id_pendonor=db_pendonor.id_pendonor,
+                id_pengguna=pengguna.id_pengguna,
+                golongan_darah=db_pendonor.golongan_darah,
+                status_verifikasi=False,
+            )
+        )
+
     db.commit()
     db.refresh(db_pendonor)
     return db_pendonor
@@ -117,8 +172,34 @@ def update_pendonor(db: Session, pendonor_id: int, pendonor_data: PendonorUpdate
         return None
 
     update_data = pendonor_data.model_dump(exclude_unset=True)
+    if "email" in update_data and update_data["email"] is not None:
+        update_data["email"] = _normalize_email(update_data["email"])
+    if "no_telepon" in update_data and update_data["no_telepon"] is not None:
+        update_data["no_telepon"] = str(update_data["no_telepon"]).strip()
+
     for field, value in update_data.items():
         setattr(db_pendonor, field, value)
+
+    if db_pendonor.email:
+        pengguna = db.query(Pengguna).filter(Pengguna.email == db_pendonor.email).first()
+        if pengguna:
+            existing_riwayat = (
+                db.query(RiwayatDonor)
+                .filter(
+                    RiwayatDonor.id_pendonor == db_pendonor.id_pendonor,
+                    RiwayatDonor.id_pengguna == pengguna.id_pengguna,
+                )
+                .first()
+            )
+            if not existing_riwayat:
+                db.add(
+                    RiwayatDonor(
+                        id_pendonor=db_pendonor.id_pendonor,
+                        id_pengguna=pengguna.id_pengguna,
+                        golongan_darah=db_pendonor.golongan_darah,
+                        status_verifikasi=False,
+                    )
+                )
 
     db.commit()
     db.refresh(db_pendonor)
@@ -187,6 +268,24 @@ def update_riwayat_donor(
     db.commit()
     db.refresh(db_riwayat)
     return db_riwayat
+
+
+def delete_riwayat_donor(
+    db: Session,
+    riwayat_id: int,
+    id_pengguna: int | None = None,
+) -> bool:
+    query = db.query(RiwayatDonor).filter(RiwayatDonor.id_riwayat == riwayat_id)
+    if id_pengguna is not None:
+        query = query.filter(RiwayatDonor.id_pengguna == id_pengguna)
+
+    db_riwayat = query.first()
+    if not db_riwayat:
+        return False
+
+    db.delete(db_riwayat)
+    db.commit()
+    return True
 
 
 def get_riwayat_donor(db: Session, riwayat_id: int) -> RiwayatDonor | None:

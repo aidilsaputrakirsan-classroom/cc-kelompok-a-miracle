@@ -84,6 +84,7 @@ class TokenResponse(BaseModel):
 
 class PendonorCreate(BaseModel):
     nama_lengkap: str = Field(..., min_length=2, max_length=100)
+    email: EmailStr
     jenis_kelamin: JenisKelaminEnum
     berat_badan: float = Field(..., gt=0, le=300)
     tinggi_badan: float = Field(..., gt=0, le=300)
@@ -93,12 +94,13 @@ class PendonorCreate(BaseModel):
     tanggal_terakhir_donor: Optional[date] = None
     total_donor: int = Field(default=0, ge=0)
     alamat: str = Field(..., min_length=5)
-    no_telepon: int
+    no_telepon: str = Field(..., min_length=8, max_length=30)
     riwayat_kesehatan: Optional[str] = None
 
 
 class PendonorUpdate(BaseModel):
     nama_lengkap: Optional[str] = Field(None, min_length=2, max_length=100)
+    email: Optional[EmailStr] = None
     jenis_kelamin: Optional[JenisKelaminEnum] = None
     berat_badan: Optional[float] = Field(None, gt=0, le=300)
     tinggi_badan: Optional[float] = Field(None, gt=0, le=300)
@@ -108,13 +110,14 @@ class PendonorUpdate(BaseModel):
     tanggal_terakhir_donor: Optional[date] = None
     total_donor: Optional[int] = Field(None, ge=0)
     alamat: Optional[str] = Field(None, min_length=5)
-    no_telepon: Optional[int] = None
+    no_telepon: Optional[str] = Field(None, min_length=8, max_length=30)
     riwayat_kesehatan: Optional[str] = None
 
 
 class PendonorResponse(BaseModel):
     id_pendonor: int
     nama_lengkap: str
+    email: str
     jenis_kelamin: str
     berat_badan: float
     tinggi_badan: float
@@ -124,7 +127,7 @@ class PendonorResponse(BaseModel):
     tanggal_terakhir_donor: Optional[date] = None
     total_donor: int
     alamat: str
-    no_telepon: int
+    no_telepon: str
     riwayat_kesehatan: Optional[str] = None
     created_at: datetime
 

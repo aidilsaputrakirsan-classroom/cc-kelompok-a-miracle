@@ -6,8 +6,6 @@ import { Droplets, Menu, X } from 'lucide-react';
 export const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -15,12 +13,6 @@ export const Header = () => {
     };
     window.addEventListener('scroll', handleScroll);
     
-    // Check auth status
-    const adminToken = localStorage.getItem('admin_token');
-    const userToken = localStorage.getItem('user_token');
-    setIsLoggedIn(!!(adminToken || userToken));
-    setIsAdmin(!!adminToken);
-
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
@@ -84,41 +76,28 @@ export const Header = () => {
             )
           ))}
           
-          {!isLoggedIn ? (
-            <>
-              <Link 
-                to="/login" 
-                className={`text-sm font-medium transition-colors ${
-                  isScrolled 
-                    ? 'text-slate-600 hover:text-[#660000]' 
-                    : 'text-white/80 hover:text-white'
-                }`}
-              >
-                Masuk
-              </Link>
-              <Link 
-                to="/login?type=admin" 
-                className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all shadow-lg ${
-                  isScrolled 
-                    ? 'bg-[#660000] text-white hover:bg-[#550000] shadow-[#660000]/20' 
-                    : 'bg-white text-[#660000] hover:bg-slate-50 shadow-black/20'
-                }`}
-              >
-                Portal Admin
-              </Link>
-            </>
-          ) : (
+          <>
             <Link 
-              to={isAdmin ? "/admin" : "/user/dashboard"} 
+              to="/login?type=user" 
+              className={`text-sm font-medium transition-colors ${
+                isScrolled 
+                  ? 'text-slate-600 hover:text-[#660000]' 
+                  : 'text-white/80 hover:text-white'
+              }`}
+            >
+              Masuk
+            </Link>
+            <Link 
+              to="/login?type=admin" 
               className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all shadow-lg ${
                 isScrolled 
                   ? 'bg-[#660000] text-white hover:bg-[#550000] shadow-[#660000]/20' 
                   : 'bg-white text-[#660000] hover:bg-slate-50 shadow-black/20'
               }`}
             >
-              Dashboard
+              Portal Admin
             </Link>
-          )}
+          </>
         </div>
 
         {/* Mobile Menu Toggle */}
@@ -165,32 +144,20 @@ export const Header = () => {
                   </Link>
                 )
               ))}
-              {!isLoggedIn ? (
-                <>
-                  <Link 
-                    to="/login"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="text-lg font-semibold text-slate-900 hover:text-[#660000] transition-colors"
-                  >
-                    Masuk
-                  </Link>
-                  <Link 
-                    to="/login?type=admin"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="bg-[#660000] text-white px-6 py-4 rounded-2xl font-bold text-center shadow-lg shadow-[#660000]/20"
-                  >
-                    Portal Admin
-                  </Link>
-                </>
-              ) : (
-                <Link 
-                  to={isAdmin ? "/admin" : "/user/dashboard"}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="bg-[#660000] text-white px-6 py-4 rounded-2xl font-bold text-center shadow-lg shadow-[#660000]/20"
-                >
-                  Dashboard
-                </Link>
-              )}
+              <Link 
+                to="/login?type=user"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="text-lg font-semibold text-slate-900 hover:text-[#660000] transition-colors"
+              >
+                Masuk
+              </Link>
+              <Link 
+                to="/login?type=admin"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="bg-[#660000] text-white px-6 py-4 rounded-2xl font-bold text-center shadow-lg shadow-[#660000]/20"
+              >
+                Portal Admin
+              </Link>
             </div>
           </motion.div>
         )}
