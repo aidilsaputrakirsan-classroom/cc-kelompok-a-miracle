@@ -165,13 +165,32 @@ export const Header = () => {
                   </Link>
                 )
               ))}
-              <Link 
-                to={isLoggedIn ? "/admin" : "/login"}
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="bg-[#660000] text-white px-6 py-4 rounded-2xl font-bold text-center shadow-lg shadow-[#660000]/20"
-              >
-                {isLoggedIn ? 'Dashboard' : 'Portal Admin'}
-              </Link>
+              {!isLoggedIn ? (
+                <>
+                  <Link 
+                    to="/login"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="text-lg font-semibold text-slate-900 hover:text-[#660000] transition-colors"
+                  >
+                    Masuk
+                  </Link>
+                  <Link 
+                    to="/login?type=admin"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="bg-[#660000] text-white px-6 py-4 rounded-2xl font-bold text-center shadow-lg shadow-[#660000]/20"
+                  >
+                    Portal Admin
+                  </Link>
+                </>
+              ) : (
+                <Link 
+                  to={isAdmin ? "/admin" : "/user/dashboard"}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="bg-[#660000] text-white px-6 py-4 rounded-2xl font-bold text-center shadow-lg shadow-[#660000]/20"
+                >
+                  Dashboard
+                </Link>
+              )}
             </div>
           </motion.div>
         )}

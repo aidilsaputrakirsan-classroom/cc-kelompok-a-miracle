@@ -72,7 +72,7 @@ export const DonorRegistration = () => {
         tinggi_badan: parseFloat(formData.tinggi_badan),
         umur: parseInt(formData.umur),
         total_donor: parseInt(formData.total_donor),
-        no_telepon: parseInt(formData.no_telepon),
+        no_telepon: formData.no_telepon,
         tanggal_terakhir_donor: neverDonated ? null : formData.tanggal_terakhir_donor
       });
       setStep(4);

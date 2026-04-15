@@ -36,7 +36,7 @@ export const Login = () => {
         const res = await apiService.loginPengguna(email, password);
         localStorage.setItem('user_token', res.data.access_token);
         localStorage.removeItem('admin_token');
-        navigate('/'); // Or to user dashboard if exists
+        navigate('/user/dashboard');
       }
     } catch (err) {
       setError(err.response?.data?.detail || 'Email atau password salah.');
@@ -83,7 +83,7 @@ export const Login = () => {
                 <input 
                   type="email" 
                   required
-                  placeholder={loginType === 'admin' ? "Contoh: admin@itk.ac.id" : "Contoh: Miracle@student.itk.ac.id"}
+                  placeholder={loginType === 'admin' ? "Contoh: admin@itk.ac.id" : "Contoh: budi@student.itk.ac.id"}
                   className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-[#660000] transition-all text-slate-900"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}

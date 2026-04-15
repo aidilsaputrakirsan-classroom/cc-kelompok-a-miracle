@@ -20,7 +20,13 @@ export default defineConfig(({mode}) => {
         '/api': {
           target: 'http://localhost:8000',
           changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/api/, ''),
+          rewrite: (path) => {
+            // Keep full path for /api/public/* routes, strip /api for others
+            if (path.startsWith('/api/public/')) {
+              return path;
+            }
+            return path.replace(/^\/api/, '');
+          },
         },
       },
       hmr: process.env.DISABLE_HMR !== 'true',

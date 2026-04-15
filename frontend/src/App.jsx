@@ -3,6 +3,7 @@ import { LandingPage } from './pages/LandingPage';
 import { Login } from './pages/Login';
 import { UserRegister } from './pages/UserRegister';
 import { AdminDashboard } from './pages/AdminDashboard';
+import { UserDashboard } from './pages/UserDashboard';
 import { DonorList } from './pages/DonorList';
 import { VerificationQueue } from './pages/VerificationQueue';
 import { DonorRegistration } from './pages/DonorRegistration';
@@ -45,6 +46,12 @@ export default function App() {
           <AdminRoute>
             <VerificationQueue />
           </AdminRoute>
+        } />
+
+        <Route path="/user/dashboard" element={
+          <UserRoute>
+            <UserDashboard />
+          </UserRoute>
         } />
 
         <Route path="*" element={<Navigate to="/" replace />} />

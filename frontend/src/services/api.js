@@ -1,9 +1,9 @@
 import axios from 'axios';
 
-const API_BASE_URL = '/api'; // Sesuaikan dengan URL backend Anda
+const API_BASE_URL = '/api';
 
 const api = axios.create({
-  baseURL: '', // Biarkan kosong jika menggunakan proxy atau path relatif
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -41,7 +41,7 @@ export const apiService = {
   deletePendonor: (id) => api.delete(`/pendonor/${id}`),
 
   // Public
-  getPublicBloodStock: () => api.get('/api/public/blood-stock'),
+  getPublicBloodStock: () => api.get('/public/blood-stock'),
 
   // Riwayat Donor (Admin)
   createRiwayatDonor: (data) => api.post('/riwayat-donor', data),
@@ -55,6 +55,41 @@ export const apiService = {
   getRiwayatDonorPengguna: (params) => api.get('/pengguna/riwayat-donor', { params }),
   getRiwayatDonorDetailPengguna: (id) => api.get(`/pengguna/riwayat-donor/${id}`),
   updateRiwayatDonorPengguna: (id, data) => api.put(`/pengguna/riwayat-donor/${id}`, data),
+
+  // Stats (Admin Dashboard)
+  getStats: async () => {
+    try {
+      const pendonorRes = await api.get('/pendonor', { params: { limit: 1000 } });
+      const riwayatRes = await api.get('/riwayat-donor', { params: { limit: 1000 } });
+      
+      const pendonors = pendonorRes.data.pendonor || [];
+      const riwayats = riwayatRes.data.riwayat_donor || [];
+      
+      // Hitung statistik dari data yang ada
+      const pendonor_by_golongan_darah = {};
+      const pendonor_by_jenis_kelamin = {};
+      
+      pendonors.forEach(p => {
+        // Group by golongan darah
+        pendonor_by_golongan_darah[p.golongan_darah] = (pendonor_by_golongan_darah[p.golongan_darah] || 0) + 1;
+        
+        // Group by jenis kelamin
+        pendonor_by_jenis_kelamin[p.jenis_kelamin] = (pendonor_by_jenis_kelamin[p.jenis_kelamin] || 0) + 1;
+      });
+      
+      return {
+        data: {
+          total_pendonor: pendonors.length,
+          pendonor_siap_donor: pendonors.filter(p => p.total_donor < 10).length,
+          pendonor_by_golongan_darah,
+          pendonor_by_jenis_kelamin,
+        }
+      };
+    } catch (err) {
+      console.error('Error computing stats:', err);
+      throw err;
+    }
+  },
 };
 
 export default api;
