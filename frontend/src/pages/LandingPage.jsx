@@ -32,12 +32,12 @@ export const LandingPage = () => {
       <Header />
       <div className="bg-[#660000] text-white">
         {/* Hero Section */}
-        <section className="relative overflow-hidden pt-32 pb-24 lg:pt-48 lg:pb-32 px-6">
-          {/* Background gradient elements */}
-          <div className="absolute top-20 right-10 w-96 h-96 bg-white/10 rounded-full blur-3xl opacity-50"></div>
-          <div className="absolute bottom-10 left-10 w-72 h-72 bg-white/5 rounded-full blur-2xl opacity-50"></div>
+        <section className="relative overflow-visible pt-32 pb-24 lg:pt-48 lg:pb-32 px-6">
+          {/* Background gradient elements with lower z-index */}
+          <div className="absolute top-20 right-10 w-96 h-96 bg-white/10 rounded-full blur-3xl opacity-50 -z-10"></div>
+          <div className="absolute bottom-10 left-10 w-72 h-72 bg-white/5 rounded-full blur-2xl opacity-50 -z-10"></div>
           
-          <div className="max-w-3xl mx-auto text-center relative z-10">
+          <div className="max-w-3xl mx-auto text-center relative z-20">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}

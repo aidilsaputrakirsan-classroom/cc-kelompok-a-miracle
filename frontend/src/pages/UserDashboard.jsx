@@ -53,9 +53,15 @@ export const UserDashboard = () => {
   const fetchHistory = async () => {
     try {
       const res = await apiService.getRiwayatDonorPengguna();
-      setHistory(res.data);
+      const normalizedHistory = Array.isArray(res.data)
+        ? res.data
+        : Array.isArray(res.data?.riwayat_donor)
+          ? res.data.riwayat_donor
+          : [];
+      setHistory(normalizedHistory);
     } catch (err) {
       console.error('Error fetching history:', err);
+      setHistory([]);
     } finally {
       setLoading(false);
     }
@@ -93,7 +99,7 @@ export const UserDashboard = () => {
     setEditingItem(item);
     setFormData({
       id_pendonor: item.id_pendonor,
-      tanggal_donor: item.tanggal_donor.split('T')[0],
+      tanggal_donor: item.tanggal_donor ? item.tanggal_donor.split('T')[0] : format(new Date(), 'yyyy-MM-dd'),
       tempat_donor: item.tempat_donor,
       catatan: item.catatan || ''
     });
@@ -109,6 +115,13 @@ export const UserDashboard = () => {
         alert(err.response?.data?.detail || 'Gagal menghapus riwayat.');
       }
     }
+  };
+
+  const formatTanggalDonor = (tanggalDonor) => {
+    if (!tanggalDonor) return '-';
+    const parsedDate = new Date(tanggalDonor);
+    if (Number.isNaN(parsedDate.getTime())) return '-';
+    return format(parsedDate, 'dd MMMM yyyy', { locale: id });
   };
 
   return (
@@ -195,7 +208,7 @@ export const UserDashboard = () => {
                         <div className="flex items-center gap-3">
                           <Calendar className="w-4 h-4 text-[#660000]" />
                           <span className="font-bold text-slate-900">
-                            {format(new Date(item.tanggal_donor), 'dd MMMM yyyy', { locale: id })}
+                            {formatTanggalDonor(item.tanggal_donor)}
                           </span>
                         </div>
                       </td>

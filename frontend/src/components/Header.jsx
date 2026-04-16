@@ -13,15 +13,24 @@ export const Header = () => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
     };
-    window.addEventListener('scroll', handleScroll);
     
-    // Check auth status
-    const adminToken = localStorage.getItem('admin_token');
-    const userToken = localStorage.getItem('user_token');
-    setIsLoggedIn(!!(adminToken || userToken));
-    setIsAdmin(!!adminToken);
+    const handleStorageChange = () => {
+      const adminToken = localStorage.getItem('admin_token');
+      const userToken = localStorage.getItem('user_token');
+      setIsLoggedIn(!!(adminToken || userToken));
+      setIsAdmin(!!adminToken);
+    };
+    
+    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Initial check
+    handleStorageChange();
 
-    return () => window.removeEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, []);
 
   const navLinks = [
