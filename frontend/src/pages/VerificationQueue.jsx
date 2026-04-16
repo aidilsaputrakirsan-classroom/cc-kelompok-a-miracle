@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { 
+  X,
   CheckCircle2, 
   XCircle, 
   Clock, 
@@ -14,6 +15,9 @@ import { apiService } from '../services/api';
 export const VerificationQueue = () => {
   const [queue, setQueue] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [selectedDonor, setSelectedDonor] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
 
   useEffect(() => {
     const fetchQueue = async () => {
@@ -40,6 +44,26 @@ export const VerificationQueue = () => {
     } catch (err) {
       console.error('Gagal memverifikasi:', err);
     }
+  };
+
+  const openDetail = async (item) => {
+    setSelectedItem(item);
+    setSelectedDonor(null);
+    setDetailLoading(true);
+
+    try {
+      const donorRes = await apiService.getPendonorById(item.id_pendonor);
+      setSelectedDonor(donorRes.data);
+    } catch (err) {
+      console.error('Gagal mengambil detail pendonor:', err);
+    } finally {
+      setDetailLoading(false);
+    }
+  };
+
+  const closeDetail = () => {
+    setSelectedItem(null);
+    setSelectedDonor(null);
   };
 
   return (
@@ -86,6 +110,13 @@ export const VerificationQueue = () => {
             </div>
 
             <div className="flex items-center gap-3 border-t md:border-t-0 pt-4 md:pt-0">
+              <button
+                onClick={() => openDetail(item)}
+                className="flex-1 md:flex-none px-4 py-2 border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 transition-colors flex items-center justify-center gap-2"
+              >
+                <FileText className="w-4 h-4" />
+                <span>Tinjau</span>
+              </button>
               <button 
                 onClick={() => handleVerify(item.id_riwayat, 'rejected')}
                 className="flex-1 md:flex-none px-4 py-2 border border-slate-200 text-slate-600 rounded-xl hover:bg-slate-50 transition-colors flex items-center justify-center gap-2"
@@ -114,6 +145,105 @@ export const VerificationQueue = () => {
           </div>
         )}
       </div>
+
+      {selectedItem && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 sm:p-6">
+          <div
+            className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
+            onClick={closeDetail}
+          />
+
+          <div className="relative w-full max-w-3xl bg-white rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col border border-slate-100">
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-[#660000] to-[#7d0f0f] text-white">
+              <div>
+                <h2 className="text-xl font-black">Detail Laporan Donor #{selectedItem.id_riwayat}</h2>
+                <p className="text-sm text-white/80 mt-1">Tinjau data sebelum verifikasi.</p>
+              </div>
+              <button
+                onClick={closeDetail}
+                className="p-2 hover:bg-white/20 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5 text-white" />
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 shadow-sm">
+                  <p className="text-xs text-slate-500 uppercase font-bold mb-1">ID Riwayat</p>
+                  <p className="font-semibold text-slate-900">{selectedItem.id_riwayat}</p>
+                </div>
+                <div className="bg-amber-50 p-4 rounded-2xl border border-amber-100 shadow-sm">
+                  <p className="text-xs text-slate-500 uppercase font-bold mb-1">Status</p>
+                  <p className="font-semibold text-amber-700">Pending Verifikasi</p>
+                </div>
+                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 shadow-sm">
+                  <p className="text-xs text-slate-500 uppercase font-bold mb-1">ID Pendonor</p>
+                  <p className="font-semibold text-slate-900">{selectedItem.id_pendonor}</p>
+                </div>
+                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 shadow-sm">
+                  <p className="text-xs text-slate-500 uppercase font-bold mb-1">Golongan Darah Laporan</p>
+                  <p className="font-semibold text-slate-900">{selectedItem.golongan_darah}</p>
+                </div>
+              </div>
+
+              {detailLoading ? (
+                <div className="text-sm text-slate-500">Memuat detail pendonor...</div>
+              ) : selectedDonor ? (
+                <div className="space-y-4">
+                  <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Data Pendonor</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div className="bg-white p-4 rounded-2xl border border-slate-100">
+                      <p className="text-xs text-slate-500 uppercase font-bold mb-1">Nama Lengkap</p>
+                      <p className="font-semibold text-slate-900">{selectedDonor.nama_lengkap || '-'}</p>
+                    </div>
+                    <div className="bg-white p-4 rounded-2xl border border-slate-100">
+                      <p className="text-xs text-slate-500 uppercase font-bold mb-1">Jenis Kelamin</p>
+                      <p className="font-semibold text-slate-900">{selectedDonor.jenis_kelamin || '-'}</p>
+                    </div>
+                    <div className="bg-white p-4 rounded-2xl border border-slate-100">
+                      <p className="text-xs text-slate-500 uppercase font-bold mb-1">Usia</p>
+                      <p className="font-semibold text-slate-900">{selectedDonor.umur || '-'} Tahun</p>
+                    </div>
+                    <div className="bg-white p-4 rounded-2xl border border-slate-100">
+                      <p className="text-xs text-slate-500 uppercase font-bold mb-1">Tanggal Lahir</p>
+                      <p className="font-semibold text-slate-900">{selectedDonor.tanggal_lahir || '-'}</p>
+                    </div>
+                    <div className="bg-white p-4 rounded-2xl border border-slate-100">
+                      <p className="text-xs text-slate-500 uppercase font-bold mb-1">Berat Badan</p>
+                      <p className="font-semibold text-slate-900">{selectedDonor.berat_badan || '-'} kg</p>
+                    </div>
+                    <div className="bg-white p-4 rounded-2xl border border-slate-100">
+                      <p className="text-xs text-slate-500 uppercase font-bold mb-1">Tinggi Badan</p>
+                      <p className="font-semibold text-slate-900">{selectedDonor.tinggi_badan || '-'} cm</p>
+                    </div>
+                    <div className="bg-white p-4 rounded-2xl border border-slate-100">
+                      <p className="text-xs text-slate-500 uppercase font-bold mb-1">No. Telepon</p>
+                      <p className="font-semibold text-slate-900">{selectedDonor.no_telepon || '-'}</p>
+                    </div>
+                    <div className="bg-white p-4 rounded-2xl border border-slate-100">
+                      <p className="text-xs text-slate-500 uppercase font-bold mb-1">Email</p>
+                      <p className="font-semibold text-slate-900">{selectedDonor.email || '-'}</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-white p-4 rounded-2xl border border-slate-100 text-sm">
+                    <p className="text-xs text-slate-500 uppercase font-bold mb-1">Alamat</p>
+                    <p className="font-semibold text-slate-900">{selectedDonor.alamat || '-'}</p>
+                  </div>
+
+                  <div className="bg-white p-4 rounded-2xl border border-slate-100 text-sm">
+                    <p className="text-xs text-slate-500 uppercase font-bold mb-1">Riwayat Kesehatan</p>
+                    <p className="font-semibold text-slate-900">{selectedDonor.riwayat_kesehatan || '-'}</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-sm text-slate-500">Detail pendonor tidak ditemukan.</div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

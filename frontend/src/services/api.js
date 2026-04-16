@@ -13,9 +13,19 @@ const api = axios.create({
 api.interceptors.request.use((config) => {
   const adminToken = localStorage.getItem('admin_token');
   const userToken = localStorage.getItem('user_token');
-  
-  // Prioritaskan admin token jika ada, atau gunakan user token
-  const token = adminToken || userToken;
+
+  const requestPath = String(config.url || '');
+  const isUserEndpoint = requestPath.startsWith('/pengguna');
+  const isAdminEndpoint = requestPath.startsWith('/pendonor') || requestPath.startsWith('/riwayat-donor');
+
+  let token = null;
+  if (isUserEndpoint) {
+    token = userToken;
+  } else if (isAdminEndpoint) {
+    token = adminToken;
+  } else {
+    token = adminToken || userToken;
+  }
   
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
@@ -60,30 +70,39 @@ export const apiService = {
   // Stats (Admin Dashboard)
   getStats: async () => {
     try {
-      const pendonorRes = await api.get('/pendonor');
-      const riwayatRes = await api.get('/riwayat-donor');
+      const [pendonorRes, riwayatAllRes, riwayatVerifiedRes, riwayatPendingRes] = await Promise.all([
+        api.get('/pendonor', { params: { limit: 1000 } }),
+        api.get('/riwayat-donor', { params: { limit: 1000 } }),
+        api.get('/riwayat-donor', { params: { status_verifikasi: true, limit: 1000 } }),
+        api.get('/riwayat-donor', { params: { status_verifikasi: false, limit: 1000 } }),
+      ]);
       
       const pendonors = pendonorRes.data.pendonor || [];
-      const riwayats = riwayatRes.data.riwayat_donor || [];
+      const riwayats = riwayatAllRes.data.riwayat_donor || [];
+      const riwayatVerified = riwayatVerifiedRes.data.riwayat_donor || [];
+      const riwayatPending = riwayatPendingRes.data.riwayat_donor || [];
+
+      const verifiedPendonorIds = new Set(riwayatVerified.map((item) => item.id_pendonor));
+      const verifiedPendonors = pendonors.filter((p) => verifiedPendonorIds.has(p.id_pendonor));
       
-      // Hitung statistik dari data yang ada
       const pendonor_by_golongan_darah = {};
       const pendonor_by_jenis_kelamin = {};
       
-      pendonors.forEach(p => {
-        // Group by golongan darah
+      verifiedPendonors.forEach((p) => {
         pendonor_by_golongan_darah[p.golongan_darah] = (pendonor_by_golongan_darah[p.golongan_darah] || 0) + 1;
-        
-        // Group by jenis kelamin
         pendonor_by_jenis_kelamin[p.jenis_kelamin] = (pendonor_by_jenis_kelamin[p.jenis_kelamin] || 0) + 1;
       });
       
       return {
         data: {
           total_pendonor: pendonors.length,
-          pendonor_siap_donor: pendonors.filter(p => p.total_donor < 10).length,
+          pendonor_siap_donor: riwayatVerified.length,
+          verifikasi_pending: riwayatPending.length,
+          donor_berhasil: riwayatVerified.length,
           pendonor_by_golongan_darah,
+          stok_darah_by_golongan_darah: pendonor_by_golongan_darah,
           pendonor_by_jenis_kelamin,
+          total_riwayat: riwayats.length,
         }
       };
     } catch (err) {
