@@ -1,56 +1,54 @@
-# Schema Database
+# Schema Database (Aktual Backend)
 
+```mermaid
+erDiagram
     ADMIN {
-        int id_admin PK
-        varchar nama_admin
-        varchar email
-        varchar password
+        Integer id_admin PK
+        String nama_admin
+        String email UK
+        String password
+    }
+
+    PENGGUNA {
+        Integer id_pengguna PK
+        String nama_pengguna
+        String email UK
+        String password
+        DateTime created_at
     }
 
     PENDONOR {
-        int id_pendonor PK
-        varchar nama_lengkap
-        varchar jenis_kelamin
-        float berat_badan
-        float tinggi_badan
-        varchar golongan_darah
-        int usia
-        date tanggal_lahir
-        text alamat
+        Integer id_pendonor PK
+        String nama_lengkap
+        String email
+        Enum jenis_kelamin
+        Float berat_badan
+        Float tinggi_badan
+        Enum golongan_darah
+        Integer umur
+        Date tanggal_lahir
+        Date tanggal_terakhir_donor
+        Integer total_donor
+        Text alamat
+        String no_telepon
+        Text riwayat_kesehatan
+        DateTime created_at
     }
 
     RIWAYAT_DONOR {
-        int id_riwayat PK
-        int id_pendonor FK
-        date tanggal_donor
-        varchar status_verifikasi
-        text catatan
+        Integer id_riwayat PK
+        Integer id_pendonor FK
+        Integer id_pengguna FK
+        Enum golongan_darah
+        Boolean status_verifikasi
     }
 
-    RIWAYAT_KESEHATAN {
-        int id_kesehatan PK
-        int id_pendonor FK
-        text riwayat_penyakit
-        text keterangan
-    }
+    PENDONOR ||--o{ RIWAYAT_DONOR : memiliki
+    PENGGUNA ||--o{ RIWAYAT_DONOR : memiliki
+```
 
-    GAMIFIKASI {
-        int id_gamifikasi PK
-        int id_pendonor FK
-        int point
-        varchar voucher
-        datetime last_updated
-    }
+## Catatan Perubahan
 
-    ADMIN ||--o{ PENDONOR : Memverifikasi
-    ADMIN ||--o{ RIWAYAT_DONOR : Memverifikasi
-    PENDONOR ||--o{ RIWAYAT_DONOR : Memiliki
-    PENDONOR ||--o{ RIWAYAT_KESEHATAN : Memiliki
-    PENDONOR ||--|| GAMIFIKASI : Memiliki
-
-# ERD Konseptual
-![alt text](<ERD Konseptual.drawio.png>)
-<br>
-
-# ERD Crow's Foot
-![alt text](<ERD CP.drawio.png>)
+- `pendonor.email` ditambahkan untuk menghubungkan input pendonor publik dengan akun pengguna ber-email sama.
+- `pendonor.no_telepon` sudah bertipe `String`, bukan integer.
+- Entitas non-implementasi (`riwayat_kesehatan`, `gamifikasi`) dihapus dari ERD dokumen karena tidak ada pada model backend aktif.

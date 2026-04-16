@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { 
   Users, 
   Droplets, 
@@ -62,8 +62,8 @@ export const AdminDashboard = () => {
 
   if (loading || !stats) return <div className="flex items-center justify-center h-full">Memuat data...</div>;
 
-  const bloodData = Object.entries(stats.pendonor_by_golongan_darah).map(([name, value]) => ({ name, value }));
-  const genderData = Object.entries(stats.pendonor_by_jenis_kelamin).map(([name, value]) => ({ name, value }));
+  const bloodData = Object.entries(stats.stok_darah_by_golongan_darah || {}).map(([name, value]) => ({ name, value }));
+  const genderData = Object.entries(stats.pendonor_by_jenis_kelamin || {}).map(([name, value]) => ({ name, value }));
 
   const COLORS = ['#660000', '#3b82f6', '#f59e0b', '#10b981', '#6366f1', '#8b5cf6', '#d946ef', '#f97316'];
 
@@ -78,9 +78,8 @@ export const AdminDashboard = () => {
           >
             <ArrowLeft className="w-6 h-6" />
           </Link>
-          <div className="text-2xl font-black tracking-tighter uppercase">TraceIt ADMIN</div>
         </div>
-        <h1 className="text-3xl lg:text-4xl font-black mb-2">Ringkasan Sistem</h1>
+        <h1 className="text-3xl lg:text-4xl font-black mb-2">Dashboard Pendonor</h1>
         <p className="text-white/80 font-medium">Pantau data pendonor dan statistik donor darah secara real-time.</p>
       </div>
 
@@ -96,17 +95,17 @@ export const AdminDashboard = () => {
           title="Pendonor Siap" 
           value={stats.pendonor_siap_donor || 0} 
           icon={Droplets} 
-          color="bg-[#660000]" 
+          color="bg-red-600" 
         />
         <StatCard 
           title="Verifikasi Pending" 
-          value="-" 
+          value={stats.verifikasi_pending || 0} 
           icon={Clock} 
-          color="bg-amber-500" 
+          color="bg-amber-400" 
         />
         <StatCard 
           title="Donor Berhasil" 
-          value="-" 
+          value={stats.donor_berhasil || 0} 
           icon={CheckCircle} 
           color="bg-emerald-500" 
         />

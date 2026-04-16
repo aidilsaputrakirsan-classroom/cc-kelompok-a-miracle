@@ -1,26 +1,36 @@
+from sqlalchemy import func
 from sqlalchemy.orm import Session
-from sqlalchemy import or_, func
-from datetime import date
-from models import Admin, Pendonor, RiwayatDonor, Gamifikasi, RiwayatKesehatan
-from schemas import (
-    AdminCreate, PendonorCreate, PendonorUpdate, RiwayatDonorCreate, RiwayatDonorVerifikasi,
-    RiwayatKesehatanCreate
-)
 from auth import hash_password, verify_password
+from models import Admin, Pengguna, Pendonor, RiwayatDonor, GolonganDarahEnum
+from schemas import (
+    AdminCreate,
+    PenggunaCreate,
+    PendonorCreate,
+    PendonorUpdate,
+    RiwayatDonorCreate,
+    RiwayatDonorUpdate,
+    RiwayatDonorVerifikasi,
+)
 
 
-# ==================== ADMIN CRUD ====================
+def _normalize_email(email: str) -> str:
+    return email.strip().lower()
+
 
 def create_admin(db: Session, admin_data: AdminCreate) -> Admin | None:
-    """Buat admin baru. Cek apakah email sudah terdaftar."""
-    existing = db.query(Admin).filter(Admin.email == admin_data.email).first()
+    existing_admin = db.query(Admin).first()
+    if existing_admin:
+        return None
+
+    normalized_email = _normalize_email(admin_data.email)
+    existing = db.query(Admin).filter(Admin.email == normalized_email).first()
     if existing:
-        return None  # Email sudah terdaftar
+        return None
 
     db_admin = Admin(
-        email=admin_data.email,
-        name=admin_data.name,
-        hashed_password=hash_password(admin_data.password),
+        nama_admin=admin_data.nama_admin,
+        email=normalized_email,
+        password=hash_password(admin_data.password),
     )
     db.add(db_admin)
     db.commit()
@@ -28,40 +38,103 @@ def create_admin(db: Session, admin_data: AdminCreate) -> Admin | None:
     return db_admin
 
 
+def create_pengguna(db: Session, pengguna_data: PenggunaCreate) -> Pengguna | None:
+    normalized_email = _normalize_email(pengguna_data.email)
+    existing = db.query(Pengguna).filter(Pengguna.email == normalized_email).first()
+    if existing:
+        return None
+
+    db_pengguna = Pengguna(
+        nama_pengguna=pengguna_data.nama_pengguna,
+        email=normalized_email,
+        password=hash_password(pengguna_data.password),
+    )
+    db.add(db_pengguna)
+    db.flush()
+
+    # Hubungkan data pendonor publik yang sudah lebih dulu diinput dengan akun pengguna ber-email sama.
+    pendonor_list = db.query(Pendonor).filter(Pendonor.email == normalized_email).all()
+    for pendonor in pendonor_list:
+        existing_riwayat = (
+            db.query(RiwayatDonor)
+            .filter(
+                RiwayatDonor.id_pendonor == pendonor.id_pendonor,
+                RiwayatDonor.id_pengguna == db_pengguna.id_pengguna,
+            )
+            .first()
+        )
+        if existing_riwayat:
+            continue
+
+        db.add(
+            RiwayatDonor(
+                id_pendonor=pendonor.id_pendonor,
+                id_pengguna=db_pengguna.id_pengguna,
+                golongan_darah=pendonor.golongan_darah,
+                status_verifikasi=False,
+            )
+        )
+
+    db.commit()
+    db.refresh(db_pengguna)
+    return db_pengguna
+
+
 def authenticate_admin(db: Session, email: str, password: str) -> Admin | None:
-    """Autentikasi admin berdasarkan email & password."""
-    admin = db.query(Admin).filter(Admin.email == email).first()
+    normalized_email = _normalize_email(email)
+    admin = db.query(Admin).filter(Admin.email == normalized_email).first()
     if not admin:
         return None
-    if not verify_password(password, admin.hashed_password):
+    if not verify_password(password, admin.password):
         return None
     return admin
 
 
+def authenticate_pengguna(db: Session, email: str, password: str) -> Pengguna | None:
+    normalized_email = _normalize_email(email)
+    pengguna = db.query(Pengguna).filter(Pengguna.email == normalized_email).first()
+    if not pengguna:
+        return None
+    if not verify_password(password, pengguna.password):
+        return None
+    return pengguna
+
+
 def get_admin(db: Session, admin_id: int) -> Admin | None:
-    """Ambil admin berdasarkan ID."""
     return db.query(Admin).filter(Admin.id_admin == admin_id).first()
 
 
-# ==================== PENDONOR CRUD ====================
+def get_pengguna(db: Session, pengguna_id: int) -> Pengguna | None:
+    return db.query(Pengguna).filter(Pengguna.id_pengguna == pengguna_id).first()
+
 
 def create_pendonor(db: Session, pendonor_data: PendonorCreate) -> Pendonor:
-    """Buat pendonor baru."""
-    db_pendonor = Pendonor(**pendonor_data.model_dump())
+    payload = pendonor_data.model_dump()
+    payload["email"] = _normalize_email(payload["email"])
+    payload["no_telepon"] = str(payload["no_telepon"]).strip()
+
+    db_pendonor = Pendonor(**payload)
     db.add(db_pendonor)
+    db.flush()
+
+    # Jika email pendonor sudah punya akun pengguna, otomatis tampilkan pada dashboard pengguna itu.
+    pengguna = db.query(Pengguna).filter(Pengguna.email == db_pendonor.email).first()
+    if pengguna:
+        db.add(
+            RiwayatDonor(
+                id_pendonor=db_pendonor.id_pendonor,
+                id_pengguna=pengguna.id_pengguna,
+                golongan_darah=db_pendonor.golongan_darah,
+                status_verifikasi=False,
+            )
+        )
+
     db.commit()
     db.refresh(db_pendonor)
-    
-    # Buat gamifikasi untuk pendonor baru
-    db_gamifikasi = Gamifikasi(id_pendonor=db_pendonor.id_pendonor, point=0)
-    db.add(db_gamifikasi)
-    db.commit()
-    
     return db_pendonor
 
 
 def get_pendonor(db: Session, pendonor_id: int) -> Pendonor | None:
-    """Ambil pendonor berdasarkan ID."""
     return db.query(Pendonor).filter(Pendonor.id_pendonor == pendonor_id).first()
 
 
@@ -69,250 +142,252 @@ def get_pendonor_all(
     db: Session,
     skip: int = 0,
     limit: int = 20,
-    nama: str = None,
-    jenis_kelamin: str = None,
-    golongan_darah: str = None,
-    usia_min: int = None,
-    usia_max: int = None,
+    nama: str | None = None,
+    jenis_kelamin: str | None = None,
+    golongan_darah: str | None = None,
+    umur_min: int | None = None,
+    umur_max: int | None = None,
 ):
-    """Ambil daftar pendonor dengan filter dan pagination."""
     query = db.query(Pendonor)
-    
-    # Apply filters
+
     if nama:
         query = query.filter(Pendonor.nama_lengkap.ilike(f"%{nama}%"))
     if jenis_kelamin:
         query = query.filter(Pendonor.jenis_kelamin == jenis_kelamin)
     if golongan_darah:
         query = query.filter(Pendonor.golongan_darah == golongan_darah)
-    if usia_min:
-        query = query.filter(Pendonor.usia >= usia_min)
-    if usia_max:
-        query = query.filter(Pendonor.usia <= usia_max)
-    
+    if umur_min is not None:
+        query = query.filter(Pendonor.umur >= umur_min)
+    if umur_max is not None:
+        query = query.filter(Pendonor.umur <= umur_max)
+
     total = query.count()
     pendonor = query.order_by(Pendonor.created_at.desc()).offset(skip).limit(limit).all()
-    
     return {"total": total, "pendonor": pendonor}
 
 
 def update_pendonor(db: Session, pendonor_id: int, pendonor_data: PendonorUpdate) -> Pendonor | None:
-    """Update data pendonor."""
     db_pendonor = db.query(Pendonor).filter(Pendonor.id_pendonor == pendonor_id).first()
-    
     if not db_pendonor:
         return None
-    
+
     update_data = pendonor_data.model_dump(exclude_unset=True)
+    if "email" in update_data and update_data["email"] is not None:
+        update_data["email"] = _normalize_email(update_data["email"])
+    if "no_telepon" in update_data and update_data["no_telepon"] is not None:
+        update_data["no_telepon"] = str(update_data["no_telepon"]).strip()
+
     for field, value in update_data.items():
         setattr(db_pendonor, field, value)
-    
+
+    if db_pendonor.email:
+        pengguna = db.query(Pengguna).filter(Pengguna.email == db_pendonor.email).first()
+        if pengguna:
+            existing_riwayat = (
+                db.query(RiwayatDonor)
+                .filter(
+                    RiwayatDonor.id_pendonor == db_pendonor.id_pendonor,
+                    RiwayatDonor.id_pengguna == pengguna.id_pengguna,
+                )
+                .first()
+            )
+            if not existing_riwayat:
+                db.add(
+                    RiwayatDonor(
+                        id_pendonor=db_pendonor.id_pendonor,
+                        id_pengguna=pengguna.id_pengguna,
+                        golongan_darah=db_pendonor.golongan_darah,
+                        status_verifikasi=False,
+                    )
+                )
+
     db.commit()
     db.refresh(db_pendonor)
     return db_pendonor
 
 
 def delete_pendonor(db: Session, pendonor_id: int) -> bool:
-    """Hapus pendonor berdasarkan ID."""
     db_pendonor = db.query(Pendonor).filter(Pendonor.id_pendonor == pendonor_id).first()
-    
     if not db_pendonor:
         return False
-    
+
     db.delete(db_pendonor)
     db.commit()
     return True
 
 
-# ==================== GAMIFIKASI CRUD ====================
-
-def get_gamifikasi(db: Session, gamifikasi_id: int) -> Gamifikasi | None:
-    """Ambil gamifikasi berdasarkan ID."""
-    return db.query(Gamifikasi).filter(Gamifikasi.id_gamifikasi == gamifikasi_id).first()
-
-
-def get_gamifikasi_by_pendonor(db: Session, pendonor_id: int) -> Gamifikasi | None:
-    """Ambil gamifikasi berdasarkan ID pendonor."""
-    return db.query(Gamifikasi).filter(Gamifikasi.id_pendonor == pendonor_id).first()
-
-
-def update_gamifikasi_point(
-    db: Session, pendonor_id: int, tambah_point: int = 10
-) -> Gamifikasi | None:
-    """Update point gamifikasi (tambah point setiap donor)."""
-    gamifikasi = db.query(Gamifikasi).filter(Gamifikasi.id_pendonor == pendonor_id).first()
-    
-    if not gamifikasi:
-        return None
-    
-    gamifikasi.point += tambah_point
-    db.commit()
-    db.refresh(gamifikasi)
-    return gamifikasi
-
-
-# ==================== RIWAYAT DONOR CRUD ====================
-
-def create_riwayat_donor(db: Session, riwayat_data: RiwayatDonorCreate) -> RiwayatDonor | None:
-    """Buat riwayat donor baru."""
-    # Cek apakah pendonor ada
+def create_riwayat_donor(
+    db: Session,
+    riwayat_data: RiwayatDonorCreate,
+    id_pengguna: int | None = None,
+) -> RiwayatDonor | None:
     pendonor = db.query(Pendonor).filter(Pendonor.id_pendonor == riwayat_data.id_pendonor).first()
     if not pendonor:
         return None
-    
-    # Buat riwayat donor
-    db_riwayat = RiwayatDonor(**riwayat_data.model_dump())
+
+    donor_golongan_darah = riwayat_data.golongan_darah or pendonor.golongan_darah
+
+    db_riwayat = RiwayatDonor(
+        id_pendonor=riwayat_data.id_pendonor,
+        id_pengguna=id_pengguna,
+        golongan_darah=donor_golongan_darah,
+        status_verifikasi=False,
+    )
     db.add(db_riwayat)
     db.commit()
     db.refresh(db_riwayat)
     return db_riwayat
 
 
-def get_riwayat_donor(db: Session, riwayat_id: int) -> RiwayatDonor | None:
-    """Ambil riwayat donor berdasarkan ID."""
-    return db.query(RiwayatDonor).filter(RiwayatDonor.id_riwayat == riwayat_id).first()
-
-
-def get_riwayat_donor_by_pendonor(
-    db: Session,
-    pendonor_id: int,
-    skip: int = 0,
-    limit: int = 20,
-):
-    """Ambil riwayat donor berdasarkan pendonor dengan pagination."""
-    query = db.query(RiwayatDonor).filter(RiwayatDonor.id_pendonor == pendonor_id)
-    
-    total = query.count()
-    riwayat = query.order_by(RiwayatDonor.tanggal_donor.desc()).offset(skip).limit(limit).all()
-    
-    return {"total": total, "riwayat_donor": riwayat}
-
-
-def get_riwayat_donor_pending(db: Session, skip: int = 0, limit: int = 20):
-    """Ambil riwayat donor yang masih pending verifikasi."""
-    query = db.query(RiwayatDonor).filter(RiwayatDonor.status_verifikasi == "pending")
-    
-    total = query.count()
-    riwayat = query.order_by(RiwayatDonor.created_at.desc()).offset(skip).limit(limit).all()
-    
-    return {"total": total, "riwayat_donor": riwayat}
-
-
-def verifikasi_riwayat_donor(
+def update_riwayat_donor(
     db: Session,
     riwayat_id: int,
-    verifikasi_data: RiwayatDonorVerifikasi,
-    admin_id: int,
+    riwayat_data: RiwayatDonorUpdate,
+    id_pengguna: int | None = None,
 ) -> RiwayatDonor | None:
-    """Verifikasi riwayat donor oleh admin."""
-    db_riwayat = db.query(RiwayatDonor).filter(RiwayatDonor.id_riwayat == riwayat_id).first()
-    
+    query = db.query(RiwayatDonor).filter(RiwayatDonor.id_riwayat == riwayat_id)
+    if id_pengguna is not None:
+        query = query.filter(RiwayatDonor.id_pengguna == id_pengguna)
+
+    db_riwayat = query.first()
     if not db_riwayat:
         return None
-    
-    db_riwayat.status_verifikasi = verifikasi_data.status_verifikasi
-    db_riwayat.catatan = verifikasi_data.catatan
-    db_riwayat.id_admin = admin_id
-    
-    # Jika disetujui, update last donation date dan count
-    if verifikasi_data.status_verifikasi == "approved":
-        pendonor = db.query(Pendonor).filter(Pendonor.id_pendonor == db_riwayat.id_pendonor).first()
-        if pendonor:
-            pendonor.tanggal_terakhir_donor = db_riwayat.tanggal_donor
-            pendonor.riwayat_donor_count += 1
-            
-            # Update point gamifikasi
-            update_gamifikasi_point(db, db_riwayat.id_pendonor, tambah_point=10)
-    
+
+    update_data = riwayat_data.model_dump(exclude_unset=True)
+    if "id_pendonor" in update_data:
+        pendonor = db.query(Pendonor).filter(Pendonor.id_pendonor == update_data["id_pendonor"]).first()
+        if not pendonor:
+            return None
+
+    for field, value in update_data.items():
+        setattr(db_riwayat, field, value)
+
+    if "id_pendonor" in update_data and "golongan_darah" not in update_data:
+        db_riwayat.golongan_darah = pendonor.golongan_darah
+
     db.commit()
     db.refresh(db_riwayat)
     return db_riwayat
 
 
-# ==================== RIWAYAT KESEHATAN CRUD ====================
+def delete_riwayat_donor(
+    db: Session,
+    riwayat_id: int,
+    id_pengguna: int | None = None,
+) -> bool:
+    query = db.query(RiwayatDonor).filter(RiwayatDonor.id_riwayat == riwayat_id)
+    if id_pengguna is not None:
+        query = query.filter(RiwayatDonor.id_pengguna == id_pengguna)
 
-def create_riwayat_kesehatan(
-    db: Session, kesehatan_data: RiwayatKesehatanCreate
-) -> RiwayatKesehatan | None:
-    """Buat riwayat kesehatan baru."""
-    pendonor = db.query(Pendonor).filter(Pendonor.id_pendonor == kesehatan_data.id_pendonor).first()
-    if not pendonor:
-        return None
-    
-    db_kesehatan = RiwayatKesehatan(**kesehatan_data.model_dump())
-    db.add(db_kesehatan)
-    db.commit()
-    db.refresh(db_kesehatan)
-    return db_kesehatan
-
-
-def get_riwayat_kesehatan(db: Session, kesehatan_id: int) -> RiwayatKesehatan | None:
-    """Ambil riwayat kesehatan berdasarkan ID."""
-    return db.query(RiwayatKesehatan).filter(RiwayatKesehatan.id_kesehatan == kesehatan_id).first()
-
-
-def get_riwayat_kesehatan_by_pendonor(db: Session, pendonor_id: int):
-    """Ambil riwayat kesehatan berdasarkan pendonor."""
-    return (
-        db.query(RiwayatKesehatan)
-        .filter(RiwayatKesehatan.id_pendonor == pendonor_id)
-        .order_by(RiwayatKesehatan.created_at.desc())
-        .all()
-    )
-
-
-def update_riwayat_kesehatan(
-    db: Session, kesehatan_id: int, keterangan: str
-) -> RiwayatKesehatan | None:
-    """Update riwayat kesehatan."""
-    db_kesehatan = db.query(RiwayatKesehatan).filter(RiwayatKesehatan.id_kesehatan == kesehatan_id).first()
-    
-    if not db_kesehatan:
-        return None
-    
-    db_kesehatan.keterangan = keterangan
-    db.commit()
-    db.refresh(db_kesehatan)
-    return db_kesehatan
-
-
-def delete_riwayat_kesehatan(db: Session, kesehatan_id: int) -> bool:
-    """Hapus riwayat kesehatan."""
-    db_kesehatan = db.query(RiwayatKesehatan).filter(RiwayatKesehatan.id_kesehatan == kesehatan_id).first()
-    
-    if not db_kesehatan:
+    db_riwayat = query.first()
+    if not db_riwayat:
         return False
-    
-    db.delete(db_kesehatan)
+
+    db.delete(db_riwayat)
     db.commit()
     return True
 
 
-# ==================== STATISTICS ====================
+def get_riwayat_donor(db: Session, riwayat_id: int) -> RiwayatDonor | None:
+    return db.query(RiwayatDonor).filter(RiwayatDonor.id_riwayat == riwayat_id).first()
+
+
+def get_riwayat_donor_all(db: Session, skip: int = 0, limit: int = 20, status_verifikasi: bool | None = None):
+    query = db.query(RiwayatDonor)
+    if status_verifikasi is not None:
+        query = query.filter(RiwayatDonor.status_verifikasi == status_verifikasi)
+
+    total = query.count()
+    riwayat = query.order_by(RiwayatDonor.id_riwayat.desc()).offset(skip).limit(limit).all()
+    return {"total": total, "riwayat_donor": riwayat}
+
+
+def get_riwayat_donor_by_pendonor(db: Session, pendonor_id: int, skip: int = 0, limit: int = 20):
+    query = db.query(RiwayatDonor).filter(RiwayatDonor.id_pendonor == pendonor_id)
+    total = query.count()
+    riwayat = query.order_by(RiwayatDonor.id_riwayat.desc()).offset(skip).limit(limit).all()
+    return {"total": total, "riwayat_donor": riwayat}
+
+
+def get_riwayat_donor_by_pengguna(db: Session, pengguna_id: int, skip: int = 0, limit: int = 20):
+    query = db.query(RiwayatDonor).filter(RiwayatDonor.id_pengguna == pengguna_id)
+    total = query.count()
+    riwayat = query.order_by(RiwayatDonor.id_riwayat.desc()).offset(skip).limit(limit).all()
+    return {"total": total, "riwayat_donor": riwayat}
+
+
+def get_riwayat_donor_milik_pengguna(db: Session, riwayat_id: int, pengguna_id: int) -> RiwayatDonor | None:
+    return (
+        db.query(RiwayatDonor)
+        .filter(
+            RiwayatDonor.id_riwayat == riwayat_id,
+            RiwayatDonor.id_pengguna == pengguna_id,
+        )
+        .first()
+    )
+
+
+def verifikasi_riwayat_donor(db: Session, riwayat_id: int, verifikasi_data: RiwayatDonorVerifikasi) -> RiwayatDonor | None:
+    db_riwayat = db.query(RiwayatDonor).filter(RiwayatDonor.id_riwayat == riwayat_id).first()
+    if not db_riwayat:
+        return None
+
+    db_riwayat.status_verifikasi = verifikasi_data.status_verifikasi
+
+    if verifikasi_data.status_verifikasi:
+        pendonor = db.query(Pendonor).filter(Pendonor.id_pendonor == db_riwayat.id_pendonor).first()
+        if pendonor:
+            pendonor.total_donor = (pendonor.total_donor or 0) + 1
+
+    db.commit()
+    db.refresh(db_riwayat)
+    return db_riwayat
+
 
 def get_pendonor_stats(db: Session) -> dict:
-    """Ambil statistik pendonor."""
     total_pendonor = db.query(func.count(Pendonor.id_pendonor)).scalar() or 0
-    
-    # Kelompok by golongan darah
     darah_stats = (
         db.query(Pendonor.golongan_darah, func.count(Pendonor.id_pendonor))
         .group_by(Pendonor.golongan_darah)
         .all()
     )
-    pendonor_by_golongan_darah = {darah: count for darah, count in darah_stats}
-    
-    # Kelompok by jenis kelamin
     kelamin_stats = (
         db.query(Pendonor.jenis_kelamin, func.count(Pendonor.id_pendonor))
         .group_by(Pendonor.jenis_kelamin)
         .all()
     )
-    pendonor_by_jenis_kelamin = {kelamin: count for kelamin, count in kelamin_stats}
-    
+
     return {
         "total_pendonor": total_pendonor,
-        "pendonor_by_golongan_darah": pendonor_by_golongan_darah,
-        "pendonor_by_jenis_kelamin": pendonor_by_jenis_kelamin,
+        "pendonor_by_golongan_darah": {str(k): v for k, v in darah_stats},
+        "pendonor_by_jenis_kelamin": {str(k): v for k, v in kelamin_stats},
     }
 
+
+def get_public_blood_stock(db: Session) -> dict:
+    # Hanya hitung donor yang punya riwayat donor terverifikasi (status_verifikasi = True)
+    darah_stats = (
+        db.query(
+            Pendonor.golongan_darah,
+            func.count(func.distinct(Pendonor.id_pendonor))
+        )
+        .join(RiwayatDonor, Pendonor.id_pendonor == RiwayatDonor.id_pendonor)
+        .filter(RiwayatDonor.status_verifikasi == True)
+        .group_by(Pendonor.golongan_darah)
+        .all()
+    )
+
+    darah_count_map = {
+        (golongan.value if hasattr(golongan, "value") else str(golongan)): total
+        for golongan, total in darah_stats
+    }
+
+    stock_list = [
+        {
+            "golongan_darah": golongan.value,
+            "jumlah_stok": darah_count_map.get(golongan.value, 0),
+        }
+        for golongan in GolonganDarahEnum
+    ]
+
+    return {"blood_stock": stock_list}

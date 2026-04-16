@@ -1,16 +1,14 @@
 import os
 from datetime import datetime, timedelta, timezone
 from typing import Optional
-
 from dotenv import load_dotenv
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
-
 from database import get_db
-from models import Admin, Pendonor
+from models import Admin, Pengguna
 
 load_dotenv()
 
@@ -43,6 +41,9 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     """Buat JWT access token."""
     to_encode = data.copy()
+    # JWT `sub` harus string; integer membuat token gagal divalidasi saat decode.
+    if "sub" in to_encode:
+        to_encode["sub"] = str(to_encode["sub"])
     expire = datetime.now(timezone.utc) + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
@@ -61,6 +62,13 @@ def decode_token(token: str) -> dict:
         )
 
 
+def _parse_subject_id(subject: object) -> int | None:
+    try:
+        return int(subject)
+    except (TypeError, ValueError):
+        return None
+
+
 # ==================== DEPENDENCY ====================
 
 def get_current_admin(
@@ -72,7 +80,7 @@ def get_current_admin(
     Gunakan di endpoint yang hanya bisa diakses admin.
     """
     payload = decode_token(token)
-    admin_id: int = payload.get("sub")
+    admin_id = _parse_subject_id(payload.get("sub"))
     user_type: str = payload.get("user_type")
 
     if user_type != "admin" or admin_id is None:
@@ -88,52 +96,32 @@ def get_current_admin(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Admin tidak ditemukan",
         )
-
-    if not admin.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Akun admin tidak aktif",
-        )
-
     return admin
 
 
-def get_current_user(
+def get_current_pengguna(
     token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db),
-):
+) -> Pengguna:
     """
-    Dependency injection: ambil current user (bisa admin atau pendonor) dari JWT token.
-    Gunakan di endpoint yang butuh autentikasi umum.
+    Dependency injection: ambil current pengguna dari JWT token.
+    Gunakan di endpoint yang hanya bisa diakses pengguna.
     """
     payload = decode_token(token)
-    user_id: int = payload.get("sub")
+    pengguna_id = _parse_subject_id(payload.get("sub"))
     user_type: str = payload.get("user_type")
 
-    if user_id is None:
+    if user_type != "pengguna" or pengguna_id is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token tidak valid",
+            detail="Hanya pengguna yang bisa akses endpoint ini",
         )
 
-    if user_type == "admin":
-        user = db.query(Admin).filter(Admin.id_admin == user_id).first()
-        if not user or not user.is_active:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Admin tidak ditemukan atau tidak aktif",
-            )
-    elif user_type == "pendonor":
-        user = db.query(Pendonor).filter(Pendonor.id_pendonor == user_id).first()
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Pendonor tidak ditemukan",
-            )
-    else:
+    pengguna = db.query(Pengguna).filter(Pengguna.id_pengguna == pengguna_id).first()
+
+    if pengguna is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User type tidak valid",
+            detail="Pengguna tidak ditemukan",
         )
-
-    return user
+    return pengguna

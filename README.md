@@ -106,8 +106,8 @@ npm run dev
 | 1 | Setup & Hello World | ✅ |
 | 2 | REST API + Database | ✅ |
 | 3 | React Frontend | ✅ |
-| 4 | Full-Stack Integration | ⬜ |
-| 5-7 | Docker & Compose	 | ⬜ |
+| 4 | Full-Stack Integration | ✅ |
+| 5-7 | Docker & Compose	 | ✅ |
 | 8 | UTS Demo | ⬜ |
 | 9-11 | CI/CD Pipeline | ⬜ |
 | 12-14 | Microservices | ⬜ |
@@ -239,6 +239,216 @@ setup.sh adalah file shell script yang digunakan untuk menjalankan serangkaian p
 ```
 ./setup.sh
 ```
+
+---
+
+## Docker Multi-Container Setup (Modul 6)
+
+Pada praktikum modul 6, aplikasi TraceIt dijalankan menggunakan 3 container Docker yang saling terhubung dalam satu network.
+
+### Container Services
+
+| Container | Image | Fungsi | Port |
+|-----------|-------|--------|------|
+| `tracelt-frontend` | `tracelt-frontend:v1-fe` | Frontend React + Nginx | `3000:80` |
+| `tracelt-backend` | `tracelt-backend:v1` | Backend FastAPI | `8000:8000` |
+| `tracelt-db` | `postgres:15` | Database PostgreSQL | `5432:5432` |
+
+### Network & Volume
+
+- **Network:** `cc-kelompok-a-miracle_default` (bridge) — menghubungkan ketiga container
+- **Volume:** `pgdata` — menyimpan data PostgreSQL secara persist
+
+### Build Docker Images
+
+```bash
+# Build backend
+docker build -t tracelt-backend:v1 ./backend
+
+# Build frontend (multi-stage: Node.js build + Nginx serve)
+docker build -t tracelt-frontend:v1-fe ./frontend
+```
+
+### Menjalankan Container
+
+```bash
+# Buat network
+docker network create cc-kelompok-a-miracle_default
+
+# Jalankan database
+docker run -d --name tracelt-db --network cc-kelompok-a-miracle_default \
+  -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=tracelt \
+  -p 5432:5432 -v pgdata:/var/lib/postgresql/data postgres:15
+
+# Jalankan backend
+docker run -d --name tracelt-backend --network cc-kelompok-a-miracle_default \
+  --env-file ./backend/.env.docker -p 8000:8000 tracelt-backend:v1
+
+# Jalankan frontend
+docker run -d --name tracelt-frontend --network cc-kelompok-a-miracle_default \
+  -p 3000:80 tracelt-frontend:v1-fe
+```
+
+Atau menggunakan script:
+```bash
+./scripts/docker-run.sh start
+```
+
+### Akses Service
+
+| Service | URL |
+|---------|-----|
+| Frontend | `http://localhost:3000` |
+| Backend API | `http://localhost:8000` |
+| Backend Docs (Swagger) | `http://localhost:8000/docs` |
+| Backend Health Check | `http://localhost:8000/health` |
+
+### Docker Testing
+
+Pengujian dilakukan dengan langkah berikut:
+
+1. Build image backend dan frontend
+2. Jalankan ketiga container (database, backend, frontend)
+3. Cek status container dengan `docker ps`
+4. Cek log container dengan `docker logs`
+5. Akses frontend di `http://localhost:3000`
+6. Akses backend docs di `http://localhost:8000/docs`
+7. Akses health check di `http://localhost:8000/health`
+8. Cek network dengan `docker network inspect cc-kelompok-a-miracle_default`
+9. Cek volume dengan `docker volume ls`
+
+### Hasil Pengujian
+
+| Pengujian | Hasil |
+|-----------|-------|
+| Build image backend | Berhasil |
+| Build image frontend | Berhasil |
+| Container `tracelt-db` | Up |
+| Container `tracelt-backend` | Up (healthy) |
+| Container `tracelt-frontend` | Up |
+| Akses `http://localhost:3000` | Berhasil |
+| Akses `http://localhost:8000/docs` | Berhasil |
+| Health check `http://localhost:8000/health` | Berhasil |
+| Docker network | Ketiga container terhubung |
+| Docker volume `pgdata` | Terdeteksi |
+
+### Image Size
+
+| Image | Tag | Size |
+|-------|-----|------|
+| `tracelt-backend` | `v1` | 216 MB |
+| `tracelt-frontend` | `v1-fe` | 93.8 MB |
+
+Frontend menggunakan multi-stage build sehingga ukuran image jauh lebih kecil dibanding menggunakan Node.js penuh (~1 GB).
+
+### Docker Hub
+
+Image yang telah di-push ke Docker Hub:
+
+| Image | Docker Hub |
+|-------|------------|
+| Frontend | `USERNAME/tracelt-frontend:v1` |
+| Backend | `USERNAME/tracelt-backend:v1` |
+
+> Ganti `USERNAME` dengan username Docker Hub masing-masing anggota yang melakukan push.
+
+### Dokumentasi Arsitektur
+
+Dokumentasi arsitektur Docker secara lengkap tersedia di [`docs/docker-architecture.md`](docs/docker-architecture.md), mencakup diagram Mermaid, port mapping, network, volume, environment variables, dan alur komunikasi antar service.
+
+### Diagram Arsitektur Docker
+
+![Docker Architecture](docs/docker-architecture-diagram.png)
+
+**Penjelasan Diagram:**
+- **User/Browser** mengakses frontend via `localhost:3000` dan backend API via `localhost:8000`
+- **tracelt-frontend** (Nginx + React) berjalan di container port 80, di-map ke host port 3000
+- **tracelt-backend** (FastAPI) berjalan di container port 8000, menerima env vars dari `.env.docker`
+- **tracelt-db** (PostgreSQL 15) berjalan di container port 5432, data disimpan di named volume `pgdata`
+- Ketiga container terhubung dalam Docker network `cc-kelompok-a-miracle_default`
+- Frontend container hanya menyajikan file React via Nginx. Request API dilakukan oleh browser user ke `localhost:8000`, bukan dari frontend container langsung ke backend
+
+---
+
+## CI/CD — Optimasi Docker Image & Push ke Docker Hub (Modul 9-11)
+
+### Perbandingan Ukuran Image: Sebelum vs Sesudah Optimasi
+
+#### Backend (`tracelt-backend`)
+
+| Aspek | Sebelum Optimasi | Sesudah Optimasi (v2) |
+|-------|------------------|----------------------|
+| **Base Image** | `python:3.12` (full Debian) | `python:3.12-alpine` |
+| **Build Strategy** | Single-stage | Multi-stage (builder + production) |
+| **Ukuran Image** | ~1.2 GB | **216 MB** |
+| **.dockerignore** | Tidak ada | Ada |
+| **User** | root | non-root (`appuser`) |
+| **Healthcheck** | Tidak ada | Ada |
+
+#### Frontend (`tracelt-frontend`)
+
+| Aspek | Sebelum Optimasi | Sesudah Optimasi (v1) |
+|-------|------------------|----------------------|
+| **Base Image** | `node:20` (full Debian) | `node:20-slim` + `nginx:alpine` |
+| **Build Strategy** | Single-stage (Node.js serve) | Multi-stage (build + Nginx) |
+| **Ukuran Image** | ~1.1 GB | **93.8 MB** |
+| **node_modules di final** | Ya (~500 MB+) | Tidak |
+| **.dockerignore** | Tidak ada | Ada |
+
+#### Ringkasan Pengurangan
+
+| Image | Sebelum | Sesudah | Pengurangan |
+|-------|---------|---------|-------------|
+| Backend | ~1.2 GB | **216 MB** | **~82%** |
+| Frontend | ~1.1 GB | **93.8 MB** | **~91%** |
+| **Total** | **~2.3 GB** | **~310 MB** | **~87%** |
+
+### Teknik Optimasi yang Diterapkan
+
+| Teknik | Backend | Frontend | Keterangan |
+|--------|---------|----------|------------|
+| Multi-stage build | Ya | Ya | Memisahkan build dan runtime |
+| Alpine base image | Ya | Ya | Image minimal (~5-50 MB vs ~100-1000 MB) |
+| `.dockerignore` | Ya | Ya | Mengurangi build context |
+| Non-root user | Ya | - | Security best practice |
+| Healthcheck | Ya | - | Monitoring container health |
+| No cache pip/npm | Ya | Ya | `--no-cache-dir` |
+| Layer optimization | Ya | Ya | Mengurutkan COPY untuk cache efficiency |
+
+### Push ke Docker Hub
+
+Image yang telah dioptimasi di-push ke Docker Hub:
+
+```bash
+# Tag image
+docker tag tracelt-backend:v1 <DOCKERHUB_USERNAME>/backend:v2
+docker tag tracelt-frontend:v1-fe <DOCKERHUB_USERNAME>/frontend:v1
+
+# Push ke Docker Hub
+docker push <DOCKERHUB_USERNAME>/backend:v2
+docker push <DOCKERHUB_USERNAME>/frontend:v1
+```
+
+| Image | Tag | Docker Hub | Ukuran |
+|-------|-----|------------|--------|
+| Backend | `v2` | `<DOCKERHUB_USERNAME>/backend:v2` | 216 MB |
+| Frontend | `v1` | `<DOCKERHUB_USERNAME>/frontend:v1` | 93.8 MB |
+
+> Ganti `<DOCKERHUB_USERNAME>` dengan username Docker Hub tim.
+
+### Cara Pull & Jalankan dari Docker Hub
+
+```bash
+# Pull image
+docker pull <DOCKERHUB_USERNAME>/backend:v2
+docker pull <DOCKERHUB_USERNAME>/frontend:v1
+
+# Jalankan
+docker run -d --name backend -p 8000:8000 --env-file backend/.env.docker <DOCKERHUB_USERNAME>/backend:v2
+docker run -d --name frontend -p 3000:80 <DOCKERHUB_USERNAME>/frontend:v1
+```
+
+> Dokumentasi lengkap optimasi image tersedia di [`docs/laporan-cicd-image-optimization.md`](docs/laporan-cicd-image-optimization.md)
 
 
 ## Dokumentasi Week 1
