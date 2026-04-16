@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import inspect, text
 from sqlalchemy.orm import Session
 from database import engine, get_db
-from models import Base, Admin, Pengguna, Pendonor
+from models import Base, Admin, Pengguna, Pendonor, ensure_schema_compatibility
 from schemas import (
     AdminCreate, AdminResponse, PenggunaCreate, PenggunaResponse,
     PendonorCreate, PendonorUpdate, PendonorResponse, PendonorListResponse,
@@ -69,6 +69,7 @@ def _cleanup_duplicate_admins() -> None:
 
 @app.on_event("startup")
 def startup_maintenance() -> None:
+    ensure_schema_compatibility()
     _ensure_backend_schema_compatibility()
     _cleanup_duplicate_admins()
 

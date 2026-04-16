@@ -1,8 +1,29 @@
-from sqlalchemy import Column, Date, DateTime, Enum, Float, Integer, String, Text, Boolean, ForeignKey
+from sqlalchemy import Column, Date, DateTime, Enum, Float, Integer, String, Text, Boolean, ForeignKey, inspect, text
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-from database import Base
+from database import Base, engine
 import enum
+
+
+def ensure_schema_compatibility() -> None:
+    """Pastikan schema lama tetap kompatibel dengan model backend terbaru."""
+    with engine.begin() as connection:
+        inspector = inspect(connection)
+        table_names = inspector.get_table_names()
+
+        if "riwayat_donor" not in table_names:
+            return
+
+        riwayat_columns = {col["name"]: col for col in inspector.get_columns("riwayat_donor")}
+        if "id_pengguna" in riwayat_columns:
+            return
+
+        connection.execute(
+            text(
+                "ALTER TABLE riwayat_donor "
+                "ADD COLUMN id_pengguna INTEGER REFERENCES pengguna(id_pengguna)"
+            )
+        )
 
 class GolonganDarahEnum(str, enum.Enum):
     O_POSITIF = "O+"
