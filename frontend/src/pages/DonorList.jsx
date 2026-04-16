@@ -15,11 +15,14 @@ import {
   Heart,
   Activity,
   AlertCircle,
-  Trash2
+  Trash2,
+  CheckCircle
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { apiService } from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
+import { format } from 'date-fns';
+import { id } from 'date-fns/locale';
 
 export const DonorList = () => {
   const [donors, setDonors] = useState([]);
@@ -30,6 +33,7 @@ export const DonorList = () => {
   const [editFormData, setEditFormData] = useState({});
   const [unverifiedRiwayat, setUnverifiedRiwayat] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
+  const [donorVerificationStatus, setDonorVerificationStatus] = useState({}); // Track which donors are verified
   const [filters, setFilters] = useState({
     golongan_darah: '',
     jenis_kelamin: '',
@@ -48,13 +52,27 @@ export const DonorList = () => {
         umur_max: filters.umur_max || undefined
       };
       
-      // Filter out undefined values
       const cleanParams = Object.fromEntries(
         Object.entries(params).filter(([, value]) => value !== undefined)
       );
       
       const res = await apiService.getPendonorList(cleanParams);
-      setDonors(res.data.pendonor);
+      const donorData = res.data.pendonor;
+      setDonors(donorData);
+
+      // Fetch verification status for all donors to populate tabs
+      const statusMap = {};
+      for (const donor of donorData) {
+        try {
+          const rRes = await apiService.getRiwayatDonorByPendonor(donor.id_pendonor);
+          const unverified = rRes.data.riwayat_donor?.find(r => !r.status_verifikasi);
+          const hasVerified = rRes.data.riwayat_donor?.some(r => r.status_verifikasi);
+          statusMap[donor.id_pendonor] = { unverified, hasVerified };
+        } catch (e) {
+          console.error(`Error fetching status for donor ${donor.id_pendonor}:`, e);
+        }
+      }
+      setDonorVerificationStatus(statusMap);
     } catch (err) {
       console.error('Gagal mengambil data pendonor:', err);
     } finally {
@@ -68,14 +86,36 @@ export const DonorList = () => {
 
   const checkUnverifiedRiwayat = async (donorId) => {
     try {
-      const res = await apiService.getRiwayatDonorByPendonor(donorId, { status_verifikasi: false });
+      const res = await apiService.getRiwayatDonorByPendonor(donorId);
+      // Check if ada riwayat yang unverified
       const unverified = res.data.riwayat_donor && res.data.riwayat_donor.length > 0 
-        ? res.data.riwayat_donor[0] 
+        ? res.data.riwayat_donor.find(r => !r.status_verifikasi)
         : null;
+      const hasVerified = res.data.riwayat_donor && res.data.riwayat_donor.some(r => r.status_verifikasi);
+      
       setUnverifiedRiwayat(unverified);
+      setDonorVerificationStatus(prev => ({
+        ...prev,
+        [donorId]: { unverified, hasVerified }
+      }));
     } catch (err) {
       console.error('Error checking riwayat:', err);
       setUnverifiedRiwayat(null);
+    }
+  };
+
+  const handleVerifyDonor = async (riwayatId) => {
+    if (!window.confirm('Verifikasi riwayat donor ini?')) return;
+    
+    try {
+      await apiService.verifyRiwayatDonor(riwayatId, { status_verifikasi: true });
+      setUnverifiedRiwayat(null);
+      if (selectedDonor) {
+        await checkUnverifiedRiwayat(selectedDonor.id_pendonor);
+      }
+      alert('Riwayat donor berhasil diverifikasi!');
+    } catch (err) {
+      setErrorMessage(err.response?.data?.detail || 'Gagal memverifikasi riwayat donor.');
     }
   };
 
@@ -139,7 +179,7 @@ export const DonorList = () => {
           </Link>
           <div>
             <h1 className="text-2xl font-bold text-slate-900">Dashboard Pendonor</h1>
-            <p className="text-slate-500 text-sm">Kelola data civitas akademika yang terdaftar sebagai pendonor.</p>
+            <p className="text-slate-500 text-sm">Pengelolaan dan verifikasi data pendonor.</p>
           </div>
         </div>
       </div>
@@ -218,74 +258,80 @@ export const DonorList = () => {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left">
+          <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50/50 text-slate-500 text-xs uppercase tracking-wider">
-                <th className="px-6 py-4 font-semibold">Pendonor</th>
-                <th className="px-6 py-4 font-semibold text-center">Gol. Darah</th>
-                <th className="px-6 py-4 font-semibold">Kontak</th>
-                <th className="px-6 py-4 font-semibold">Donor Terakhir</th>
-                <th className="px-6 py-4 font-semibold text-right">Aksi</th>
+              <tr className="bg-[#660000] text-white text-[10px] uppercase tracking-wider">
+                <th className="px-4 py-3 font-bold border-r border-white/10">Tanggal</th>
+                <th className="px-4 py-3 font-bold border-r border-white/10">Nama Pendonor</th>
+                <th className="px-4 py-3 font-bold border-r border-white/10 text-center">Berat</th>
+                <th className="px-4 py-3 font-bold border-r border-white/10 text-center">Tinggi</th>
+                <th className="px-4 py-3 font-bold border-r border-white/10 text-center">GolDar</th>
+                <th className="px-4 py-3 font-bold border-r border-white/10 text-center">Usia</th>
+                <th className="px-4 py-3 font-bold border-r border-white/10">Telepon</th>
+                <th className="px-4 py-3 font-bold border-r border-white/10">Email</th>
+                <th className="px-4 py-3 font-bold border-r border-white/10">Tgl Lahir</th>
+                <th className="px-4 py-3 font-bold border-r border-white/10">Alamat</th>
+                <th className="px-4 py-3 font-bold border-r border-white/10">Donor Terakhir</th>
+                <th className="px-4 py-3 font-bold text-right">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-slate-400">Memuat data...</td>
+                  <td colSpan={12} className="px-6 py-12 text-center text-slate-400">Memuat data...</td>
                 </tr>
               ) : donors.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-slate-400">Tidak ada data pendonor ditemukan.</td>
+                  <td colSpan={12} className="px-6 py-12 text-center text-slate-400">Tidak ada data pendonor ditemukan.</td>
                 </tr>
-              ) : donors.map((donor) => (
-                <tr key={donor.id_pendonor} className="hover:bg-slate-50/50 transition-colors group">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold">
-                        {donor.nama_lengkap.charAt(0)}
-                      </div>
-                      <div>
-                        <div className="font-medium text-slate-900">{donor.nama_lengkap}</div>
-                        <div className="text-xs text-slate-500">{donor.umur} th • {donor.jenis_kelamin}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex justify-center">
-                      <span className="px-3 py-1 bg-[#660000]/10 text-[#660000] rounded-full text-sm font-bold border border-[#660000]/20">
-                        {donor.golongan_darah}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2 text-sm text-slate-600">
-                        <Phone className="w-3 h-3" />
-                        <span>{donor.no_telepon}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-xs text-slate-400">
-                        <MapPin className="w-3 h-3" />
-                        <span className="truncate max-w-[150px]">{donor.alamat}</span>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2 text-sm text-slate-600">
-                      <Calendar className="w-3 h-3" />
-                      <span>{donor.tanggal_terakhir_donor || '-'}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <button 
-                      onClick={() => handleOpenDonorDetail(donor)}
-                      className="p-2 text-slate-400 hover:text-[#660000] hover:bg-[#660000]/10 rounded-lg transition-all"
-                      title="Lihat Detail"
-                    >
-                      <MoreVertical className="w-5 h-5" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              ) : (
+                donors.map((donor) => (
+                  <tr key={donor.id_pendonor} className="hover:bg-slate-50/50 transition-colors group text-xs">
+                    <td className="px-4 py-3 text-slate-500 whitespace-nowrap">
+                      {donor.created_at ? format(new Date(donor.created_at), 'dd MMM yyyy', { locale: id }) : '-'}
+                    </td>
+                    <td className="px-4 py-3 font-medium text-slate-900">
+                      {donor.nama_lengkap}
+                    </td>
+                    <td className="px-4 py-3 text-center text-slate-600">
+                      {donor.berat_badan} kg
+                    </td>
+                    <td className="px-4 py-3 text-center text-slate-600">
+                      {donor.tinggi_badan} cm
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <span className="font-bold text-[#660000]">{donor.golongan_darah}</span>
+                    </td>
+                    <td className="px-4 py-3 text-center text-slate-600">
+                      {donor.umur} th
+                    </td>
+                    <td className="px-4 py-3 text-slate-600">
+                      {donor.no_telepon}
+                    </td>
+                    <td className="px-4 py-3 text-slate-600">
+                      {donor.email}
+                    </td>
+                    <td className="px-4 py-3 text-slate-600 whitespace-nowrap">
+                      {donor.tanggal_lahir}
+                    </td>
+                    <td className="px-4 py-3 text-slate-500 max-w-[150px] truncate">
+                      {donor.alamat}
+                    </td>
+                    <td className="px-4 py-3 text-slate-600 whitespace-nowrap">
+                      {donor.tanggal_terakhir_donor || '-'}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <button 
+                        onClick={() => handleOpenDonorDetail(donor)}
+                        className="p-1.5 text-slate-400 hover:text-[#660000] hover:bg-[#660000]/10 rounded-lg transition-all"
+                        title="Lihat Detail"
+                      >
+                        <MoreVertical className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -402,22 +448,58 @@ export const DonorList = () => {
                   </div>
                 </div>
 
-                {/* Donation History */}
+                {/* Donation History / Verification */}
                 <div className="bg-[#660000]/5 p-6 rounded-3xl border border-[#660000]/10">
                   <h3 className="text-sm font-bold text-[#660000] uppercase tracking-widest mb-4 flex items-center gap-2">
                     <Heart className="w-4 h-4" />
-                    Riwayat Donor
+                    Status Verifikasi Donor
                   </h3>
-                  <div className="grid grid-cols-2 gap-6">
-                    <div>
-                      <p className="text-xs text-slate-500 mb-1">Terakhir Donor</p>
-                      <p className="font-bold text-slate-900">{selectedDonor.tanggal_terakhir_donor || 'Belum pernah'}</p>
+                  
+                  {unverifiedRiwayat ? (
+                    <div className="space-y-4">
+                      <div className="p-4 bg-white rounded-2xl border border-[#660000]/10 space-y-3">
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs font-bold text-slate-400 uppercase">Laporan Baru</span>
+                          <span className="px-2 py-1 bg-amber-100 text-amber-700 text-[10px] font-bold rounded-md">PENDING</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <p className="text-[10px] text-slate-400 uppercase font-bold">Tanggal Donor</p>
+                            <p className="font-bold text-slate-900">{unverifiedRiwayat.tanggal_donor || '-'}</p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] text-slate-400 uppercase font-bold">Tempat</p>
+                            <p className="font-bold text-slate-900">{unverifiedRiwayat.tempat_donor || '-'}</p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] text-slate-400 uppercase font-bold">Berat Badan</p>
+                            <p className="font-bold text-slate-900">{unverifiedRiwayat.berat_badan} kg</p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] text-slate-400 uppercase font-bold">Tinggi Badan</p>
+                            <p className="font-bold text-slate-900">{unverifiedRiwayat.tinggi_badan} cm</p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] text-slate-400 uppercase font-bold">Usia</p>
+                            <p className="font-bold text-slate-900">{unverifiedRiwayat.umur} Tahun</p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] text-slate-400 uppercase font-bold">Gol. Darah</p>
+                            <p className="font-bold text-[#660000]">{unverifiedRiwayat.golongan_darah}</p>
+                          </div>
+                        </div>
+                        <div className="pt-2 border-t border-slate-50">
+                          <p className="text-[10px] text-slate-400 uppercase font-bold mb-1">Catatan Pengguna</p>
+                          <p className="text-xs text-slate-600 italic">"{unverifiedRiwayat.catatan || 'Tidak ada catatan'}"</p>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-xs text-slate-500 mb-1">Total Donor</p>
-                      <p className="font-bold text-slate-900">{selectedDonor.total_donor} Kali</p>
+                  ) : (
+                    <div className="text-center py-4">
+                      <CheckCircle className="w-8 h-8 text-green-500 mx-auto mb-2 opacity-20" />
+                      <p className="text-xs text-slate-400 font-medium">Tidak ada laporan donor yang perlu diverifikasi.</p>
                     </div>
-                  </div>
+                  )}
                 </div>
 
                 {/* Health History */}
@@ -435,6 +517,13 @@ export const DonorList = () => {
               <div className="p-6 bg-slate-50 border-t border-slate-100 flex gap-3">
                 {unverifiedRiwayat && (
                   <>
+                    <button 
+                      onClick={() => handleVerifyDonor(unverifiedRiwayat.id_riwayat)}
+                      className="flex-1 py-4 bg-green-600 text-white rounded-2xl font-bold hover:bg-green-700 transition-all shadow-lg shadow-black/10 flex items-center justify-center gap-2"
+                    >
+                      <CheckCircle className="w-5 h-5" />
+                      Verifikasi
+                    </button>
                     <button 
                       onClick={() => setIsEditingDonor(true)}
                       className="flex-1 py-4 bg-[#660000] text-white rounded-2xl font-bold hover:bg-[#550000] transition-all shadow-lg shadow-black/10"

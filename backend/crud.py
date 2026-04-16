@@ -365,8 +365,14 @@ def get_pendonor_stats(db: Session) -> dict:
 
 
 def get_public_blood_stock(db: Session) -> dict:
+    # Hanya hitung donor yang punya riwayat donor terverifikasi (status_verifikasi = True)
     darah_stats = (
-        db.query(Pendonor.golongan_darah, func.count(Pendonor.id_pendonor))
+        db.query(
+            Pendonor.golongan_darah,
+            func.count(func.distinct(Pendonor.id_pendonor))
+        )
+        .join(RiwayatDonor, Pendonor.id_pendonor == RiwayatDonor.id_pendonor)
+        .filter(RiwayatDonor.status_verifikasi == True)
         .group_by(Pendonor.golongan_darah)
         .all()
     )
