@@ -62,7 +62,8 @@ export const AdminDashboard = () => {
 
   if (loading || !stats) return <div className="flex items-center justify-center h-full">Memuat data...</div>;
 
-  const bloodData = Object.entries(stats.stok_darah_by_golongan_darah || {}).map(([name, value]) => ({ name, value }));
+  const bloodDistribution = stats.stok_darah_by_golongan_darah || stats.pendonor_by_golongan_darah || {};
+  const bloodData = Object.entries(bloodDistribution).map(([name, value]) => ({ name, value }));
   const genderData = Object.entries(stats.pendonor_by_jenis_kelamin || {}).map(([name, value]) => ({ name, value }));
 
   const COLORS = ['#660000', '#3b82f6', '#f59e0b', '#10b981', '#6366f1', '#8b5cf6', '#d946ef', '#f97316'];
