@@ -233,3 +233,32 @@ docker run -d --name frontend -p 3000:80 <DOCKERHUB_USERNAME>/frontend:v1
 ## 7. Kesimpulan
 
 Dengan menerapkan teknik optimasi Docker (multi-stage build, Alpine base image, .dockerignore, dan non-root user), ukuran total image berhasil dikurangi dari **~2.3 GB menjadi ~310 MB** (pengurangan **~87%**). Image `backend:v2` dan `frontend:v1` telah siap untuk di-push ke Docker Hub untuk distribusi dan deployment.
+
+
+|----------|---------|----------|------------|
+
+**Tanggal:** 18 April 2026  
+
+## 1. Tugas yang Diberikan
+Push semua images ke Docker Hub + tag `latest`.  
+Dokumentasikan image names & sizes.
+
+## 2. Langkah-langkah yang Dilakukan
+
+1. Melakukan perbaikan pada file `docker-compose.yml`  
+   - Memindahkan `healthcheck` dari bagian `networks` ke dalam `services` (backend).
+2. Menjalankan perintah build dan push menggunakan Docker Compose.
+3. Memverifikasi image yang berhasil di-push ke Docker Hub.
+4. Mendokumentasikan nama image dan ukurannya.
+
+## 3. Perintah yang Digunakan
+
+```bash
+# Build dan Push kedua image sekaligus
+docker compose build --push
+```
+
+## 4. Dokumentasi
+1.  Screenshot docker compose build --push 
+![alt text](image-16.png)
+![alt text](image-17.png)
