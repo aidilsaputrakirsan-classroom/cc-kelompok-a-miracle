@@ -18,3 +18,6 @@ dist/
 # Verifikasi
 cat .gitignore | grep .env
 # Harus ada baris: .env
+
+# Changelog (local only)
+docs/changelog.md
