@@ -34,14 +34,330 @@ Sistem TraceIt ini berperan dalam mengatasi permasalahan adanya kekurangan infor
 
 ## 🏛️ Architecture
 
+### System Overview
+
 ```
-[React Frontend] <--HTTP--> [FastAPI Backend] <--SQL--> [PostgreSQL]
-       |                            |
-  Vite + JSX               REST API Endpoints
-  (Port 5173)               (Port 8000)
+                        ┌─────────────────────────────────────────────────┐
+                        │            Docker Network (bridge)              │
+                        │         cc-kelompok-a-miracle_default           │
+                        │                                                 │
+  ┌──────────┐          │  ┌──────────────┐    ┌──────────────────────┐   │
+  │  User /  │  :3000   │  │  tracelt-    │    │   tracelt-backend    │   │
+  │ Browser  │◄────────►│  │  frontend    │    │                      │   │
+  │          │          │  │              │    │   FastAPI + Uvicorn   │   │
+  │          │  :8000   │  │  Nginx +     │    │   (Port 8000)        │   │
+  │          │◄────────►│  │  React SPA   │    │                      │   │
+  └──────────┘          │  │  (Port 80)   │    └──────────┬───────────┘   │
+                        │  └──────────────┘               │               │
+                        │                                 │ SQL           │
+                        │                    ┌────────────▼────────────┐  │
+                        │                    │     tracelt-db          │  │
+                        │                    │     PostgreSQL 15       │  │
+                        │                    │     (Port 5432)         │  │
+                        │                    │     Volume: pgdata      │  │
+                        │                    └─────────────────────────┘  │
+                        └─────────────────────────────────────────────────┘
 ```
 
-> _(Diagram ini akan berkembang setiap minggu)_
+> **Catatan:** Frontend container (Nginx) hanya menyajikan file statis React. Request API dilakukan langsung oleh browser user ke `localhost:8000`, bukan dari frontend container ke backend.
+
+| Komponen | Penjelasan |
+|----------|------------|
+| **User/Browser** | Pengguna mengakses aplikasi lewat browser |
+| **tracelt-frontend** (Nginx) | Menyajikan halaman React ke browser, port 3000 |
+| **tracelt-backend** (FastAPI) | Memproses logic bisnis & API, port 8000 |
+| **tracelt-db** (PostgreSQL) | Menyimpan semua data aplikasi, port 5432 |
+| **Docker Network** | Jaringan internal agar ketiga container bisa saling berkomunikasi |
+| **Volume pgdata** | Menyimpan data database secara permanen (tidak hilang saat container restart) |
+
+---
+
+### Backend Architecture
+
+Backend menggunakan **FastAPI** dengan arsitektur berlapis (layered architecture):
+
+```
+┌─────────────────────────────────────────────┐
+│                  main.py                     │
+│          (Routes & Endpoints)                │
+│   /auth/*  /pendonor/*  /riwayat-donor/*     │
+│   /pengguna/*  /health  /info                │
+├─────────────────────────────────────────────┤
+│                  auth.py                     │
+│          (Authentication Layer)              │
+│   JWT Token (HS256) + bcrypt password hash   │
+│   get_current_admin / get_current_pengguna   │
+├─────────────────────────────────────────────┤
+│                  crud.py                     │
+│          (Business Logic Layer)              │
+│   CRUD operations + auto-linking logic       │
+│   Verification workflow + pagination         │
+├─────────────────────────────────────────────┤
+│               schemas.py                     │
+│          (Validation Layer)                  │
+│   Pydantic v2 models + password validation   │
+├─────────────────────────────────────────────┤
+│               models.py                      │
+│          (ORM / Data Layer)                  │
+│   SQLAlchemy models + relationships          │
+├─────────────────────────────────────────────┤
+│              database.py                     │
+│          (Database Connection)               │
+│   PostgreSQL via psycopg2 + SessionLocal     │
+└─────────────────────────────────────────────┘
+```
+
+| Layer | File | Penjelasan |
+|-------|------|------------|
+| **Routes** | `main.py` | Menerima HTTP request dan mengarahkan ke fungsi yang tepat |
+| **Authentication** | `auth.py` | Mengecek siapa yang login (JWT token + password hashing) |
+| **Business Logic** | `crud.py` | Mengolah data: buat, baca, update, hapus + verifikasi donor |
+| **Validation** | `schemas.py` | Memastikan data yang masuk sesuai format (email valid, password kuat, dll) |
+| **ORM/Data** | `models.py` | Mendefinisikan struktur tabel database dalam kode Python |
+| **Connection** | `database.py` | Menghubungkan aplikasi ke PostgreSQL |
+
+#### API Endpoints
+
+| Method | Endpoint | Auth | Deskripsi |
+|--------|----------|------|-----------|
+| `GET` | `/health` | - | Health check |
+| `GET` | `/info` | - | System info & feature list |
+| `GET` | `/api/public/blood-stock` | - | Stok darah publik per golongan |
+| `POST` | `/auth/admin/register` | - | Registrasi admin (maks 1) |
+| `POST` | `/auth/admin/login` | - | Login admin, return JWT |
+| `POST` | `/auth/pengguna/register` | - | Registrasi pengguna |
+| `POST` | `/auth/pengguna/login` | - | Login pengguna, return JWT |
+| `POST` | `/pendonor` | - | Buat data pendonor baru |
+| `GET` | `/pendonor` | - | List pendonor + filter & pagination |
+| `GET` | `/pendonor/{id}` | - | Detail pendonor |
+| `PUT` | `/pendonor/{id}` | - | Update data pendonor |
+| `DELETE` | `/pendonor/{id}` | Admin | Hapus pendonor (admin only) |
+| `POST` | `/riwayat-donor` | - | Buat riwayat donor |
+| `GET` | `/riwayat-donor` | - | List riwayat donor |
+| `POST` | `/riwayat-donor/{id}/verifikasi` | Admin | Verifikasi/tolak riwayat donor |
+| `GET` | `/pengguna/me` | User | Profil pengguna saat ini |
+| `POST` | `/pengguna/riwayat-donor` | User | Buat riwayat donor (linked ke user) |
+| `GET` | `/pengguna/riwayat-donor` | User | List riwayat donor milik user |
+| `PUT` | `/pengguna/riwayat-donor/{id}` | User | Update riwayat (jika belum diverifikasi) |
+| `DELETE` | `/pengguna/riwayat-donor/{id}` | User | Hapus riwayat (jika belum diverifikasi) |
+
+---
+
+### Frontend Architecture
+
+Frontend menggunakan **React 18** dengan **Vite** sebagai build tool:
+
+```
+┌──────────────────────────────────────────────────┐
+│                    App.jsx                        │
+│              (React Router v6)                    │
+├──────────────────────────────────────────────────┤
+│                                                   │
+│  Public Routes          Protected Routes          │
+│  ┌────────────────┐     ┌──────────────────────┐  │
+│  │ /              │     │ /admin/*  (AdminRoute)│  │
+│  │  LandingPage   │     │  ├─ AdminDashboard   │  │
+│  │ /login         │     │  ├─ DonorList        │  │
+│  │  Login         │     │  └─ VerificationQueue│  │
+│  │ /register      │     ├──────────────────────┤  │
+│  │  DonorRegistr. │     │ /user/*  (UserRoute) │  │
+│  │ /user/register │     │  └─ UserDashboard    │  │
+│  │  UserRegister  │     └──────────────────────┘  │
+│  │ /stock         │                               │
+│  │  PublicStock   │     Layouts                    │
+│  └────────────────┘     ┌──────────────────────┐  │
+│                         │ AdminLayout (sidebar) │  │
+│  Components             │ Header (navbar)       │  │
+│  ┌────────────────┐     └──────────────────────┘  │
+│  │ Header.jsx     │                               │
+│  │ AdminLayout.jsx│                               │
+│  └────────────────┘                               │
+└──────────────────────────────────────────────────┘
+```
+
+| Halaman | Route | Penjelasan |
+|---------|-------|------------|
+| **LandingPage** | `/` | Halaman utama dengan info aplikasi |
+| **Login** | `/login` | Form login untuk admin dan user |
+| **DonorRegistration** | `/register` | Form pendaftaran pendonor (3 langkah) |
+| **UserRegister** | `/user/register` | Form registrasi akun pengguna baru |
+| **PublicStock** | `/stock` | Tabel stok darah publik per golongan |
+| **AdminDashboard** | `/admin` | Dashboard statistik donor (grafik) |
+| **DonorList** | `/admin/donors` | Daftar pendonor + search & filter |
+| **VerificationQueue** | `/admin/verify` | Antrian verifikasi data donor |
+| **UserDashboard** | `/user/dashboard` | Riwayat donor milik user |
+
+**Tech stack frontend:**
+
+| Library | Fungsi |
+|---------|--------|
+| React Router v6 | Client-side routing |
+| Axios | HTTP client untuk API calls |
+| Tailwind CSS | Utility-first styling |
+| Framer Motion | Animasi & transisi |
+| Recharts | Grafik (BarChart, PieChart) |
+| Lucide React | Icon library |
+| date-fns | Format tanggal (locale ID) |
+
+---
+
+### Authentication Flow
+
+```
+┌──────────┐         ┌──────────────┐         ┌────────────┐
+│  Client  │         │   FastAPI    │         │ PostgreSQL │
+│ (Browser)│         │   Backend    │         │            │
+└────┬─────┘         └──────┬───────┘         └─────┬──────┘
+     │                      │                       │
+     │  POST /auth/login    │                       │
+     │  {email, password}   │                       │
+     │─────────────────────►│                       │
+     │                      │  SELECT user by email │
+     │                      │──────────────────────►│
+     │                      │◄──────────────────────│
+     │                      │                       │
+     │                      │  Verify bcrypt hash   │
+     │                      │  Generate JWT (HS256) │
+     │                      │  payload: {sub, type} │
+     │                      │  expires: 60 min      │
+     │  {access_token}      │                       │
+     │◄─────────────────────│                       │
+     │                      │                       │
+     │  Store token in      │                       │
+     │  localStorage        │                       │
+     │  (admin_token /      │                       │
+     │   user_token)        │                       │
+     │                      │                       │
+     │  GET /pendonor       │                       │
+     │  Authorization:      │                       │
+     │  Bearer <token>      │                       │
+     │─────────────────────►│                       │
+     │                      │  Decode & validate    │
+     │                      │  JWT token            │
+     │                      │  Check user_type      │
+     │  {data}              │                       │
+     │◄─────────────────────│                       │
+     └──────────────────────┴───────────────────────┘
+```
+
+**Dua role pengguna:**
+- **Admin** — Memverifikasi data donor, menghapus pendonor, melihat dashboard statistik
+- **Pengguna (User)** — Mendaftarkan diri sebagai pendonor, mengelola riwayat donor sendiri
+
+---
+
+### Database Schema
+
+```
+┌──────────────┐       ┌──────────────────┐       ┌──────────────┐
+│    admin     │       │  riwayat_donor   │       │   pengguna   │
+├──────────────┤       ├──────────────────┤       ├──────────────┤
+│ id_admin PK  │       │ id_riwayat PK    │       │id_pengguna PK│
+│ nama_admin   │       │ id_pendonor FK ──┼──┐    │nama_pengguna │
+│ email (UQ)   │       │ id_pengguna FK ──┼──┼──► │ email (UQ)   │
+│ password     │       │ golongan_darah   │  │    │ password     │
+└──────────────┘       │ status_verifikasi│  │    │ created_at   │
+                       └──────────────────┘  │    └──────────────┘
+                                             │
+                       ┌─────────────────────▼──┐
+                       │       pendonor         │
+                       ├────────────────────────┤
+                       │ id_pendonor PK         │
+                       │ nama_lengkap           │
+                       │ email                  │
+                       │ jenis_kelamin (enum)   │
+                       │ berat_badan            │
+                       │ tinggi_badan           │
+                       │ golongan_darah (enum)  │
+                       │ umur                   │
+                       │ tanggal_lahir          │
+                       │ tanggal_terakhir_donor │
+                       │ total_donor            │
+                       │ alamat                 │
+                       │ no_telepon             │
+                       │ riwayat_kesehatan      │
+                       │ created_at             │
+                       └────────────────────────┘
+
+Relasi:
+  pendonor  1 ──── N  riwayat_donor  (satu pendonor, banyak riwayat)
+  pengguna  1 ──── N  riwayat_donor  (satu pengguna, banyak riwayat)
+```
+
+**Auto-linking logic:**
+- Saat pengguna registrasi, jika ada pendonor dengan email yang sama, `riwayat_donor` otomatis dibuat untuk menghubungkan keduanya
+- Saat pendonor dibuat, jika ada pengguna dengan email yang sama, `riwayat_donor` otomatis dibuat
+
+---
+
+### Docker Container Architecture
+
+| Container | Image | Base | Port Mapping | Fungsi |
+|-----------|-------|------|-------------|--------|
+| `tracelt-frontend` | `tracelt-frontend:v1-fe` | `node:20-slim` + `nginx:alpine` | `3000:80` | Serve React SPA via Nginx |
+| `tracelt-backend` | `tracelt-backend:v1` | `python:3.12-alpine` | `8000:8000` | FastAPI REST API |
+| `tracelt-db` | `postgres:15` | `postgres:15` | `5433:5432` | PostgreSQL database |
+
+**Network:** `cc-kelompok-a-miracle_default` (bridge) — menghubungkan ketiga container
+**Volume:** `pgdata` — persistent storage untuk data PostgreSQL
+
+**Optimasi Docker Image:**
+
+| Image | Sebelum | Sesudah | Pengurangan |
+|-------|---------|---------|-------------|
+| Backend | ~1.2 GB | 216 MB | ~82% |
+| Frontend | ~1.1 GB | 93.8 MB | ~91% |
+
+Teknik: multi-stage build, Alpine base image, `.dockerignore`, non-root user, healthcheck
+
+---
+
+### CI/CD Pipeline
+
+```
+┌──────────┐     ┌──────────────┐     ┌──────────────┐     ┌───────────┐
+│   Push   │     │   GitHub     │     │    Build     │     │  Docker   │
+│  to Git  │────►│   Actions    │────►│  & Test      │────►│   Hub     │
+│          │     │  (Trigger)   │     │  Docker Image│     │  (Push)   │
+└──────────┘     └──────────────┘     └──────────────┘     └───────────┘
+                                             │
+                                             ▼
+                                      ┌──────────────┐
+                                      │   Deploy     │
+                                      │  Railway /   │
+                                      │  Render      │
+                                      └──────────────┘
+```
+
+**Tools:** GitHub Actions untuk CI/CD, Docker Hub untuk image registry, Railway/Render untuk cloud deployment
+
+---
+
+### Komunikasi Antar Service
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     Alur Komunikasi                          │
+│                                                              │
+│  Browser ──HTTP GET──► Nginx (:3000)                         │
+│    │                    │                                    │
+│    │                    └──► Serve React SPA (static files)  │
+│    │                                                         │
+│    │──HTTP REST API──► FastAPI (:8000)                        │
+│    │  (GET/POST/PUT/     │                                   │
+│    │   DELETE + JWT)     │──SQLAlchemy──► PostgreSQL (:5432)  │
+│    │                     │               │                   │
+│    │◄── JSON Response ───┘               │──► pgdata volume  │
+│    │                                     │    (persistent)   │
+└────┴─────────────────────────────────────┴───────────────────┘
+```
+
+**Poin penting:**
+1. Browser mengakses frontend (React SPA) melalui Nginx di port 3000
+2. Browser langsung mengirim API request ke backend FastAPI di port 8000
+3. Backend berkomunikasi dengan PostgreSQL menggunakan SQLAlchemy ORM
+4. Data PostgreSQL disimpan secara persistent di Docker volume `pgdata`
+5. Autentikasi menggunakan JWT Bearer token di header Authorization
 
 ---
 
