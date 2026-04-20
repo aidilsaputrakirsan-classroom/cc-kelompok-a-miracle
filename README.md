@@ -59,6 +59,15 @@ Sistem TraceIt ini berperan dalam mengatasi permasalahan adanya kekurangan infor
 
 > **Catatan:** Frontend container (Nginx) hanya menyajikan file statis React. Request API dilakukan langsung oleh browser user ke `localhost:8000`, bukan dari frontend container ke backend.
 
+| Komponen | Penjelasan |
+|----------|------------|
+| **User/Browser** | Pengguna mengakses aplikasi lewat browser |
+| **tracelt-frontend** (Nginx) | Menyajikan halaman React ke browser, port 3000 |
+| **tracelt-backend** (FastAPI) | Memproses logic bisnis & API, port 8000 |
+| **tracelt-db** (PostgreSQL) | Menyimpan semua data aplikasi, port 5432 |
+| **Docker Network** | Jaringan internal agar ketiga container bisa saling berkomunikasi |
+| **Volume pgdata** | Menyimpan data database secara permanen (tidak hilang saat container restart) |
+
 ---
 
 ### Backend Architecture
@@ -95,6 +104,15 @@ Backend menggunakan **FastAPI** dengan arsitektur berlapis (layered architecture
 │   PostgreSQL via psycopg2 + SessionLocal     │
 └─────────────────────────────────────────────┘
 ```
+
+| Layer | File | Penjelasan |
+|-------|------|------------|
+| **Routes** | `main.py` | Menerima HTTP request dan mengarahkan ke fungsi yang tepat |
+| **Authentication** | `auth.py` | Mengecek siapa yang login (JWT token + password hashing) |
+| **Business Logic** | `crud.py` | Mengolah data: buat, baca, update, hapus + verifikasi donor |
+| **Validation** | `schemas.py` | Memastikan data yang masuk sesuai format (email valid, password kuat, dll) |
+| **ORM/Data** | `models.py` | Mendefinisikan struktur tabel database dalam kode Python |
+| **Connection** | `database.py` | Menghubungkan aplikasi ke PostgreSQL |
 
 #### API Endpoints
 
@@ -154,6 +172,18 @@ Frontend menggunakan **React 18** dengan **Vite** sebagai build tool:
 │  └────────────────┘                               │
 └──────────────────────────────────────────────────┘
 ```
+
+| Halaman | Route | Penjelasan |
+|---------|-------|------------|
+| **LandingPage** | `/` | Halaman utama dengan info aplikasi |
+| **Login** | `/login` | Form login untuk admin dan user |
+| **DonorRegistration** | `/register` | Form pendaftaran pendonor (3 langkah) |
+| **UserRegister** | `/user/register` | Form registrasi akun pengguna baru |
+| **PublicStock** | `/stock` | Tabel stok darah publik per golongan |
+| **AdminDashboard** | `/admin` | Dashboard statistik donor (grafik) |
+| **DonorList** | `/admin/donors` | Daftar pendonor + search & filter |
+| **VerificationQueue** | `/admin/verify` | Antrian verifikasi data donor |
+| **UserDashboard** | `/user/dashboard` | Riwayat donor milik user |
 
 **Tech stack frontend:**
 
