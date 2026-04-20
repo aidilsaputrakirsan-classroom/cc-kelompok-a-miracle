@@ -23,3 +23,6 @@ cat .gitignore | grep .env
 
 
 docker-compose.yml
+
+# UTS full script (local only)
+docs/UTS-demo-script.md
