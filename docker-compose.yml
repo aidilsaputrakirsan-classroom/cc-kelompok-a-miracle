@@ -21,55 +21,58 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data #bagian yang ini mengikuti modul
+      - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
+      test: ["CMD-SHELL", "pg_isready -U postgres -d tracelt"]
+      interval: 10s
       timeout: 5s
       retries: 5
       start_period: 10s
+    restart: unless-stopped
 
- # ==================== BACKEND ====================
+  # ==================== BACKEND ====================
   backend:
-    image: tracelt-backend:v2-be
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
     container_name: tracelt-backend
-    build: ./backend
+    env_file:
+      - ./backend/.env.docker
     ports:
       - "8000:8000"
-    environment:
-      DATABASE_URL: postgresql://postgres:postgres@db:5432/tracelt
     depends_on:
       db:
         condition: service_healthy
-    volumes:
-    - ./backend:/app
-    restart: on-failure
-    #healthcheck untuk memastikan backend sudah siap menerima request (dari modul)
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 15s
+    restart: unless-stopped
 
-# ==================== FRONTEND ====================
+  # ==================== FRONTEND ====================
   frontend:
-    image: tracelt-frontend:v1-fe
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:3000
     container_name: tracelt-frontend
     ports:
       - "3000:80"
     depends_on:
-      - backend
-    restart: on-failure
-
+      backend:
+        condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      test: ["CMD", "curl", "-f", "http://localhost:80/"]
       interval: 30s
-      timeout: 10s
+      timeout: 5s
       retries: 3
-      start_period: 30s
+      start_period: 10s
+    restart: unless-stopped
 
-    # ==================== VOLUMES ====================
+# ==================== VOLUMES ====================
 volumes:
   pgdata:
     name: tracelt-pgdata
@@ -79,4 +82,3 @@ networks:
   cloudnet:
     name: tracelt-network
     driver: bridge
-    

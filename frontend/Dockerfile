@@ -27,6 +27,9 @@ RUN npm run build
 # ============================================================
 FROM nginx:alpine
 
+# Install curl untuk healthcheck
+RUN apk add --no-cache curl
+
 # Copy build output dari stage 1
 COPY --from=builder /app/dist/ /usr/share/nginx/html/
 
@@ -35,6 +38,9 @@ COPY nginx.conf /etc/nginx/nginx.conf
 
 # Nginx default port
 EXPOSE 80
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:80/ || exit 1
 
 # Nginx berjalan di foreground
 CMD ["nginx", "-g", "daemon off;"]

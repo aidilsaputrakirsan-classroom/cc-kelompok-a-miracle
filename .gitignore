@@ -18,9 +18,3 @@ dist/
 # Verifikasi
 cat .gitignore | grep .env
 # Harus ada baris: .env
-
-.github/
-
-
-# UTS full script (local only)
-docs/UTS-demo-script.md
