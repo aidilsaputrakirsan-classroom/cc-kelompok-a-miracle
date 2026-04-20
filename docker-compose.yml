@@ -19,7 +19,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: tracelt
     ports:
-      - "5432:5432"
+      - "5433:5432"   # Host 5433 → Container 5432 (hindari bentrok dgn PostgreSQL lokal)
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
