@@ -22,4 +22,3 @@ cat .gitignore | grep .env
 .github/
 
 
-docker-compose.yml
