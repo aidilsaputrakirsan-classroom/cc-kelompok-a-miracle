@@ -118,28 +118,33 @@ Backend menggunakan **FastAPI** dengan arsitektur berlapis (layered architecture
 
 #### API Endpoints
 
-| Method   | Endpoint                         | Auth  | Deskripsi                                |
-| -------- | -------------------------------- | ----- | ---------------------------------------- |
-| `GET`    | `/health`                        | -     | Health check                             |
-| `GET`    | `/info`                          | -     | System info & feature list               |
-| `GET`    | `/api/public/blood-stock`        | -     | Stok darah publik per golongan           |
-| `POST`   | `/auth/admin/register`           | -     | Registrasi admin (maks 1)                |
-| `POST`   | `/auth/admin/login`              | -     | Login admin, return JWT                  |
-| `POST`   | `/auth/pengguna/register`        | -     | Registrasi pengguna                      |
-| `POST`   | `/auth/pengguna/login`           | -     | Login pengguna, return JWT               |
-| `POST`   | `/pendonor`                      | -     | Buat data pendonor baru                  |
-| `GET`    | `/pendonor`                      | -     | List pendonor + filter & pagination      |
-| `GET`    | `/pendonor/{id}`                 | -     | Detail pendonor                          |
-| `PUT`    | `/pendonor/{id}`                 | -     | Update data pendonor                     |
-| `DELETE` | `/pendonor/{id}`                 | Admin | Hapus pendonor (admin only)              |
-| `POST`   | `/riwayat-donor`                 | -     | Buat riwayat donor                       |
-| `GET`    | `/riwayat-donor`                 | -     | List riwayat donor                       |
-| `POST`   | `/riwayat-donor/{id}/verifikasi` | Admin | Verifikasi/tolak riwayat donor           |
-| `GET`    | `/pengguna/me`                   | User  | Profil pengguna saat ini                 |
-| `POST`   | `/pengguna/riwayat-donor`        | User  | Buat riwayat donor (linked ke user)      |
-| `GET`    | `/pengguna/riwayat-donor`        | User  | List riwayat donor milik user            |
-| `PUT`    | `/pengguna/riwayat-donor/{id}`   | User  | Update riwayat (jika belum diverifikasi) |
-| `DELETE` | `/pengguna/riwayat-donor/{id}`   | User  | Hapus riwayat (jika belum diverifikasi)  |
+| Method   | Endpoint                                    | Auth  | Deskripsi                                |
+| -------- | ------------------------------------------- | ----- | ---------------------------------------- |
+| `GET`    | `/health`                                   | -     | Health check                             |
+| `GET`    | `/info`                                     | -     | System info & feature list               |
+| `GET`    | `/api/public/blood-stock`                   | -     | Stok darah publik per golongan           |
+| `POST`   | `/auth/admin/register`                      | -     | Registrasi admin (maks 1)                |
+| `POST`   | `/auth/admin/login`                         | -     | Login admin, return JWT                  |
+| `POST`   | `/auth/pengguna/register`                   | -     | Registrasi pengguna                      |
+| `POST`   | `/auth/pengguna/login`                      | -     | Login pengguna, return JWT               |
+| `POST`   | `/pendonor`                                 | -     | Buat data pendonor baru                  |
+| `GET`    | `/pendonor`                                 | -     | List pendonor + filter & pagination      |
+| `GET`    | `/pendonor/{pendonor_id}`                   | -     | Detail pendonor                          |
+| `PUT`    | `/pendonor/{pendonor_id}`                   | -     | Update data pendonor                     |
+| `DELETE` | `/pendonor/{pendonor_id}`                   | Admin | Hapus pendonor (admin only)              |
+| `POST`   | `/riwayat-donor`                            | -     | Buat riwayat donor                       |
+| `GET`    | `/riwayat-donor`                            | -     | List riwayat donor                       |
+| `GET`    | `/riwayat-donor/{riwayat_id}`               | -     | Detail riwayat donor                     |
+| `GET`    | `/riwayat-donor/pendonor/{pendonor_id}`     | -     | List riwayat donor per pendonor          |
+| `POST`   | `/riwayat-donor/{riwayat_id}/verifikasi`    | Admin | Verifikasi/tolak riwayat donor           |
+| `GET`    | `/pengguna/me`                              | User  | Profil pengguna saat ini                 |
+| `POST`   | `/pengguna/riwayat-donor`                   | User  | Buat riwayat donor (linked ke user)      |
+| `GET`    | `/pengguna/riwayat-donor`                   | User  | List riwayat donor milik user            |
+| `GET`    | `/pengguna/riwayat-donor/{riwayat_id}`      | User  | Detail riwayat donor milik user          |
+| `PUT`    | `/pengguna/riwayat-donor/{riwayat_id}`      | User  | Update riwayat (jika belum diverifikasi) |
+| `DELETE` | `/pengguna/riwayat-donor/{riwayat_id}`      | User  | Hapus riwayat (jika belum diverifikasi)  |
+
+> **Catatan:** Endpoint auth juga tersedia dengan prefix `/api/` (contoh: `/api/auth/admin/login`) untuk kompatibilitas dengan frontend melalui Nginx reverse proxy.
 
 ---
 
@@ -544,19 +549,7 @@ cc-kelompok-a-miracle/
 
 </div>
 
-## 📸 Dokumentasi ENDPOINT
 
-| HTTP Method            | Code | Response body                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Penjelasan                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| ---------------------- | ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| GET/health             | 200  | `{"status": "healthy", "version": "0.2.0"}`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | endpoint berjalan dengan benar                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| POST/items             | 201  | `{ "name": "Laptop", "description": "Laptop untuk cloud computing", "price": 15000000 "quantity": 10, "id": 14, "created_at": "2026-03-06T14:10:08.175853+08:00", "updated_at": null}`                                                                                                                                                                                                                                                                                                                                                              | Response ini menunjukkan bahwa data baru berhasil dibuat di server dengan status code 201 (Created). Server mengembalikan informasi produk seperti nama, deskripsi, harga, jumlah stok, id, serta waktu created_at, sementara updated_at masih null karena data belum pernah diperbarui.                                                                                                                                                                                                                                                                                                                                            |
-| GET/items              | 200  | `{"total":3,"items":[{"name":"Laptop","description":"Laptop untuk cloud computing","price":15000000,"quantity":10,"id":14,"created_at":"2026-03-06T14:10:08.175853+08:00","updated_at":null},{"name":"Laptop","description":"Laptop untuk cloud computing","price":15000000,"quantity":10,"id":13,"created_at":"2026-03-06T13:46:08.081030+08:00","updated_at":null},{"name":"Handphone","description":"Handhone untuk cloud computing","price":5000000,"quantity":10,"id":12,"created_at":"2026-03-05T20:22:16.156768+08:00","updated_at":null}]}` | Response menunjukkan bahwa permintaan ke API berhasil mengambil data, yang ditandai dengan status code 200 (OK). Server mengembalikan data dalam format JSON yang berisi total data sebanyak 3 pada field total, serta daftar produk pada field items. Setiap item menampilkan informasi produk seperti name, description, price, quantity, id, serta waktu created_at dan updated_at. Data tersebut menunjukkan daftar produk yang tersimpan di sistem.                                                                                                                                                                            |
-| GET/item/stats         | 200  | `{"total_items":3,"total_value":350000000,"most_expensive":{"name":"Laptop","price":15000000},"cheapest":{"name":"Handphone","price":5000000}}`                                                                                                                                                                                                                                                                                                                                                                                                     | Response berisi ringkasan data produk. Field total_items menunjukkan jumlah seluruh produk yaitu 3 item. Field total_value menunjukkan total nilai seluruh produk sebesar 350.000.000. Bagian most_expensive menampilkan produk dengan harga paling mahal, yaitu Laptop dengan harga 15.000.000. Sedangkan cheapest menunjukkan produk dengan harga paling murah, yaitu Handphone dengan harga 5.000.000. JSON ini biasanya digunakan untuk menampilkan statistik atau summary data dari kumpulan produk.                                                                                                                           |
-| GET/items/{items_id}   | 200  | `{"name":"Handphone","description":"Handhone untuk cloud computing","price":5000000,"quantity":10,"id":12,"created_at":"2026-03-05T20:22:16.156768+08:00","updated_at":null}`                                                                                                                                                                                                                                                                                                                                                                       | Response menampilkan detail satu produk. Field name berisi nama produk yaitu Handphone, description menjelaskan bahwa produk digunakan untuk cloud computing, price menunjukkan harga produk sebesar 5.000.000, dan quantity menunjukkan jumlah stok yaitu 10 unit. Field id merupakan identitas unik produk di database, created_at menunjukkan waktu data dibuat, sedangkan updated_at bernilai null yang berarti data tersebut belum pernah diperbarui.                                                                                                                                                                          |
-| PUT/items/{item_id}    | 200  | `{"name":"PC","description":"Untuk Home Server","price":1000000,"quantity":23,"id":12,"created_at":"2026-03-05T20:22:16.156768+08:00","updated_at":"2026-03-07T09:45:54.375108+08:00"}`                                                                                                                                                                                                                                                                                                                                                             | Response JSON tersebut menampilkan **data produk yang telah diperbarui**. Produk memiliki **name** PC dengan **description** “Untuk Home Server”, **price** sebesar **1.000.000**, dan **quantity** sebanyak **23 unit**. Field **id** menunjukkan identitas unik produk di database. **created_at** menunjukkan waktu saat data pertama kali dibuat, sedangkan **updated_at** berisi waktu **terakhir data diperbarui**, yaitu **7 Maret 2026**, yang menandakan bahwa data produk tersebut sudah pernah diubah setelah dibuat.                                                                                                    |
-| DELETE/items{items_id} | 204  | -                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | Respons API menunjukkan proses penghapusan data item berdasarkan ID menggunakan metode HTTP DELETE pada endpoint /items/{item_id}. Pada permintaan ini, nilai item_id yang digunakan adalah 12, sehingga sistem akan menghapus data item dengan ID tersebut dari database. Permintaan dikirim ke URL http://localhost:8000/items/12. Setelah proses dijalankan, server mengembalikan status code 204 (No Content) yang menandakan bahwa operasi penghapusan berhasil dilakukan. Status ini juga menunjukkan bahwa server tidak mengirimkan isi data pada response body karena data yang diminta telah berhasil dihapus dari sistem. |
-
-<br><br>
 
 ## setup.sh
 
@@ -800,3 +793,5 @@ docker run -d --name frontend -p 3000:80 <DOCKERHUB_USERNAME>/frontend:v1
 ![alt text](image-3.png)
 
 ## Dokumentasi sebelum UTS
+
+![alt text](image-5.jpeg)
