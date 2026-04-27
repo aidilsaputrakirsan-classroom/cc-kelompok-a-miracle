@@ -16,6 +16,7 @@ import Swal from 'sweetalert2';
 export const VerificationQueue = () => {
   const [queue, setQueue] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [verifying, setVerifying] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [selectedDonor, setSelectedDonor] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -51,6 +52,7 @@ export const VerificationQueue = () => {
 
     if (!result.isConfirmed) return;
 
+    setVerifying(true);
     try {
       await apiService.verifyRiwayatDonor(id, { 
         status_verifikasi: isApproved
@@ -70,6 +72,8 @@ export const VerificationQueue = () => {
         icon: 'error',
         confirmButtonColor: '#660000'
       });
+    } finally {
+      setVerifying(false);
     }
   };
 
@@ -139,21 +143,24 @@ export const VerificationQueue = () => {
             <div className="flex items-center gap-3 border-t md:border-t-0 pt-4 md:pt-0">
               <button
                 onClick={() => openDetail(item)}
-                className="flex-1 md:flex-none px-4 py-2 border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 transition-colors flex items-center justify-center gap-2"
+                disabled={verifying}
+                className="flex-1 md:flex-none px-4 py-2 border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 <FileText className="w-4 h-4" />
                 <span>Tinjau</span>
               </button>
               <button 
                 onClick={() => handleVerify(item.id_riwayat, 'rejected')}
-                className="flex-1 md:flex-none px-4 py-2 border border-slate-200 text-slate-600 rounded-xl hover:bg-slate-50 transition-colors flex items-center justify-center gap-2"
+                disabled={verifying}
+                className="flex-1 md:flex-none px-4 py-2 border border-slate-200 text-slate-600 rounded-xl hover:bg-slate-50 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 <XCircle className="w-4 h-4" />
                 <span>Tolak</span>
               </button>
               <button 
                 onClick={() => handleVerify(item.id_riwayat, 'approved')}
-                className="flex-1 md:flex-none px-4 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors flex items-center justify-center gap-2 shadow-sm shadow-emerald-100"
+                disabled={verifying}
+                className="flex-1 md:flex-none px-4 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors flex items-center justify-center gap-2 shadow-sm shadow-emerald-100 disabled:opacity-50"
               >
                 <CheckCircle2 className="w-4 h-4" />
                 <span>Setujui</span>

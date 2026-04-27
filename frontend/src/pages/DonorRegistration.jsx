@@ -19,6 +19,7 @@ import { apiService } from '../services/api';
 export const DonorRegistration = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(false);
   const [neverDonated, setNeverDonated] = useState(false);
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState('');
@@ -140,6 +141,7 @@ export const DonorRegistration = () => {
     setServerError('');
     if (!validateStep(3)) return;
 
+    setLoading(true);
     try {
       await apiService.registerPendonor({
         ...formData,
@@ -164,6 +166,8 @@ export const DonorRegistration = () => {
       }
 
       setServerError(_general || 'Gagal mendaftar. Pastikan semua syarat input sudah benar.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -564,10 +568,20 @@ export const DonorRegistration = () => {
                   </button>
                   <button 
                     onClick={handleSubmit}
-                    className="flex-[2] bg-[#660000] text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-[#550000] transition-all shadow-lg shadow-black/10"
+                    disabled={loading}
+                    className={`flex-[2] bg-[#660000] text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-black/10 ${loading ? 'opacity-70 cursor-not-allowed' : 'hover:bg-[#550000]'}`}
                   >
-                    Selesaikan Pendaftaran
-                    <ArrowRight className="w-5 h-5" />
+                    {loading ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Sedang Memproses...
+                      </>
+                    ) : (
+                      <>
+                        Selesaikan Pendaftaran
+                        <ArrowRight className="w-5 h-5" />
+                      </>
+                    )}
                   </button>
                 </div>
               </motion.div>

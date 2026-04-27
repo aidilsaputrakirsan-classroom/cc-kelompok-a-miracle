@@ -39,6 +39,7 @@ const emptyForm = {
 export const UserDashboard = () => {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [user, setUser] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
@@ -121,6 +122,7 @@ export const UserDashboard = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setSubmitting(true);
 
     const payload = {
       id_pendonor: Number(formData.id_pendonor),
@@ -168,6 +170,8 @@ export const UserDashboard = () => {
       });
     } catch (err) {
       setError(err.response?.data?.detail || 'Gagal menyimpan data.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -584,10 +588,20 @@ export const UserDashboard = () => {
 
                 <button
                   type="submit"
-                  className="w-full bg-[#660000] text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-[#550000] transition-all shadow-lg shadow-black/10"
+                  disabled={submitting}
+                  className={`w-full bg-[#660000] text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-black/10 ${submitting ? 'opacity-70 cursor-not-allowed' : 'hover:bg-[#550000]'}`}
                 >
-                  Simpan Perubahan
-                  <ChevronRight className="w-5 h-5" />
+                  {submitting ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Sedang Menyimpan...
+                    </>
+                  ) : (
+                    <>
+                      Simpan Perubahan
+                      <ChevronRight className="w-5 h-5" />
+                    </>
+                  )}
                 </button>
               </form>
             </motion.div>
