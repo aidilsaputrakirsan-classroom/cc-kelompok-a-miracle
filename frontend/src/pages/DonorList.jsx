@@ -21,6 +21,7 @@ import { apiService } from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
+import Swal from 'sweetalert2';
 
 export const DonorList = () => {
   const [donors, setDonors] = useState([]);
@@ -74,17 +75,38 @@ export const DonorList = () => {
   };
 
   const handleDeleteDonor = async () => {
-    if (!window.confirm('Apakah Anda yakin ingin menghapus data pendonor ini? Tindakan ini tidak dapat dibatalkan.')) {
-      return;
-    }
+    const result = await Swal.fire({
+      title: 'Apakah Anda yakin?',
+      text: "Tindakan ini akan menghapus data pendonor dan tidak dapat dibatalkan!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#660000',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Ya, Hapus!',
+      cancelButtonText: 'Batal'
+    });
+
+    if (!result.isConfirmed) return;
+
     setErrorMessage('');
     try {
       await apiService.deletePendonor(selectedDonor.id_pendonor);
       setSelectedDonor(null);
       fetchDonors();
-      alert('Data pendonor berhasil dihapus!');
+      Swal.fire({
+        title: 'Terhapus!',
+        text: 'Data pendonor berhasil dihapus.',
+        icon: 'success',
+        confirmButtonColor: '#660000'
+      });
     } catch (err) {
       setErrorMessage(err.response?.data?.detail || 'Gagal menghapus data pendonor.');
+      Swal.fire({
+        title: 'Error!',
+        text: err.response?.data?.detail || 'Gagal menghapus data pendonor.',
+        icon: 'error',
+        confirmButtonColor: '#660000'
+      });
     }
   };
 

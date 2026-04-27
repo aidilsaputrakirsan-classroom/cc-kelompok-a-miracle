@@ -19,6 +19,7 @@ import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { Header } from '../components/Header';
 import { apiService } from '../services/api';
+import Swal from 'sweetalert2';
 
 const emptyForm = {
   id_pendonor: '',
@@ -26,7 +27,6 @@ const emptyForm = {
   jenis_kelamin: '',
   berat_badan: '',
   tinggi_badan: '',
-  umur: '',
   tanggal_lahir: '',
   tanggal_terakhir_donor: '',
   no_telepon: '',
@@ -58,6 +58,19 @@ export const UserDashboard = () => {
     } catch (err) {
       console.error('Error fetching user data:', err);
     }
+  };
+
+  const getAgeFromDate = (value) => {
+    const birthDate = new Date(value);
+    if (Number.isNaN(birthDate.getTime())) return 0;
+
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age -= 1;
+    }
+    return age;
   };
 
   const enrichRiwayatWithPendonor = async (riwayatList) => {
@@ -119,7 +132,7 @@ export const UserDashboard = () => {
       jenis_kelamin: formData.jenis_kelamin || undefined,
       berat_badan: formData.berat_badan !== '' ? Number(formData.berat_badan) : undefined,
       tinggi_badan: formData.tinggi_badan !== '' ? Number(formData.tinggi_badan) : undefined,
-      umur: formData.umur !== '' ? Number(formData.umur) : undefined,
+      umur: formData.tanggal_lahir ? getAgeFromDate(formData.tanggal_lahir) : undefined,
       tanggal_lahir: formData.tanggal_lahir || undefined,
       tanggal_terakhir_donor: formData.tanggal_terakhir_donor || undefined,
       no_telepon: formData.no_telepon || undefined,
@@ -146,6 +159,13 @@ export const UserDashboard = () => {
       setEditingItem(null);
       setFormData(emptyForm);
       await fetchHistory();
+      
+      Swal.fire({
+        title: 'Berhasil!',
+        text: editingItem ? 'Data riwayat donor berhasil diperbarui.' : 'Data riwayat donor berhasil ditambahkan.',
+        icon: 'success',
+        confirmButtonColor: '#660000'
+      });
     } catch (err) {
       setError(err.response?.data?.detail || 'Gagal menyimpan data.');
     }
@@ -172,15 +192,35 @@ export const UserDashboard = () => {
   };
 
   const handleDelete = async (itemId) => {
-    if (!window.confirm('Apakah Anda yakin ingin menghapus riwayat ini?')) {
-      return;
-    }
+    const result = await Swal.fire({
+      title: 'Hapus Riwayat?',
+      text: "Apakah Anda yakin ingin menghapus riwayat donor ini?",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#660000',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Ya, Hapus!',
+      cancelButtonText: 'Batal'
+    });
+
+    if (!result.isConfirmed) return;
 
     try {
       await apiService.deleteRiwayatDonorPengguna(itemId);
       await fetchHistory();
+      Swal.fire({
+        title: 'Terhapus!',
+        text: 'Riwayat donor berhasil dihapus.',
+        icon: 'success',
+        confirmButtonColor: '#660000'
+      });
     } catch (err) {
-      alert(err.response?.data?.detail || 'Gagal menghapus riwayat.');
+      Swal.fire({
+        title: 'Error!',
+        text: err.response?.data?.detail || 'Gagal menghapus riwayat.',
+        icon: 'error',
+        confirmButtonColor: '#660000'
+      });
     }
   };
 
@@ -252,6 +292,7 @@ export const UserDashboard = () => {
                     <th className="px-6 py-5 text-xs font-black uppercase tracking-widest border-r border-white/10">Tanggal Input</th>
                     <th className="px-6 py-5 text-xs font-black uppercase tracking-widest border-r border-white/10">ID Pendonor</th>
                     <th className="px-6 py-5 text-xs font-black uppercase tracking-widest border-r border-white/10">Nama</th>
+                    <th className="px-6 py-5 text-xs font-black uppercase tracking-widest border-r border-white/10">Usia</th>
                     <th className="px-6 py-5 text-xs font-black uppercase tracking-widest border-r border-white/10">Gol</th>
                     <th className="px-6 py-5 text-xs font-black uppercase tracking-widest border-r border-white/10">Berat</th>
                     <th className="px-6 py-5 text-xs font-black uppercase tracking-widest border-r border-white/10">Tinggi</th>
@@ -274,6 +315,7 @@ export const UserDashboard = () => {
                         <td className="px-6 py-6 text-sm text-slate-700 font-medium">{formatDate(item.pendonor?.created_at)}</td>
                         <td className="px-6 py-6 text-sm text-slate-700 font-medium">{item.id_pendonor}</td>
                         <td className="px-6 py-6 text-sm text-slate-700 font-medium">{item.pendonor?.nama_lengkap || '-'}</td>
+                        <td className="px-6 py-6 text-sm text-slate-700 font-medium">{item.pendonor?.umur ? `${item.pendonor.umur} Thn` : '-'}</td>
                         <td className="px-6 py-6">
                           <span className="px-2 py-1 bg-[#660000]/10 text-[#660000] rounded-lg font-black text-xs">
                             {item.golongan_darah || item.pendonor?.golongan_darah || '-'}
@@ -427,18 +469,6 @@ export const UserDashboard = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-bold text-slate-700 ml-1">Usia</label>
-                    <input
-                      type="number"
-                      min="17"
-                      required
-                      className="w-full px-4 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-[#660000] transition-all text-slate-900"
-                      value={formData.umur}
-                      onChange={(e) => setFormData({ ...formData, umur: e.target.value })}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
                     <label className="text-sm font-bold text-slate-700 ml-1">Berat Badan (kg)</label>
                     <input
                       type="number"
@@ -469,7 +499,15 @@ export const UserDashboard = () => {
                       required
                       className="w-full px-4 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-[#660000] transition-all text-slate-900"
                       value={formData.tanggal_lahir}
-                      onChange={(e) => setFormData({ ...formData, tanggal_lahir: e.target.value })}
+                      onChange={(e) => {
+                        const dateVal = e.target.value;
+                        const age = getAgeFromDate(dateVal);
+                        setFormData({ 
+                          ...formData, 
+                          tanggal_lahir: dateVal,
+                          umur: age || 0
+                        });
+                      }}
                     />
                   </div>
 

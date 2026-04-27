@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { apiService } from '../services/api';
+import Swal from 'sweetalert2';
 
 export const VerificationQueue = () => {
   const [queue, setQueue] = useState([]);
@@ -34,15 +35,41 @@ export const VerificationQueue = () => {
   }, []);
 
   const handleVerify = async (id, status) => {
+    const isApproved = status === 'approved';
+    const result = await Swal.fire({
+      title: isApproved ? 'Setujui Laporan?' : 'Tolak Laporan?',
+      text: isApproved 
+        ? "Apakah Anda yakin ingin menyetujui laporan donor ini?" 
+        : "Apakah Anda yakin ingin menolak laporan donor ini?",
+      icon: isApproved ? 'question' : 'warning',
+      showCancelButton: true,
+      confirmButtonColor: isApproved ? '#10b981' : '#dc2626',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: isApproved ? 'Ya, Setujui' : 'Ya, Tolak',
+      cancelButtonText: 'Batal'
+    });
+
+    if (!result.isConfirmed) return;
+
     try {
-      // status 'approved' -> true, 'rejected' -> false
-      const isApproved = status === 'approved';
       await apiService.verifyRiwayatDonor(id, { 
         status_verifikasi: isApproved
       });
       setQueue(prev => prev.filter(item => item.id_riwayat !== id));
+      Swal.fire({
+        title: 'Berhasil!',
+        text: isApproved ? 'Laporan berhasil disetujui.' : 'Laporan telah ditolak.',
+        icon: 'success',
+        confirmButtonColor: '#660000'
+      });
     } catch (err) {
       console.error('Gagal memverifikasi:', err);
+      Swal.fire({
+        title: 'Error!',
+        text: 'Gagal memproses verifikasi.',
+        icon: 'error',
+        confirmButtonColor: '#660000'
+      });
     }
   };
 
