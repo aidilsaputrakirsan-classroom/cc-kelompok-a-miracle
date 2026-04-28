@@ -22,6 +22,7 @@ import {
   Pie,
   Cell
 } from 'recharts';
+import { LoadingSpinner } from '../components/LoadingSpinner';
 
 const StatCard = ({ title, value, icon: Icon, trend, color }) => (
   <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
@@ -65,7 +66,9 @@ export const AdminUsersDashboard = () => {
     setLoading(false);
   }, []);
 
-  if (loading || !stats) return <div className="flex items-center justify-center h-full">Memuat data...</div>;
+  if (loading || !stats) {
+    return <LoadingSpinner fullPage />;
+  }
 
   const accessData = Object.entries(stats.pengguna_by_akses).map(([name, value]) => ({ name, value }));
   const statusData = Object.entries(stats.pengguna_by_status).map(([name, value]) => ({ name, value }));

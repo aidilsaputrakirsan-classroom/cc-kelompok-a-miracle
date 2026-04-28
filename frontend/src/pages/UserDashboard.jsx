@@ -19,6 +19,7 @@ import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { Header } from '../components/Header';
 import { apiService } from '../services/api';
+import { LoadingSpinner } from '../components/LoadingSpinner';
 import Swal from 'sweetalert2';
 
 const emptyForm = {
@@ -236,14 +237,7 @@ export const UserDashboard = () => {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-[#660000] border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-slate-500 font-medium">Memuat dashboard...</p>
-        </div>
-      </div>
-    );
+    return <LoadingSpinner fullPage />;
   }
 
   return (

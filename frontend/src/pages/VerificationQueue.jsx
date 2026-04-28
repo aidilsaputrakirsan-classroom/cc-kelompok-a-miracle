@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { apiService } from '../services/api';
+import { LoadingSpinner } from '../components/LoadingSpinner';
 import Swal from 'sweetalert2';
 
 export const VerificationQueue = () => {
@@ -96,6 +97,10 @@ export const VerificationQueue = () => {
     setSelectedItem(null);
     setSelectedDonor(null);
   };
+
+  if (loading) {
+    return <LoadingSpinner fullPage />;
+  }
 
   return (
     <div className="space-y-6">

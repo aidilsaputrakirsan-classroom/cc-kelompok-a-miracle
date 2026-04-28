@@ -6,6 +6,7 @@ import {
 import { Link } from 'react-router-dom';
 import { apiService } from '../services/api';
 import { Header } from '../components/Header';
+import { LoadingSpinner } from '../components/LoadingSpinner';
 
 export const PublicStock = () => {
   const [stockData, setStockData] = useState({});
@@ -59,7 +60,9 @@ export const PublicStock = () => {
             <tbody className="divide-y divide-slate-100">
               {loading ? (
                 <tr>
-                  <td colSpan="2" className="px-8 py-12 text-center text-slate-400">Memuat data...</td>
+                  <td colSpan="2" className="px-8 py-12">
+                    <LoadingSpinner />
+                  </td>
                 </tr>
               ) : (
                 bloodTypes.map((type) => (

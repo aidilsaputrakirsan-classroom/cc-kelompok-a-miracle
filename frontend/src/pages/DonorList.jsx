@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { apiService } from '../services/api';
+import { LoadingSpinner } from '../components/LoadingSpinner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
@@ -226,7 +227,9 @@ export const DonorList = () => {
             <tbody className="divide-y divide-slate-100">
               {loading ? (
                 <tr>
-                  <td colSpan={12} className="px-6 py-12 text-center text-slate-400">Memuat data...</td>
+                  <td colSpan={12} className="px-6 py-12">
+                    <LoadingSpinner />
+                  </td>
                 </tr>
               ) : donors.length === 0 ? (
                 <tr>
