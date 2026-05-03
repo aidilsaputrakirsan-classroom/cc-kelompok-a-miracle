@@ -19,7 +19,5 @@ dist/
 cat .gitignore | grep .env
 # Harus ada baris: .env
 
-.github/
-
-
-docker-compose.yml
+# Changelog (local only)
+docs/changelog.md

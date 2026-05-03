@@ -23,6 +23,7 @@ import {
   Cell
 } from 'recharts';
 import { apiService } from '../services/api';
+import { LoadingSpinner } from '../components/LoadingSpinner';
 
 const StatCard = ({ title, value, icon: Icon, trend, color }) => (
   <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
@@ -60,7 +61,9 @@ export const AdminDashboard = () => {
     fetchStats();
   }, []);
 
-  if (loading || !stats) return <div className="flex items-center justify-center h-full">Memuat data...</div>;
+  if (loading || !stats) {
+    return <LoadingSpinner fullPage />;
+  }
 
   const bloodDistribution = stats.stok_darah_by_golongan_darah || stats.pendonor_by_golongan_darah || {};
   const bloodData = Object.entries(bloodDistribution).map(([name, value]) => ({ name, value }));

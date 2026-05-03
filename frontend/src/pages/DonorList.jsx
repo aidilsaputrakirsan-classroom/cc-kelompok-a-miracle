@@ -18,13 +18,16 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { apiService } from '../services/api';
+import { LoadingSpinner } from '../components/LoadingSpinner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
+import Swal from 'sweetalert2';
 
 export const DonorList = () => {
   const [donors, setDonors] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDonor, setSelectedDonor] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
@@ -74,17 +77,41 @@ export const DonorList = () => {
   };
 
   const handleDeleteDonor = async () => {
-    if (!window.confirm('Apakah Anda yakin ingin menghapus data pendonor ini? Tindakan ini tidak dapat dibatalkan.')) {
-      return;
-    }
+    const result = await Swal.fire({
+      title: 'Apakah Anda yakin?',
+      text: "Tindakan ini akan menghapus data pendonor dan tidak dapat dibatalkan!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#660000',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Ya, Hapus!',
+      cancelButtonText: 'Batal'
+    });
+
+    if (!result.isConfirmed) return;
+
+    setDeleting(true);
     setErrorMessage('');
     try {
       await apiService.deletePendonor(selectedDonor.id_pendonor);
       setSelectedDonor(null);
       fetchDonors();
-      alert('Data pendonor berhasil dihapus!');
+      Swal.fire({
+        title: 'Terhapus!',
+        text: 'Data pendonor berhasil dihapus.',
+        icon: 'success',
+        confirmButtonColor: '#660000'
+      });
     } catch (err) {
       setErrorMessage(err.response?.data?.detail || 'Gagal menghapus data pendonor.');
+      Swal.fire({
+        title: 'Error!',
+        text: err.response?.data?.detail || 'Gagal menghapus data pendonor.',
+        icon: 'error',
+        confirmButtonColor: '#660000'
+      });
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -200,7 +227,9 @@ export const DonorList = () => {
             <tbody className="divide-y divide-slate-100">
               {loading ? (
                 <tr>
-                  <td colSpan={12} className="px-6 py-12 text-center text-slate-400">Memuat data...</td>
+                  <td colSpan={12} className="px-6 py-12">
+                    <LoadingSpinner />
+                  </td>
                 </tr>
               ) : donors.length === 0 ? (
                 <tr>
@@ -392,14 +421,25 @@ export const DonorList = () => {
               <div className="p-6 bg-slate-50 border-t border-slate-100 flex gap-3">
                 <button
                   onClick={handleDeleteDonor}
-                  className="flex-1 py-4 bg-red-500 text-white rounded-2xl font-bold hover:bg-red-600 transition-all shadow-lg shadow-black/10 flex items-center justify-center gap-2"
+                  disabled={deleting}
+                  className={`flex-1 py-4 bg-red-500 text-white rounded-2xl font-bold transition-all shadow-lg shadow-black/10 flex items-center justify-center gap-2 ${deleting ? 'opacity-70 cursor-not-allowed' : 'hover:bg-red-600'}`}
                 >
-                  <Trash2 className="w-5 h-5" />
-                  Hapus
+                  {deleting ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Menghapus...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="w-5 h-5" />
+                      Hapus
+                    </>
+                  )}
                 </button>
                 <button
                   onClick={() => setSelectedDonor(null)}
-                  className="flex-1 py-4 bg-slate-200 text-slate-900 rounded-2xl font-bold hover:bg-slate-300 transition-all"
+                  disabled={deleting}
+                  className="flex-1 py-4 bg-slate-200 text-slate-900 rounded-2xl font-bold hover:bg-slate-300 transition-all disabled:opacity-50"
                 >
                   Tutup Detail
                 </button>

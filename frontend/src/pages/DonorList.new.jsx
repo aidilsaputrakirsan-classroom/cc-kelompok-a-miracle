@@ -21,6 +21,7 @@ import {
 import { Link } from 'react-router-dom';
 import { apiService } from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
+import Swal from 'sweetalert2';
 
 export const DonorList = () => {
   const [donors, setDonors] = useState([]);
@@ -95,7 +96,6 @@ export const DonorList = () => {
     setEditFormData({
       nama_lengkap: donor.nama_lengkap,
       jenis_kelamin: donor.jenis_kelamin,
-      umur: donor.umur,
       tanggal_lahir: donor.tanggal_lahir,
       berat_badan: donor.berat_badan,
       tinggi_badan: donor.tinggi_badan,
@@ -111,17 +111,45 @@ export const DonorList = () => {
     setUnverifiedRiwayat(status?.unverified || null);
   };
 
+  const getAgeFromDate = (value) => {
+    const birthDate = new Date(value);
+    if (Number.isNaN(birthDate.getTime())) return 0;
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age -= 1;
+    }
+    return age;
+  };
+
   const handleVerifyDonor = async (riwayatId) => {
-    if (!window.confirm('Verifikasi riwayat donor ini?')) return;
+    const result = await Swal.fire({
+      title: 'Verifikasi Riwayat?',
+      text: "Apakah Anda yakin ingin memverifikasi riwayat donor ini?",
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#059669',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Ya, Verifikasi'
+    });
+
+    if (!result.isConfirmed) return;
     
     try {
       await apiService.verifyRiwayatDonor(riwayatId, { status_verifikasi: true });
       if (selectedDonor) {
         await loadDonorVerificationStatus(selectedDonor.id_pendonor);
-        const updated = donorVerificationStatus[selectedDonor.id_pendonor];
-        setUnverifiedRiwayat(updated?.unverified || null);
+        const updatedStatus = donorVerificationStatus[selectedDonor.id_pendonor];
+        setUnverifiedRiwayat(updatedStatus?.unverified || null);
       }
-      alert('Riwayat donor berhasil diverifikasi!');
+      Swal.fire({
+        title: 'Berhasil!',
+        text: 'Riwayat donor berhasil diverifikasi.',
+        icon: 'success',
+        confirmButtonColor: '#059669'
+      });
+      fetchDonors();
     } catch (err) {
       setErrorMessage(err.response?.data?.detail || 'Gagal memverifikasi riwayat donor.');
     }
@@ -130,26 +158,49 @@ export const DonorList = () => {
   const handleUpdateDonor = async (e) => {
     e.preventDefault();
     setErrorMessage('');
+    const calculatedAge = getAgeFromDate(editFormData.tanggal_lahir);
     try {
-      await apiService.updatePendonor(selectedDonor.id_pendonor, editFormData);
+      await apiService.updatePendonor(selectedDonor.id_pendonor, {
+        ...editFormData,
+        umur: calculatedAge
+      });
       setIsEditingDonor(false);
       fetchDonors();
-      alert('Data pendonor berhasil diperbarui!');
+      Swal.fire({
+        title: 'Berhasil!',
+        text: 'Data pendonor berhasil diperbarui.',
+        icon: 'success',
+        confirmButtonColor: '#660000'
+      });
     } catch (err) {
       setErrorMessage(err.response?.data?.detail || 'Gagal memperbarui data pendonor.');
     }
   };
 
   const handleDeleteDonor = async () => {
-    if (!window.confirm('Apakah Anda yakin ingin menghapus data pendonor ini? Tindakan ini tidak dapat dibatalkan.')) {
-      return;
-    }
+    const result = await Swal.fire({
+      title: 'Hapus Pendonor?',
+      text: "Tindakan ini akan menghapus data pendonor dan riwayatnya!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#dc2626',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Ya, Hapus!'
+    });
+
+    if (!result.isConfirmed) return;
+
     setErrorMessage('');
     try {
       await apiService.deletePendonor(selectedDonor.id_pendonor);
       setSelectedDonor(null);
       fetchDonors();
-      alert('Data pendonor berhasil dihapus!');
+      Swal.fire({
+        title: 'Terhapus!',
+        text: 'Data pendonor berhasil dihapus.',
+        icon: 'success',
+        confirmButtonColor: '#660000'
+      });
     } catch (err) {
       setErrorMessage(err.response?.data?.detail || 'Gagal menghapus data pendonor.');
     }

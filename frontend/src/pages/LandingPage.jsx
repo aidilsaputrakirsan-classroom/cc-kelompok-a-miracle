@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Droplets,
@@ -10,6 +11,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Header } from '../components/Header';
+import { LoadingSpinner } from '../components/LoadingSpinner';
 
 const FeatureCard = ({ icon: Icon, title, desc, color = "text-[#660000]" }) => (
   <motion.div
@@ -27,6 +29,19 @@ const FeatureCard = ({ icon: Icon, title, desc, color = "text-[#660000]" }) => (
 );
 
 export const LandingPage = () => {
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 800);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (loading) {
+    return <LoadingSpinner fullPage />;
+  }
+
   return (
     <div className="min-h-screen bg-white font-sans">
       <Header />

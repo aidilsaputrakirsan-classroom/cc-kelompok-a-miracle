@@ -19,6 +19,7 @@ import { apiService } from '../services/api';
 export const DonorRegistration = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(false);
   const [neverDonated, setNeverDonated] = useState(false);
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState('');
@@ -29,7 +30,7 @@ export const DonorRegistration = () => {
     berat_badan: '',
     tinggi_badan: '',
     golongan_darah: 'O+',
-    umur: '',
+    umur: 0,
     tanggal_lahir: '',
     alamat: '',
     no_telepon: '',
@@ -108,9 +109,6 @@ export const DonorRegistration = () => {
 
       if (!formData.tinggi_badan) newErrors.tinggi_badan = 'Tinggi badan wajib diisi';
       else if (Number.isNaN(tinggi) || tinggi <= 0 || tinggi > 300) newErrors.tinggi_badan = 'Tinggi badan harus > 0 dan <= 300';
-
-      if (!formData.umur) newErrors.umur = 'Usia wajib diisi';
-      else if (Number.isNaN(umur) || umur < 17 || umur > 120) newErrors.umur = 'Usia harus 17-120 tahun';
     } else if (currentStep === 3) {
       const totalDonor = Number(formData.total_donor);
 
@@ -143,6 +141,7 @@ export const DonorRegistration = () => {
     setServerError('');
     if (!validateStep(3)) return;
 
+    setLoading(true);
     try {
       await apiService.registerPendonor({
         ...formData,
@@ -167,6 +166,8 @@ export const DonorRegistration = () => {
       }
 
       setServerError(_general || 'Gagal mendaftar. Pastikan semua syarat input sudah benar.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -313,7 +314,13 @@ export const DonorRegistration = () => {
                         className={`w-full pl-12 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-[#660000] transition-all ${errors.tanggal_lahir ? 'ring-2 ring-red-500' : ''}`}
                         value={formData.tanggal_lahir}
                         onChange={(e) => {
-                          setFormData({...formData, tanggal_lahir: e.target.value});
+                          const dateVal = e.target.value;
+                          const calculatedAge = getAgeFromDate(dateVal);
+                          setFormData({
+                            ...formData, 
+                            tanggal_lahir: dateVal,
+                            umur: calculatedAge || 0
+                          });
                           if (errors.tanggal_lahir) setErrors({...errors, tanggal_lahir: ''});
                         }}
                       />
@@ -436,25 +443,6 @@ export const DonorRegistration = () => {
                         <option value="AB-">AB-</option>
                       </select>
                     </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-sm font-semibold text-slate-700 ml-1 flex justify-between">
-                      Usia <span className="text-red-500">*</span>
-                    </label>
-                    <input 
-                      type="number" 
-                      required
-                      min={17}
-                      placeholder="Contoh: 20"
-                      className={`w-full px-4 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-[#660000] transition-all ${errors.umur ? 'ring-2 ring-red-500' : ''}`}
-                      value={formData.umur}
-                      onChange={(e) => {
-                        setFormData({...formData, umur: e.target.value});
-                        if (errors.umur) setErrors({...errors, umur: ''});
-                      }}
-                    />
-                    {errors.umur && <p className="text-xs text-red-500 ml-1">{errors.umur}</p>}
                   </div>
                 </div>
 
@@ -580,10 +568,20 @@ export const DonorRegistration = () => {
                   </button>
                   <button 
                     onClick={handleSubmit}
-                    className="flex-[2] bg-[#660000] text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-[#550000] transition-all shadow-lg shadow-black/10"
+                    disabled={loading}
+                    className={`flex-[2] bg-[#660000] text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-black/10 ${loading ? 'opacity-70 cursor-not-allowed' : 'hover:bg-[#550000]'}`}
                   >
-                    Selesaikan Pendaftaran
-                    <ArrowRight className="w-5 h-5" />
+                    {loading ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Sedang Memproses...
+                      </>
+                    ) : (
+                      <>
+                        Selesaikan Pendaftaran
+                        <ArrowRight className="w-5 h-5" />
+                      </>
+                    )}
                   </button>
                 </div>
               </motion.div>

@@ -11,10 +11,13 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { apiService } from '../services/api';
+import { LoadingSpinner } from '../components/LoadingSpinner';
+import Swal from 'sweetalert2';
 
 export const VerificationQueue = () => {
   const [queue, setQueue] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [verifying, setVerifying] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [selectedDonor, setSelectedDonor] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -34,15 +37,44 @@ export const VerificationQueue = () => {
   }, []);
 
   const handleVerify = async (id, status) => {
+    const isApproved = status === 'approved';
+    const result = await Swal.fire({
+      title: isApproved ? 'Setujui Laporan?' : 'Tolak Laporan?',
+      text: isApproved 
+        ? "Apakah Anda yakin ingin menyetujui laporan donor ini?" 
+        : "Apakah Anda yakin ingin menolak laporan donor ini?",
+      icon: isApproved ? 'question' : 'warning',
+      showCancelButton: true,
+      confirmButtonColor: isApproved ? '#10b981' : '#dc2626',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: isApproved ? 'Ya, Setujui' : 'Ya, Tolak',
+      cancelButtonText: 'Batal'
+    });
+
+    if (!result.isConfirmed) return;
+
+    setVerifying(true);
     try {
-      // status 'approved' -> true, 'rejected' -> false
-      const isApproved = status === 'approved';
       await apiService.verifyRiwayatDonor(id, { 
         status_verifikasi: isApproved
       });
       setQueue(prev => prev.filter(item => item.id_riwayat !== id));
+      Swal.fire({
+        title: 'Berhasil!',
+        text: isApproved ? 'Laporan berhasil disetujui.' : 'Laporan telah ditolak.',
+        icon: 'success',
+        confirmButtonColor: '#660000'
+      });
     } catch (err) {
       console.error('Gagal memverifikasi:', err);
+      Swal.fire({
+        title: 'Error!',
+        text: 'Gagal memproses verifikasi.',
+        icon: 'error',
+        confirmButtonColor: '#660000'
+      });
+    } finally {
+      setVerifying(false);
     }
   };
 
@@ -65,6 +97,10 @@ export const VerificationQueue = () => {
     setSelectedItem(null);
     setSelectedDonor(null);
   };
+
+  if (loading) {
+    return <LoadingSpinner fullPage />;
+  }
 
   return (
     <div className="space-y-6">
@@ -112,21 +148,24 @@ export const VerificationQueue = () => {
             <div className="flex items-center gap-3 border-t md:border-t-0 pt-4 md:pt-0">
               <button
                 onClick={() => openDetail(item)}
-                className="flex-1 md:flex-none px-4 py-2 border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 transition-colors flex items-center justify-center gap-2"
+                disabled={verifying}
+                className="flex-1 md:flex-none px-4 py-2 border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 <FileText className="w-4 h-4" />
                 <span>Tinjau</span>
               </button>
               <button 
                 onClick={() => handleVerify(item.id_riwayat, 'rejected')}
-                className="flex-1 md:flex-none px-4 py-2 border border-slate-200 text-slate-600 rounded-xl hover:bg-slate-50 transition-colors flex items-center justify-center gap-2"
+                disabled={verifying}
+                className="flex-1 md:flex-none px-4 py-2 border border-slate-200 text-slate-600 rounded-xl hover:bg-slate-50 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 <XCircle className="w-4 h-4" />
                 <span>Tolak</span>
               </button>
               <button 
                 onClick={() => handleVerify(item.id_riwayat, 'approved')}
-                className="flex-1 md:flex-none px-4 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors flex items-center justify-center gap-2 shadow-sm shadow-emerald-100"
+                disabled={verifying}
+                className="flex-1 md:flex-none px-4 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors flex items-center justify-center gap-2 shadow-sm shadow-emerald-100 disabled:opacity-50"
               >
                 <CheckCircle2 className="w-4 h-4" />
                 <span>Setujui</span>
