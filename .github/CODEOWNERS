@@ -1,0 +1,20 @@
+# CODEOWNERS — Tracelt Team Miracle 
+
+# Backend — Lead Backend
+/backend/                @intniaaa20-lead-backend
+
+# Frontend — Lead Frontend
+/frontend/               @yosanpratiwi-lead-frontend
+
+# Docker & Infrastructure — Lead DevOps
+docker-compose.yml       @Avhilla-lead-devops
+/backend/Dockerfile      @Avhilla-lead-devops
+/frontend/Dockerfile     @Avhilla-lead-devops
+Makefile                 @Avhilla-lead-devops
+
+# Documentation — Lead QA & Docs
+README.md                @Betran23-lead-qa
+/docs/                   @Betran23-lead-qa
+
+# CI/CD (jika 5 orang) — Lead CI/CD
+ /.github/workflows/   @10231025-collab-lead-cicd
