@@ -10,6 +10,7 @@ import { VerificationQueue } from './pages/VerificationQueue';
 import { DonorRegistration } from './pages/DonorRegistration';
 import { PublicStock } from './pages/PublicStock';
 import { AdminLayout } from './components/AdminLayout';
+import AboutPage from "./components/AboutPage";
 import { apiService } from './services/api';
 
 const AdminRoute = ({ children }) => {
