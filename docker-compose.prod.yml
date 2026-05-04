@@ -1,0 +1,13 @@
+services:
+  db:
+    restart: always
+    ports: []
+
+  backend:
+    restart: always
+
+  frontend:
+    restart: always
+    build:
+      args:
+        VITE_API_URL: https://yourdomain.com
