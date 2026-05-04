@@ -13,6 +13,7 @@ import { AdminLayout } from './components/AdminLayout';
 import AboutPage from "./components/AboutPage";
 import { apiService } from './services/api';
 
+// ================= ADMIN ROUTE =================
 const AdminRoute = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [isValid, setIsValid] = useState(false);
@@ -26,8 +27,7 @@ const AdminRoute = ({ children }) => {
           setLoading(false);
           return;
         }
-        
-        // Try to validate token by calling an admin-only endpoint
+
         await apiService.getPendonorList({});
         setIsValid(true);
       } catch (err) {
@@ -39,7 +39,7 @@ const AdminRoute = ({ children }) => {
         setLoading(false);
       }
     };
-    
+
     validateToken();
   }, []);
 
@@ -48,6 +48,7 @@ const AdminRoute = ({ children }) => {
   return <AdminLayout>{children}</AdminLayout>;
 };
 
+// ================= USER ROUTE =================
 const UserRoute = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [isValid, setIsValid] = useState(false);
@@ -61,8 +62,7 @@ const UserRoute = ({ children }) => {
           setLoading(false);
           return;
         }
-        
-        // Try to validate token by calling a user-only endpoint
+
         await apiService.getPenggunaMe();
         setIsValid(true);
       } catch (err) {
@@ -74,7 +74,7 @@ const UserRoute = ({ children }) => {
         setLoading(false);
       }
     };
-    
+
     validateToken();
   }, []);
 
@@ -83,7 +83,36 @@ const UserRoute = ({ children }) => {
   return <>{children}</>;
 };
 
+// ================= APP =================
 export default function App() {
+  const [darkMode, setDarkMode] = useState(false);
+
+  // Load theme dari localStorage
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("theme");
+    if (savedTheme === "dark") {
+      setDarkMode(true);
+      document.documentElement.classList.add("dark");
+    }
+  }, []);
+
+  // Toggle dark mode
+  const toggleDarkMode = () => {
+    setDarkMode((prev) => {
+      const newMode = !prev;
+
+      if (newMode) {
+        document.documentElement.classList.add("dark");
+        localStorage.setItem("theme", "dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+        localStorage.setItem("theme", "light");
+      }
+
+      return newMode;
+    });
+  };
+
   return (
     <Router>
       <Routes>
