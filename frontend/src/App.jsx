@@ -92,6 +92,7 @@ export default function App() {
         <Route path="/user/register" element={<UserRegister />} />
         <Route path="/register" element={<DonorRegistration />} />
         <Route path="/stock" element={<PublicStock />} />
+        <Route path="/about" element={<AboutPage />} />
 
         <Route path="/admin" element={
           <AdminRoute>
