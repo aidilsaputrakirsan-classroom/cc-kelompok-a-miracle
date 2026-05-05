@@ -1,12 +1,12 @@
 # ============================================================
 # Stage 1: Build — Install deps & build React app
 # ============================================================
-FROM node:20-slim AS builder
+FROM node:20-slim AS builder #versi Node.js yang lebih ringan dari node:20
 
 WORKDIR /app
 
 # Copy package files
-COPY package.json package-lock.json* ./
+COPY package.json package-lock.json* ./  #untuk layer caching (kalau tidak ada perubahan di package.json, npm install tidak dijalankan ulang)
 
 # Gunakan npm install (bukan ci) untuk membiarkan npm mendeteksi 
 # binary native yang benar untuk Linux (amd64)
