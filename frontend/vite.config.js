@@ -15,6 +15,11 @@ export default defineConfig(({mode}) => {
         '@': path.resolve(__dirname, '.'),
       },
     },
+    test: {
+      globals: true,
+      environment: 'jsdom',
+      setupFiles: './src/test/setup.js',
+    },
     server: {
       proxy: {
         '/api': {

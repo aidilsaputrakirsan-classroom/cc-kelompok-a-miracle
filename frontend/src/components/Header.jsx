@@ -127,6 +127,7 @@ export const Header = () => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={toggleDarkMode}
+              aria-label={isDark ? 'Ganti ke Mode Terang' : 'Ganti ke Mode Gelap'}
               className={`p-2.5 rounded-xl transition-all flex items-center gap-2 border shadow-sm ${
                 isScrolled 
                   ? 'border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300' 
