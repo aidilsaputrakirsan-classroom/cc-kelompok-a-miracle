@@ -10,7 +10,7 @@ from sqlalchemy.pool import StaticPool
 from database import Base, get_db
 from main import app
 
-# Database test — SQLite in-memory (tidak perlu PostgreSQL untuk testing!)
+# Database test — SQLite lokal (tidak perlu PostgreSQL untuk testing!)
 SQLALCHEMY_TEST_DATABASE_URL = "sqlite:///./test.db"
 
 engine = create_engine(
@@ -24,11 +24,13 @@ TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engin
 @pytest.fixture(scope="function")
 def db_session():
     """Buat database baru untuk setiap test."""
+    # Buat skema baru sebelum test dijalankan.
     Base.metadata.create_all(bind=engine)
     session = TestingSessionLocal()
     try:
         yield session
     finally:
+        # Tutup sesi dan hapus skema setelah test selesai.
         session.close()
         Base.metadata.drop_all(bind=engine)
 
@@ -36,6 +38,7 @@ def db_session():
 @pytest.fixture(scope="function")
 def client(db_session):
     """Test client dengan database override."""
+    # Override dependency DB agar memakai sesi test.
     def override_get_db():
         try:
             yield db_session
@@ -51,12 +54,14 @@ def client(db_session):
 @pytest.fixture
 def auth_headers(client):
     """Helper: register + login, return auth headers."""
+    # Registrasi pengguna umum untuk kebutuhan auth.
     # Register
     client.post("/auth/register", json={
         "email": "test@example.com",
         "password": "TestPassword123",
         "name": "Test User"
     })
+    # Login untuk ambil token.
     # Login
     response = client.post("/auth/login", json={
         "email": "test@example.com",
@@ -69,11 +74,13 @@ def auth_headers(client):
 @pytest.fixture
 def admin_headers(client):
     """Helper: register + login admin, return auth headers."""
+    # Registrasi admin untuk kebutuhan otorisasi.
     client.post("/auth/admin/register", json={
         "email": "admin@example.com",
         "password": "AdminPass123",
         "nama_admin": "Admin Test"
     })
+    # Login admin untuk ambil token.
     login = client.post("/auth/admin/login", json={
         "email": "admin@example.com",
         "password": "AdminPass123"
@@ -85,6 +92,7 @@ def admin_headers(client):
 
 def create_pendonor(client, overrides=None):
     """Helper: buat pendonor baru dan kembalikan response JSON."""
+    # Payload default bisa dioverride sesuai kebutuhan test.
     payload = {
         "nama_lengkap": "Budi Santoso",
         "email": "budi@example.com",
