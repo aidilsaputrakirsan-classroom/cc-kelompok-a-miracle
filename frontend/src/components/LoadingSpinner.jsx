@@ -12,7 +12,7 @@ export const LoadingSpinner = ({ fullPage = false, size = 'md' }) => {
     : "flex flex-col items-center justify-center p-12";
 
   return (
-    <div className={containerClasses}>
+    <div className={containerClasses} role="status">
       <div className={`${sizeClasses[size]} border-[#660000]/20 border-t-[#660000] rounded-full animate-spin mb-4`} />
       <p className="text-[#660000] font-bold animate-pulse">Memuat data...</p>
     </div>
