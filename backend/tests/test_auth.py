@@ -3,6 +3,7 @@
 
 def test_register_admin_success(client):
     """Test register admin berhasil."""
+    # Registrasi admin pertama harus sukses.
     response = client.post("/auth/admin/register", json={
         "email": "admin1@example.com",
         "password": "AdminPass123",
@@ -18,6 +19,7 @@ def test_register_admin_success(client):
 
 def test_register_admin_duplicate(client):
     """Test register admin kedua -> 400 (hanya 1 admin)."""
+    # Buat admin pertama, lalu coba daftar admin kedua.
     client.post("/auth/admin/register", json={
         "email": "admin1@example.com",
         "password": "AdminPass123",
@@ -33,6 +35,7 @@ def test_register_admin_duplicate(client):
 
 def test_register_admin_invalid_email(client):
     """Test register admin dengan email invalid -> 422."""
+    # Email tidak valid harus gagal validasi.
     response = client.post("/auth/admin/register", json={
         "email": "not-an-email",
         "password": "AdminPass123",
@@ -43,6 +46,7 @@ def test_register_admin_invalid_email(client):
 
 def test_register_admin_weak_password(client):
     """Test register admin dengan password lemah -> 422."""
+    # Password lemah harus ditolak.
     response = client.post("/auth/admin/register", json={
         "email": "adminweak@example.com",
         "password": "adminpass",
@@ -53,6 +57,7 @@ def test_register_admin_weak_password(client):
 
 def test_login_admin_success(client):
     """Test login admin dengan kredensial benar."""
+    # Daftarkan admin, lalu login dengan kredensial yang benar.
     client.post("/auth/admin/register", json={
         "email": "adminlogin@example.com",
         "password": "AdminPass123",
@@ -71,6 +76,7 @@ def test_login_admin_success(client):
 
 def test_login_admin_wrong_password(client):
     """Test login admin dengan password salah -> 401."""
+    # Password salah harus ditolak.
     client.post("/auth/admin/register", json={
         "email": "adminwrong@example.com",
         "password": "AdminPass123",
@@ -85,6 +91,7 @@ def test_login_admin_wrong_password(client):
 
 def test_login_admin_not_registered(client):
     """Test login admin dengan email tidak terdaftar -> 401."""
+    # Email yang belum terdaftar tidak boleh login.
     response = client.post("/auth/admin/login", json={
         "email": "unknownadmin@example.com",
         "password": "AdminPass123"
@@ -94,6 +101,7 @@ def test_login_admin_not_registered(client):
 
 def test_register_pengguna_success(client):
     """Test register pengguna berhasil."""
+    # Registrasi pengguna baru harus sukses.
     response = client.post("/auth/pengguna/register", json={
         "email": "pengguna1@example.com",
         "password": "UserPass123",
@@ -110,6 +118,7 @@ def test_register_pengguna_success(client):
 
 def test_register_pengguna_duplicate_email(client):
     """Test register pengguna email sama -> 400."""
+    # Email yang sama tidak boleh dipakai dua kali.
     client.post("/auth/pengguna/register", json={
         "email": "dupengguna@example.com",
         "password": "UserPass123",
@@ -125,6 +134,7 @@ def test_register_pengguna_duplicate_email(client):
 
 def test_register_pengguna_invalid_email(client):
     """Test register pengguna dengan email invalid -> 422."""
+    # Email tidak valid harus gagal.
     response = client.post("/auth/pengguna/register", json={
         "email": "invalid-email",
         "password": "UserPass123",
@@ -135,6 +145,7 @@ def test_register_pengguna_invalid_email(client):
 
 def test_register_pengguna_weak_password(client):
     """Test register pengguna dengan password lemah -> 422."""
+    # Password lemah harus ditolak.
     response = client.post("/auth/pengguna/register", json={
         "email": "penggunaweak@example.com",
         "password": "userpass",
@@ -145,6 +156,7 @@ def test_register_pengguna_weak_password(client):
 
 def test_login_pengguna_success(client):
     """Test login pengguna dengan kredensial benar."""
+    # Daftar pengguna, lalu login dengan kredensial benar.
     client.post("/auth/pengguna/register", json={
         "email": "penglogin@example.com",
         "password": "UserPass123",
@@ -163,6 +175,7 @@ def test_login_pengguna_success(client):
 
 def test_login_pengguna_wrong_password(client):
     """Test login pengguna dengan password salah -> 401."""
+    # Password salah harus ditolak.
     client.post("/auth/pengguna/register", json={
         "email": "pengwrong@example.com",
         "password": "UserPass123",
@@ -177,6 +190,7 @@ def test_login_pengguna_wrong_password(client):
 
 def test_login_pengguna_not_registered(client):
     """Test login pengguna dengan email tidak terdaftar -> 401."""
+    # Email yang belum terdaftar tidak boleh login.
     response = client.post("/auth/pengguna/login", json={
         "email": "unknownpengguna@example.com",
         "password": "UserPass123"
