@@ -64,3 +64,44 @@ def auth_headers(client):
     })
     token = response.json()["access_token"]
     return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture
+def admin_headers(client):
+    """Helper: register + login admin, return auth headers."""
+    client.post("/auth/admin/register", json={
+        "email": "admin@example.com",
+        "password": "AdminPass123",
+        "nama_admin": "Admin Test"
+    })
+    login = client.post("/auth/admin/login", json={
+        "email": "admin@example.com",
+        "password": "AdminPass123"
+    })
+    assert login.status_code == 200
+    token = login.json()["access_token"]
+    return {"Authorization": f"Bearer {token}"}
+
+
+def create_pendonor(client, overrides=None):
+    """Helper: buat pendonor baru dan kembalikan response JSON."""
+    payload = {
+        "nama_lengkap": "Budi Santoso",
+        "email": "budi@example.com",
+        "jenis_kelamin": "Laki-laki",
+        "berat_badan": 70,
+        "tinggi_badan": 170,
+        "golongan_darah": "A+",
+        "umur": 25,
+        "tanggal_lahir": "1999-01-01",
+        "tanggal_terakhir_donor": "2024-01-01",
+        "total_donor": 0,
+        "alamat": "Jl. Mawar No. 1",
+        "no_telepon": "081234567890",
+        "riwayat_kesehatan": "Sehat"
+    }
+    if overrides:
+        payload.update(overrides)
+    response = client.post("/pendonor", json=payload)
+    assert response.status_code == 201
+    return response.json()
