@@ -44,14 +44,14 @@ export const LandingPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white font-sans dark:bg-slate-950 transition-colors duration-300">
+    <div className="min-h-screen bg-white font-sans dark:bg-slate-950 transition-colors duration-500">
       <Header />
-      <div className="bg-[#660000] text-white dark:bg-red-950 transition-colors duration-300">
+      <div className="bg-[#660000] text-white dark:bg-[#1a0000] transition-colors duration-500">
         {/* Hero Section */}
         <section className="relative overflow-visible pt-32 pb-24 lg:pt-48 lg:pb-32 px-6">
           {/* Background gradient elements with lower z-index */}
-          <div className="absolute top-20 right-10 w-96 h-96 bg-white/10 rounded-full blur-3xl opacity-50 -z-10"></div>
-          <div className="absolute bottom-10 left-10 w-72 h-72 bg-white/5 rounded-full blur-2xl opacity-50 -z-10"></div>
+          <div className="absolute top-20 right-10 w-96 h-96 bg-white/10 rounded-full blur-3xl opacity-50 -z-10 dark:bg-red-500/5"></div>
+          <div className="absolute bottom-10 left-10 w-72 h-72 bg-white/5 rounded-full blur-2xl opacity-50 -z-10 dark:bg-red-500/5"></div>
           
           <div className="max-w-6xl mx-auto text-center relative z-20">
             <motion.div
@@ -59,19 +59,19 @@ export const LandingPage = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
             >
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 backdrop-blur-md text-white text-xs font-bold mb-6 border border-white/30">
-                <Heart className="w-3.5 h-3.5 fill-current" />
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 backdrop-blur-md text-white text-xs font-bold mb-6 border border-white/30 dark:bg-slate-800/40 dark:border-slate-700/50">
+                <Heart className="w-3.5 h-3.5 fill-current text-white dark:text-red-400" />
                 PENGUJUAN PENDONOR DARAH
               </div>
-              <h1 className="text-5xl lg:text-7xl font-black leading-[1.1] text-white mb-8 drop-shadow-lg">
-                TRACELT <span className="text-white/70">ITK</span>
+              <h1 className="text-5xl lg:text-7xl font-black leading-[1.1] text-white mb-8 drop-shadow-lg dark:text-slate-100">
+                TRACELT <span className="text-white/70 dark:text-red-500/70">ITK</span>
               </h1>
-              <p className="text-xl text-white/90 leading-relaxed mb-10 mx-auto max-w-2xl drop-shadow-md">
+              <p className="text-xl text-white/90 leading-relaxed mb-10 mx-auto max-w-2xl drop-shadow-md dark:text-slate-300">
                 Aplikasi berbasis web yang dirancang untuk membantu civitas akademika <strong>Institut Teknologi Kalimantan</strong> dalam mengajukan permohonan data pendonor darah sukarela.
               </p>
               <div className="flex flex-wrap gap-6 justify-center">
                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Link to="/register" className="bg-white text-[#660000] px-10 py-5 rounded-[2rem] font-black text-lg flex items-center gap-2 hover:bg-slate-50 transition-all shadow-[0_20px_50px_rgba(0,0,0,0.3)] group/cta">
+                  <Link to="/register" className="bg-white text-[#660000] px-10 py-5 rounded-[2rem] font-black text-lg flex items-center gap-2 hover:bg-slate-50 transition-all shadow-[0_20px_50px_rgba(0,0,0,0.3)] group/cta dark:bg-red-600 dark:text-white dark:hover:bg-red-500 dark:shadow-red-900/40">
                     Daftar Jadi Pendonor
                     <motion.div
                       animate={{ x: [0, 5, 0] }}
@@ -82,7 +82,7 @@ export const LandingPage = () => {
                   </Link>
                 </motion.div>
                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <a href="#about" className="bg-white/10 backdrop-blur-xl text-white border-2 border-white/30 px-10 py-5 rounded-[2rem] font-black text-lg hover:bg-white/20 transition-all flex items-center border-b-[4px] active:border-b-0 active:translate-y-1">
+                  <a href="#about" className="bg-white/10 backdrop-blur-xl text-white border-2 border-white/30 px-10 py-5 rounded-[2rem] font-black text-lg hover:bg-white/20 transition-all flex items-center border-b-[4px] active:border-b-0 active:translate-y-1 dark:bg-slate-800/20 dark:border-slate-700/50">
                     Pelajari Lebih Lanjut
                   </a>
                 </motion.div>

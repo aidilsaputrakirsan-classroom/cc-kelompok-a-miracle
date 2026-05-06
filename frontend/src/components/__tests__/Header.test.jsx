@@ -1,3 +1,20 @@
+// import { render, screen } from '@testing-library/react'
+// import { describe, it, expect } from 'vitest'
+// import Header from '../Header'
+
+// describe('Header Component', () => {
+//   it('menampilkan judul aplikasi', () => {
+//     render(<Header totalItems={0} />)
+//     // Sesuaikan dengan teks judul di Header Anda
+//     expect(screen.getByText(/cloud/i)).toBeInTheDocument()
+//   })
+
+//   it('menampilkan jumlah total items', () => {
+//     render(<Header totalItems={5} />)
+//     expect(screen.getByText(/5/)).toBeInTheDocument()
+//   })
+// })
+
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Header } from '../Header';
@@ -9,6 +26,21 @@ describe('Header Component', () => {
     localStorage.clear();
     // Default document classes
     document.documentElement.classList.remove('dark');
+    
+    // Mock window.matchMedia
+    Object.defineProperty(window, 'matchMedia', {
+      writable: true,
+      value: vi.fn().mockImplementation(query => ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addListener: vi.fn(), // deprecated
+        removeListener: vi.fn(), // deprecated
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      })),
+    });
   });
 
   it('renders logo and navigation links', () => {
