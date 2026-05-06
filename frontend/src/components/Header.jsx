@@ -13,7 +13,14 @@ export const Header = () => {
   useEffect(() => {
     // Initial theme check
     const savedTheme = localStorage.getItem('theme');
-    setIsDark(savedTheme === 'dark' || document.documentElement.classList.contains('dark'));
+    const isDarkMode = savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    
+    setIsDark(isDarkMode);
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
 
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
