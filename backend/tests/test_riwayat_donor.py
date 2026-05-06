@@ -3,6 +3,7 @@ from tests.conftest import create_pendonor
 
 
 def _get_pengguna_headers(client, overrides=None):
+    # Siapkan payload registrasi pengguna (bisa dioverride).
     payload = {
         "email": "pengguna@example.com",
         "password": "UserPass123",
@@ -13,6 +14,7 @@ def _get_pengguna_headers(client, overrides=None):
     response = client.post("/auth/pengguna/register", json=payload)
     assert response.status_code == 201
 
+    # Login untuk mendapatkan token akses.
     login = client.post("/auth/pengguna/login", json={
         "email": payload["email"],
         "password": payload["password"]
@@ -24,6 +26,7 @@ def _get_pengguna_headers(client, overrides=None):
 
 def test_create_riwayat_donor_success(client):
     """Test membuat riwayat donor -> 201."""
+    # Buat pendonor lalu buat riwayat donor miliknya.
     pendonor = create_pendonor(client)
     pendonor_id = pendonor["id_pendonor"]
     response = client.post("/riwayat-donor", json={
@@ -38,6 +41,7 @@ def test_create_riwayat_donor_success(client):
 
 def test_create_riwayat_donor_invalid_pendonor(client):
     """Test membuat riwayat donor dengan pendonor tidak ada -> 404."""
+    # Id pendonor tidak ada harus mengembalikan 404.
     response = client.post("/riwayat-donor", json={
         "id_pendonor": 9999
     })
@@ -46,6 +50,7 @@ def test_create_riwayat_donor_invalid_pendonor(client):
 
 def test_get_riwayat_donor_list(client):
     """Test mengambil daftar riwayat donor -> 200."""
+    # Pastikan ada data sebelum mengambil list.
     pendonor = create_pendonor(client)
     client.post("/riwayat-donor", json={
         "id_pendonor": pendonor["id_pendonor"]
@@ -58,6 +63,7 @@ def test_get_riwayat_donor_list(client):
 
 def test_get_riwayat_donor_pagination(client):
     """Test pagination riwayat donor dengan skip & limit."""
+    # Buat beberapa data untuk menguji pagination.
     pendonor_1 = create_pendonor(client, {"email": "riwayat1@example.com"})
     pendonor_2 = create_pendonor(client, {"email": "riwayat2@example.com"})
     pendonor_3 = create_pendonor(client, {"email": "riwayat3@example.com"})
@@ -75,12 +81,14 @@ def test_get_riwayat_donor_pagination(client):
 
 def test_get_riwayat_donor_not_found(client):
     """Test mengambil riwayat donor yang tidak ada -> 404."""
+    # Id riwayat donor yang tidak ada harus 404.
     response = client.get("/riwayat-donor/9999")
     assert response.status_code == 404
 
 
 def test_get_riwayat_donor_by_pendonor(client):
     """Test list riwayat donor berdasarkan pendonor."""
+    # Buat dua pendonor dan cek filter berdasarkan id pendonor.
     pendonor_1 = create_pendonor(client, {"email": "pendonor.list@example.com"})
     pendonor_2 = create_pendonor(client, {"email": "pendonor.list2@example.com"})
     pendonor_id = pendonor_1["id_pendonor"]
@@ -97,6 +105,7 @@ def test_get_riwayat_donor_by_pendonor(client):
 
 def test_create_riwayat_donor_pengguna_success(client):
     """Test pengguna membuat riwayat donor -> 201."""
+    # Pengguna login lalu buat riwayat donor via endpoint pengguna.
     pendonor = create_pendonor(client)
     pengguna_headers = _get_pengguna_headers(client)
 
@@ -111,6 +120,7 @@ def test_create_riwayat_donor_pengguna_success(client):
 
 def test_create_riwayat_donor_pengguna_unauthorized(client):
     """Test pengguna membuat riwayat donor tanpa token -> 401."""
+    # Tanpa token harus ditolak.
     pendonor = create_pendonor(client)
     response = client.post("/pengguna/riwayat-donor", json={
         "id_pendonor": pendonor["id_pendonor"]
@@ -120,6 +130,7 @@ def test_create_riwayat_donor_pengguna_unauthorized(client):
 
 def test_get_riwayat_donor_pengguna_list(client):
     """Test pengguna mengambil daftar riwayat donor miliknya -> 200."""
+    # Buat satu data lalu pastikan bisa diambil oleh pemiliknya.
     pendonor = create_pendonor(client)
     pengguna_headers = _get_pengguna_headers(client)
 
@@ -135,6 +146,7 @@ def test_get_riwayat_donor_pengguna_list(client):
 
 def test_get_riwayat_donor_pengguna_detail(client):
     """Test pengguna mengambil detail riwayat donor miliknya -> 200."""
+    # Ambil detail berdasarkan id riwayat yang dibuat.
     pendonor = create_pendonor(client)
     pengguna_headers = _get_pengguna_headers(client)
 
@@ -150,6 +162,7 @@ def test_get_riwayat_donor_pengguna_detail(client):
 
 def test_get_riwayat_donor_pengguna_detail_not_found(client):
     """Test pengguna mengambil detail riwayat donor tidak ada -> 404."""
+    # Id tidak ada harus 404.
     pengguna_headers = _get_pengguna_headers(client)
     response = client.get("/pengguna/riwayat-donor/9999", headers=pengguna_headers)
     assert response.status_code == 404
@@ -167,7 +180,7 @@ def test_update_riwayat_donor_pengguna_success(client):
     riwayat_id = created["id_riwayat"]
     golongan_awal = created.get("golongan_darah")
 
-    # Update ke nilai berbeda dari default
+    # Update ke nilai berbeda dari default.
     response = client.put(f"/pengguna/riwayat-donor/{riwayat_id}", json={
         "golongan_darah": "B+"
     }, headers=pengguna_headers)
@@ -179,6 +192,7 @@ def test_update_riwayat_donor_pengguna_success(client):
 
 def test_update_riwayat_donor_pengguna_not_found(client):
     """Test pengguna update riwayat donor tidak ada -> 404."""
+    # Update id yang tidak ada harus 404.
     pengguna_headers = _get_pengguna_headers(client)
     response = client.put("/pengguna/riwayat-donor/9999", json={
         "golongan_darah": "A+"
@@ -188,6 +202,7 @@ def test_update_riwayat_donor_pengguna_not_found(client):
 
 def test_delete_riwayat_donor_pengguna_success(client):
     """Test pengguna hapus riwayat donor -> 204."""
+    # Buat data lalu hapus oleh pengguna.
     pendonor = create_pendonor(client)
     pengguna_headers = _get_pengguna_headers(client)
 
@@ -202,6 +217,7 @@ def test_delete_riwayat_donor_pengguna_success(client):
 
 def test_delete_riwayat_donor_pengguna_not_found(client):
     """Test pengguna hapus riwayat donor tidak ada -> 404."""
+    # Hapus id yang tidak ada harus 404.
     pengguna_headers = _get_pengguna_headers(client)
     response = client.delete("/pengguna/riwayat-donor/9999", headers=pengguna_headers)
     assert response.status_code == 404
@@ -209,6 +225,7 @@ def test_delete_riwayat_donor_pengguna_not_found(client):
 
 def test_pengguna_update_delete_after_verifikasi(client, admin_headers):
     """Test riwayat donor terverifikasi tidak bisa diubah/dihapus pengguna."""
+    # Setelah diverifikasi admin, pengguna tidak boleh update/delete.
     pendonor = create_pendonor(client)
     pengguna_headers = _get_pengguna_headers(client)
 
@@ -233,6 +250,7 @@ def test_pengguna_update_delete_after_verifikasi(client, admin_headers):
 
 def test_verifikasi_riwayat_donor_unauthorized(client):
     """Test verifikasi tanpa admin -> 401."""
+    # Verifikasi tanpa admin harus ditolak.
     pendonor = create_pendonor(client)
     created = client.post("/riwayat-donor", json={
         "id_pendonor": pendonor["id_pendonor"]
@@ -247,6 +265,7 @@ def test_verifikasi_riwayat_donor_unauthorized(client):
 
 def test_riwayat_donor_filter_status_verifikasi(client, admin_headers):
     """Test filter status verifikasi pada riwayat donor."""
+    # Buat dua data, verifikasi salah satu, lalu filter.
     pendonor_1 = create_pendonor(client, {"email": "verif1@example.com"})
     pendonor_2 = create_pendonor(client, {"email": "verif2@example.com"})
 
@@ -266,6 +285,7 @@ def test_riwayat_donor_filter_status_verifikasi(client, admin_headers):
 
 def test_pengguna_cannot_access_other_pengguna_riwayat(client):
     """Test pengguna tidak bisa akses riwayat milik pengguna lain -> 404."""
+    # Pengguna lain tidak boleh mengakses riwayat milik orang lain.
     pendonor = create_pendonor(client)
     pengguna_headers = _get_pengguna_headers(client, {"email": "pengguna1@example.com"})
     other_headers = _get_pengguna_headers(client, {"email": "pengguna2@example.com"})
