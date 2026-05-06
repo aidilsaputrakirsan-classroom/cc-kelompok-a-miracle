@@ -1,46 +1,54 @@
-import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
-import { ItemCard } from '../ItemCard';
-import { Droplets } from 'lucide-react';
+import { render, screen, fireEvent } from '@testing-library/react'
+import { describe, it, expect, vi } from 'vitest'
+import ItemCard from '../ItemCard'
+
+const mockItem = {
+  id: 1,
+  name: 'Laptop',
+  description: 'Laptop untuk cloud computing',
+  price: 15000000,
+  quantity: 5,
+}
 
 describe('ItemCard Component', () => {
-  it('renders title and description correctly', () => {
+  it('menampilkan nama dan harga item', () => {
     render(
-      <ItemCard 
-        title="Test Title" 
-        description="Test Description" 
-        icon={Droplets}
+      <ItemCard
+        item={mockItem}
+        onEdit={() => {}}
+        onDelete={() => {}}
       />
-    );
-    
-    expect(screen.getByText('Test Title')).toBeInTheDocument();
-    expect(screen.getByText('Test Description')).toBeInTheDocument();
-  });
+    )
+    expect(screen.getByText('Laptop')).toBeInTheDocument()
+    expect(screen.getByText(/15/)).toBeInTheDocument()
+  })
 
-  it('renders badge when provided', () => {
+  it('memanggil onEdit saat tombol edit diklik', () => {
+    const handleEdit = vi.fn()
     render(
-      <ItemCard 
-        title="Test Title" 
-        description="Test Description" 
-        badge="New"
+      <ItemCard
+        item={mockItem}
+        onEdit={handleEdit}
+        onDelete={() => {}}
       />
-    );
-    
-    expect(screen.getByText('New')).toBeInTheDocument();
-  });
+    )
+    // Sesuaikan selector dengan teks tombol edit di komponen Anda
+    const editButton = screen.getByText(/edit/i)
+    fireEvent.click(editButton)
+    expect(handleEdit).toHaveBeenCalledWith(mockItem)
+  })
 
-  it('calls onClick handler when clicked', () => {
-    const handleClick = vi.fn();
+  it('memanggil onDelete saat tombol hapus diklik', () => {
+    const handleDelete = vi.fn()
     render(
-      <ItemCard 
-        title="Test Title" 
-        description="Test Description" 
-        onClick={handleClick}
+      <ItemCard
+        item={mockItem}
+        onEdit={() => {}}
+        onDelete={handleDelete}
       />
-    );
-    
-    // Clicking the title should bubble up to the container's onClick
-    fireEvent.click(screen.getByText('Test Title'));
-    expect(handleClick).toHaveBeenCalled();
-  });
-});
+    )
+    const deleteButton = screen.getByText(/hapus|delete/i)
+    fireEvent.click(deleteButton)
+    expect(handleDelete).toHaveBeenCalledWith(mockItem.id)
+  })
+})
