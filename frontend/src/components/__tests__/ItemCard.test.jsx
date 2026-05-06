@@ -39,8 +39,43 @@ describe('ItemCard Component', () => {
       />
     );
     
-    // Clicking the title should bubble up to the container's onClick
     fireEvent.click(screen.getByText('Test Title'));
     expect(handleClick).toHaveBeenCalled();
+  });
+
+  it('renders subtitle correctly', () => {
+    render(
+      <ItemCard 
+        title="Test Title" 
+        subtitle="Test Subtitle" 
+        description="Test Description" 
+      />
+    );
+    
+    expect(screen.getByText('Test Subtitle')).toBeInTheDocument();
+  });
+
+  it('renders badge when provided', () => {
+    render(
+      <ItemCard 
+        title="Budi Santoso" 
+        description="Darah O+" 
+        badge="Aktif" 
+      />
+    );
+    expect(screen.getByText('Aktif')).toBeInTheDocument();
+  });
+
+  it('uses custom badge color when provided', () => {
+    render(
+      <ItemCard 
+        title="Budi Santoso" 
+        description="Darah O+" 
+        badge="Langka" 
+        badgeColor="bg-purple-600"
+      />
+    );
+    const badge = screen.getByText('Langka');
+    expect(badge).toHaveClass('bg-purple-600');
   });
 });

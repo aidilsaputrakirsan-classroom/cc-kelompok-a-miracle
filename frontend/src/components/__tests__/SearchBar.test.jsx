@@ -22,4 +22,14 @@ describe('SearchBar Component', () => {
     
     expect(handleClear).toHaveBeenCalled();
   });
+
+  it('renders custom placeholder', () => {
+    render(<SearchBar value="" onChange={() => {}} onClear={() => {}} placeholder="Cari pendonor..." />);
+    expect(screen.getByPlaceholderText('Cari pendonor...')).toBeInTheDocument();
+  });
+
+  it('does not show clear button when value is empty', () => {
+    render(<SearchBar value="" onChange={() => {}} onClear={() => {}} />);
+    expect(screen.queryByLabelText('clear-search')).not.toBeInTheDocument();
+  });
 });

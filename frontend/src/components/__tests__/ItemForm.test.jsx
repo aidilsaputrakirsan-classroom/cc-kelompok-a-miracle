@@ -8,29 +8,59 @@ describe('ItemForm Component', () => {
     { name: 'email', label: 'Email', type: 'email' }
   ];
 
-  it('shows error when required field is empty on submit', () => {
+  it('menampilkan error jika field wajib kosong saat submit', () => {
     const handleSubmit = vi.fn();
     render(<ItemForm fields={fields} onSubmit={handleSubmit} />);
     
-    fireEvent.click(screen.getByText('Simpan'));
+    const submitButton = screen.getByText('Simpan');
+    fireEvent.click(submitButton);
     
     expect(screen.getByText('Nama wajib diisi')).toBeInTheDocument();
     expect(handleSubmit).not.toHaveBeenCalled();
   });
 
-  it('calls onSubmit with form data when valid', () => {
+  it('memanggil onSubmit dengan data form jika input valid', () => {
     const handleSubmit = vi.fn();
     render(<ItemForm fields={fields} onSubmit={handleSubmit} />);
     
-    // Now we can use labels properly
-    fireEvent.change(screen.getByLabelText(/Nama/i), { target: { value: 'John Doe' } });
-    fireEvent.change(screen.getByLabelText(/Email/i), { target: { value: 'john@example.com' } });
+    fireEvent.change(screen.getByLabelText(/Nama/i), { target: { value: 'Budi Santoso' } });
+    fireEvent.change(screen.getByLabelText(/Email/i), { target: { value: 'budi@example.com' } });
     
     fireEvent.click(screen.getByText('Simpan'));
     
     expect(handleSubmit).toHaveBeenCalledWith({
-      name: 'John Doe',
-      email: 'john@example.com'
+      name: 'Budi Santoso',
+      email: 'budi@example.com'
+    });
+  });
+
+  it('mengisi data awal (initialData) dengan benar', () => {
+    const initialData = { name: 'Siti', email: 'siti@example.com' };
+    render(<ItemForm fields={fields} onSubmit={vi.fn()} initialData={initialData} />);
+    
+    expect(screen.getByLabelText(/Nama/i).value).toBe('Siti');
+    expect(screen.getByLabelText(/Email/i).value).toBe('siti@example.com');
+  });
+
+  it('menghapus pesan error saat pengguna mulai mengetik', () => {
+    render(<ItemForm fields={fields} onSubmit={vi.fn()} />);
+    
+    fireEvent.click(screen.getByText('Simpan'));
+    expect(screen.getByText('Nama wajib diisi')).toBeInTheDocument();
+    
+    fireEvent.change(screen.getByLabelText(/Nama/i), { target: { value: 'A' } });
+    expect(screen.queryByText('Nama wajib diisi')).not.toBeInTheDocument();
+  });
+
+  it('berhasil submit tanpa mengisi field opsional', () => {
+    const handleSubmit = vi.fn();
+    render(<ItemForm fields={fields} onSubmit={handleSubmit} />);
+    
+    fireEvent.change(screen.getByLabelText(/Nama/i), { target: { value: 'Nama Wajib' } });
+    fireEvent.click(screen.getByText('Simpan'));
+    
+    expect(handleSubmit).toHaveBeenCalledWith({
+      name: 'Nama Wajib'
     });
   });
 });

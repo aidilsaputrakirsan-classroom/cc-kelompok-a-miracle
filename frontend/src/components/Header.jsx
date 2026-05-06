@@ -13,7 +13,14 @@ export const Header = () => {
   useEffect(() => {
     // Initial theme check
     const savedTheme = localStorage.getItem('theme');
-    setIsDark(savedTheme === 'dark' || document.documentElement.classList.contains('dark'));
+    const isDarkMode = savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    
+    setIsDark(isDarkMode);
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
 
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
@@ -197,6 +204,7 @@ export const Header = () => {
         <button 
           className="lg:hidden p-2 rounded-lg transition-colors"
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          aria-label="Toggle Menu"
         >
           {isMobileMenuOpen ? (
             <X className={`w-6 h-6 ${isScrolled ? 'text-slate-900 dark:text-white' : 'text-white'}`} />
