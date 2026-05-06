@@ -10,6 +10,7 @@ import { VerificationQueue } from './pages/VerificationQueue';
 import { DonorRegistration } from './pages/DonorRegistration';
 import { PublicStock } from './pages/PublicStock';
 import { AdminLayout } from './components/AdminLayout';
+import AboutPage from "./components/AboutPage";
 import { apiService } from './services/api';
 
 const AdminRoute = ({ children }) => {
@@ -91,6 +92,7 @@ export default function App() {
         <Route path="/user/register" element={<UserRegister />} />
         <Route path="/register" element={<DonorRegistration />} />
         <Route path="/stock" element={<PublicStock />} />
+        <Route path="/about" element={<AboutPage />} />
 
         <Route path="/admin" element={
           <AdminRoute>

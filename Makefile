@@ -1,5 +1,28 @@
 .PHONY: up down build logs ps clean restart
 
+# Lint (cek code style)
+lint:
+	@echo "Running linter..."
+	# contoh (sesuaikan dengan project)
+	# backend (python)
+	docker compose exec backend flake8 || true
+	# frontend (optional)
+	# docker compose exec frontend npm run lint || true
+
+# Test (placeholder dulu)
+test:
+	@echo "Running tests..."
+	@echo "No tests implemented yet"
+
+# Build docker
+build:
+	@echo "Building containers..."
+	docker compose build
+
+# PR check (dipakai sebelum PR / CI)
+pr-check: build test
+	@echo "PR check completed"
+
 # Start semua services
 up:
 	docker compose up -d

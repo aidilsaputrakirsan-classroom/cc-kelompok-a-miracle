@@ -431,6 +431,30 @@ npm install
 npm run dev
 ```
 
+## ⚙️ Makefile Commands
+
+Project ini menyediakan beberapa command untuk membantu workflow development:
+
+### 🔍 Lint
+Menjalankan pengecekan code style
+```bash
+make lint
+```
+
+### 🧪 Test
+Menjalankan test (sementara masih placeholder)
+```bash
+make test
+```
+
+### 🚀 PR Check
+Digunakan sebelum membuat Pull Request:
+- Build container
+- Menjalankan test
+```bash
+make pr-check
+```
+
 ## 📅 Roadmap
 
 | Minggu | Target                 | Status |

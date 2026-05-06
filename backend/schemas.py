@@ -118,10 +118,10 @@ class PendonorResponse(BaseModel):
     id_pendonor: int
     nama_lengkap: str
     email: str
-    jenis_kelamin: str
+    jenis_kelamin: JenisKelaminEnum
     berat_badan: float
     tinggi_badan: float
-    golongan_darah: str
+    golongan_darah: GolonganDarahEnum
     umur: int
     tanggal_lahir: date
     tanggal_terakhir_donor: Optional[date] = None
@@ -153,7 +153,7 @@ class RiwayatDonorResponse(BaseModel):
     id_riwayat: int
     id_pendonor: int
     id_pengguna: Optional[int] = None
-    golongan_darah: str
+    golongan_darah: GolonganDarahEnum
     status_verifikasi: bool
 
     class Config:
