@@ -7,9 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test": "vitest",
+    "lint": "eslint src --ext .jsx,.js",
+    "clean": "rm -rf dist"
   },
   "dependencies": {
     "@google/genai": "^1.29.0",
