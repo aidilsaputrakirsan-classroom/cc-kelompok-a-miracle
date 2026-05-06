@@ -4,6 +4,7 @@ from tests.conftest import create_pendonor
 
 def test_create_pendonor_success(client):
     """Test membuat pendonor baru -> 201."""
+    # Buat data via helper agar payload konsisten.
     data = create_pendonor(client)
     assert data["nama_lengkap"] == "Budi Santoso"
     assert data["email"] == "budi@example.com"
@@ -12,6 +13,7 @@ def test_create_pendonor_success(client):
 
 def test_get_pendonor_list(client):
     """Test mengambil daftar pendonor -> 200."""
+    # Pastikan ada minimal satu data sebelum list.
     create_pendonor(client)
     response = client.get("/pendonor")
     assert response.status_code == 200
@@ -21,6 +23,7 @@ def test_get_pendonor_list(client):
 
 def test_get_pendonor_pagination(client):
     """Test pagination pendonor dengan skip & limit."""
+    # Buat beberapa data agar pagination bisa diuji.
     create_pendonor(client, {"email": "budi1@example.com"})
     create_pendonor(client, {"email": "budi2@example.com"})
     create_pendonor(client, {"email": "budi3@example.com"})
@@ -34,12 +37,14 @@ def test_get_pendonor_pagination(client):
 
 def test_get_pendonor_pagination_invalid(client):
     """Test pagination pendonor dengan parameter invalid -> 422."""
+    # skip/limit tidak valid harus memicu error validasi.
     response = client.get("/pendonor?skip=-1&limit=0")
     assert response.status_code == 422
 
 
 def test_get_pendonor_filtering(client):
     """Test filter pendonor berdasarkan nama, kelamin, darah, dan umur."""
+    # Buat dua data pendonor berbeda untuk uji filter.
     create_pendonor(client, {
         "email": "budi.filter@example.com",
         "nama_lengkap": "Budi Filter",
@@ -55,6 +60,7 @@ def test_get_pendonor_filtering(client):
         "umur": 30
     })
 
+    # Terapkan beberapa filter sekaligus.
     response = client.get(
         "/pendonor?nama=Budi&jenis_kelamin=LAKI_LAKI&golongan_darah=A_POSITIF&umur_min=20&umur_max=28"
     )
@@ -69,6 +75,7 @@ def test_get_pendonor_filtering(client):
 
 def test_create_pendonor_invalid_email(client):
     """Test create pendonor email invalid -> 422."""
+    # Gunakan format email yang jelas tidak valid.
     response = client.post("/pendonor", json={
         "nama_lengkap": "Invalid Email",
         "email": "not-an-email",
@@ -86,6 +93,7 @@ def test_create_pendonor_invalid_email(client):
 
 def test_create_pendonor_missing_required(client):
     """Test create pendonor tanpa field wajib -> 422."""
+    # Hilang nama_lengkap harus gagal validasi.
     response = client.post("/pendonor", json={
         "email": "missing@example.com",
         "jenis_kelamin": "Laki-laki",
@@ -102,6 +110,7 @@ def test_create_pendonor_missing_required(client):
 
 def test_create_pendonor_invalid_umur(client):
     """Test create pendonor umur di bawah batas -> 422."""
+    # Umur di bawah batas minimal harus ditolak.
     response = client.post("/pendonor", json={
         "nama_lengkap": "Invalid Umur",
         "email": "invalidumur@example.com",
@@ -119,6 +128,7 @@ def test_create_pendonor_invalid_umur(client):
 
 def test_create_pendonor_invalid_enum(client):
     """Test create pendonor dengan enum invalid -> 422."""
+    # Nilai enum tidak valid untuk jenis_kelamin dan golongan_darah.
     response = client.post("/pendonor", json={
         "nama_lengkap": "Invalid Enum",
         "email": "invalide@example.com",
@@ -136,12 +146,14 @@ def test_create_pendonor_invalid_enum(client):
 
 def test_get_pendonor_not_found(client):
     """Test mengambil pendonor yang tidak ada -> 404."""
+    # Id yang tidak ada harus mengembalikan 404.
     response = client.get("/pendonor/9999")
     assert response.status_code == 404
 
 
 def test_update_pendonor_success(client):
     """Test update pendonor -> data berubah."""
+    # Update sebagian field dan verifikasi perubahannya.
     created = create_pendonor(client)
     pendonor_id = created["id_pendonor"]
 
@@ -157,6 +169,7 @@ def test_update_pendonor_success(client):
 
 def test_update_pendonor_not_found(client):
     """Test update pendonor tidak ada -> 404."""
+    # Update id yang tidak ada harus mengembalikan 404.
     response = client.put("/pendonor/9999", json={
         "alamat": "Jl. Melati No. 2"
     })
@@ -165,6 +178,7 @@ def test_update_pendonor_not_found(client):
 
 def test_delete_pendonor_unauthorized(client):
     """Test hapus pendonor tanpa admin -> 401."""
+    # Hapus tanpa header admin harus ditolak.
     created = create_pendonor(client)
     pendonor_id = created["id_pendonor"]
 
@@ -174,6 +188,7 @@ def test_delete_pendonor_unauthorized(client):
 
 def test_delete_pendonor_success(client, admin_headers):
     """Test hapus pendonor -> 204, lalu GET -> 404."""
+    # Hapus dengan admin, lalu pastikan data hilang.
     created = create_pendonor(client)
     pendonor_id = created["id_pendonor"]
 
@@ -186,5 +201,6 @@ def test_delete_pendonor_success(client, admin_headers):
 
 def test_delete_pendonor_not_found(client, admin_headers):
     """Test hapus pendonor tidak ada -> 404."""
+    # Hapus id yang tidak ada harus mengembalikan 404.
     response = client.delete("/pendonor/9999", headers=admin_headers)
     assert response.status_code == 404
