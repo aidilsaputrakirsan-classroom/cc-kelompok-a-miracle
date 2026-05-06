@@ -1,3 +1,5 @@
+# Daftar dependency Python untuk backend (dipakai saat instalasi).
+# Format umum: nama-paket==versi
 fastapi==0.115.0
 uvicorn==0.30.0
 sqlalchemy==2.0.35
