@@ -1,49 +1,10 @@
 """Test CRUD pendonor endpoints."""
-
-
-def _get_admin_headers(client):
-    response = client.post("/auth/admin/register", json={
-        "email": "admin@example.com",
-        "password": "AdminPass123",
-        "nama_admin": "Admin Test"
-    })
-    assert response.status_code == 201
-
-    login = client.post("/auth/admin/login", json={
-        "email": "admin@example.com",
-        "password": "AdminPass123"
-    })
-    assert login.status_code == 200
-    token = login.json()["access_token"]
-    return {"Authorization": f"Bearer {token}"}
-
-
-def _create_pendonor(client, overrides=None):
-    payload = {
-        "nama_lengkap": "Budi Santoso",
-        "email": "budi@example.com",
-        "jenis_kelamin": "Laki-laki",
-        "berat_badan": 70,
-        "tinggi_badan": 170,
-        "golongan_darah": "A+",
-        "umur": 25,
-        "tanggal_lahir": "1999-01-01",
-        "tanggal_terakhir_donor": "2024-01-01",
-        "total_donor": 0,
-        "alamat": "Jl. Mawar No. 1",
-        "no_telepon": "081234567890",
-        "riwayat_kesehatan": "Sehat"
-    }
-    if overrides:
-        payload.update(overrides)
-    response = client.post("/pendonor", json=payload)
-    assert response.status_code == 201
-    return response.json()
+from tests.conftest import create_pendonor
 
 
 def test_create_pendonor_success(client):
     """Test membuat pendonor baru -> 201."""
-    data = _create_pendonor(client)
+    data = create_pendonor(client)
     assert data["nama_lengkap"] == "Budi Santoso"
     assert data["email"] == "budi@example.com"
     assert "id_pendonor" in data
@@ -51,7 +12,7 @@ def test_create_pendonor_success(client):
 
 def test_get_pendonor_list(client):
     """Test mengambil daftar pendonor -> 200."""
-    _create_pendonor(client)
+    create_pendonor(client)
     response = client.get("/pendonor")
     assert response.status_code == 200
     data = response.json()
@@ -60,9 +21,9 @@ def test_get_pendonor_list(client):
 
 def test_get_pendonor_pagination(client):
     """Test pagination pendonor dengan skip & limit."""
-    _create_pendonor(client, {"email": "budi1@example.com"})
-    _create_pendonor(client, {"email": "budi2@example.com"})
-    _create_pendonor(client, {"email": "budi3@example.com"})
+    create_pendonor(client, {"email": "budi1@example.com"})
+    create_pendonor(client, {"email": "budi2@example.com"})
+    create_pendonor(client, {"email": "budi3@example.com"})
 
     response = client.get("/pendonor?skip=0&limit=2")
     assert response.status_code == 200
@@ -79,14 +40,14 @@ def test_get_pendonor_pagination_invalid(client):
 
 def test_get_pendonor_filtering(client):
     """Test filter pendonor berdasarkan nama, kelamin, darah, dan umur."""
-    _create_pendonor(client, {
+    create_pendonor(client, {
         "email": "budi.filter@example.com",
         "nama_lengkap": "Budi Filter",
         "golongan_darah": "A+",
         "jenis_kelamin": "Laki-laki",
         "umur": 25
     })
-    _create_pendonor(client, {
+    create_pendonor(client, {
         "email": "siti.filter@example.com",
         "nama_lengkap": "Siti Filter",
         "golongan_darah": "B+",
@@ -181,7 +142,7 @@ def test_get_pendonor_not_found(client):
 
 def test_update_pendonor_success(client):
     """Test update pendonor -> data berubah."""
-    created = _create_pendonor(client)
+    created = create_pendonor(client)
     pendonor_id = created["id_pendonor"]
 
     response = client.put(f"/pendonor/{pendonor_id}", json={
@@ -204,18 +165,17 @@ def test_update_pendonor_not_found(client):
 
 def test_delete_pendonor_unauthorized(client):
     """Test hapus pendonor tanpa admin -> 401."""
-    created = _create_pendonor(client)
+    created = create_pendonor(client)
     pendonor_id = created["id_pendonor"]
 
     response = client.delete(f"/pendonor/{pendonor_id}")
     assert response.status_code == 401
 
 
-def test_delete_pendonor_success(client):
+def test_delete_pendonor_success(client, admin_headers):
     """Test hapus pendonor -> 204, lalu GET -> 404."""
-    created = _create_pendonor(client)
+    created = create_pendonor(client)
     pendonor_id = created["id_pendonor"]
-    admin_headers = _get_admin_headers(client)
 
     response = client.delete(f"/pendonor/{pendonor_id}", headers=admin_headers)
     assert response.status_code == 204
@@ -224,8 +184,7 @@ def test_delete_pendonor_success(client):
     assert get_resp.status_code == 404
 
 
-def test_delete_pendonor_not_found(client):
+def test_delete_pendonor_not_found(client, admin_headers):
     """Test hapus pendonor tidak ada -> 404."""
-    admin_headers = _get_admin_headers(client)
     response = client.delete("/pendonor/9999", headers=admin_headers)
     assert response.status_code == 404

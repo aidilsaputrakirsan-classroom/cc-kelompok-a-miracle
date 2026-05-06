@@ -30,6 +30,7 @@ def test_register_admin_duplicate(client):
     })
     assert response.status_code == 400
 
+
 def test_register_admin_invalid_email(client):
     """Test register admin dengan email invalid -> 422."""
     response = client.post("/auth/admin/register", json={
@@ -38,6 +39,7 @@ def test_register_admin_invalid_email(client):
         "nama_admin": "Admin Invalid"
     })
     assert response.status_code == 422
+
 
 def test_register_admin_weak_password(client):
     """Test register admin dengan password lemah -> 422."""
@@ -80,6 +82,7 @@ def test_login_admin_wrong_password(client):
     })
     assert response.status_code == 401
 
+
 def test_login_admin_not_registered(client):
     """Test login admin dengan email tidak terdaftar -> 401."""
     response = client.post("/auth/admin/login", json={
@@ -119,6 +122,7 @@ def test_register_pengguna_duplicate_email(client):
     })
     assert response.status_code == 400
 
+
 def test_register_pengguna_invalid_email(client):
     """Test register pengguna dengan email invalid -> 422."""
     response = client.post("/auth/pengguna/register", json={
@@ -127,6 +131,7 @@ def test_register_pengguna_invalid_email(client):
         "nama_pengguna": "Pengguna Invalid"
     })
     assert response.status_code == 422
+
 
 def test_register_pengguna_weak_password(client):
     """Test register pengguna dengan password lemah -> 422."""
@@ -168,6 +173,7 @@ def test_login_pengguna_wrong_password(client):
         "password": "UserPass124"
     })
     assert response.status_code == 401
+
 
 def test_login_pengguna_not_registered(client):
     """Test login pengguna dengan email tidak terdaftar -> 401."""
