@@ -1,0 +1,9 @@
+line-length = 100
+target-version = "py312"
+
+[lint]
+select = ["E", "F", "W", "I"]   # Error, Pyflakes, Warning, isort
+ignore = ["E501"]               # Ignore line too long (untuk sekarang)
+
+[format]
+quote-style = "double"
