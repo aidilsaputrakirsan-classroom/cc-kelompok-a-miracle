@@ -1,20 +1,33 @@
 import os
-from fastapi import FastAPI, Depends, HTTPException, Query
-from fastapi.responses import JSONResponse
+
+from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from sqlalchemy import inspect, text
 from sqlalchemy.orm import Session
-from database import engine, get_db
-from models import Base, Admin, Pengguna, Pendonor, ensure_schema_compatibility
-from schemas import (
-    AdminCreate, AdminResponse, PenggunaCreate, PenggunaResponse,
-    PendonorCreate, PendonorUpdate, PendonorResponse, PendonorListResponse,
-    RiwayatDonorCreate, RiwayatDonorVerifikasi, RiwayatDonorResponse, RiwayatDonorListResponse,
-    RiwayatDonorUpdate,
-    LoginRequest, TokenResponse, PublicBloodStockResponse,
-)
-from auth import create_access_token, get_current_admin, get_current_pengguna
+
 import crud
+from auth import create_access_token, get_current_admin, get_current_pengguna
+from database import engine, get_db
+from models import Admin, Base, Pengguna, ensure_schema_compatibility
+from schemas import (
+    AdminCreate,
+    AdminResponse,
+    LoginRequest,
+    PendonorCreate,
+    PendonorListResponse,
+    PendonorResponse,
+    PendonorUpdate,
+    PenggunaCreate,
+    PenggunaResponse,
+    PublicBloodStockResponse,
+    RiwayatDonorCreate,
+    RiwayatDonorListResponse,
+    RiwayatDonorResponse,
+    RiwayatDonorUpdate,
+    RiwayatDonorVerifikasi,
+    TokenResponse,
+)
 
 # Buat semua tabel
 Base.metadata.create_all(bind=engine)
@@ -131,7 +144,7 @@ def login_admin(login_data: LoginRequest, db: Session = Depends(get_db)):
     admin = crud.authenticate_admin(db=db, email=login_data.email, password=login_data.password)
     if not admin:
         raise HTTPException(status_code=401, detail="Email atau password admin salah")
-    
+
     token = create_access_token(data={"sub": admin.id_admin, "user_type": "admin"})
     return {
         "access_token": token,

@@ -2,8 +2,9 @@
 """Test apakah backend bisa connect ke PostgreSQL database."""
 
 from sqlalchemy import text
+
 from database import SessionLocal
-from models import Admin, Pengguna, Pendonor, RiwayatDonor
+from models import Admin, Pendonor, Pengguna, RiwayatDonor
 
 print("=" * 60)
 print("Testing Backend Database Connection")
@@ -29,11 +30,11 @@ try:
     print(f"  - Pengguna: {total_pengguna}")
     print(f"  - Pendonor: {total_pendonor}")
     print(f"  - Riwayat donor: {total_riwayat}")
-    
+
     db.close()
-    
+
 except Exception as e:
-    print(f"\n✗ Connection FAILED!")
+    print("\n✗ Connection FAILED!")
     print(f"Error Type: {type(e).__name__}")
     print(f"Error Message: {str(e)}")
     print("\nPossible causes:")
