@@ -1,10 +1,8 @@
-import re
 from datetime import date, datetime
 from enum import Enum
 from typing import Optional
-
+import re
 from pydantic import BaseModel, EmailStr, Field, field_validator
-
 
 class GolonganDarahEnum(str, Enum):
     O_POSITIF = "O+"
@@ -120,10 +118,10 @@ class PendonorResponse(BaseModel):
     id_pendonor: int
     nama_lengkap: str
     email: str
-    jenis_kelamin: JenisKelaminEnum
+    jenis_kelamin: str
     berat_badan: float
     tinggi_badan: float
-    golongan_darah: GolonganDarahEnum
+    golongan_darah: str
     umur: int
     tanggal_lahir: date
     tanggal_terakhir_donor: Optional[date] = None
@@ -132,6 +130,8 @@ class PendonorResponse(BaseModel):
     no_telepon: str
     riwayat_kesehatan: Optional[str] = None
     created_at: datetime
+    is_eligible: bool = True
+    days_until_eligible: int = 0
 
     class Config:
         from_attributes = True
@@ -140,11 +140,13 @@ class PendonorResponse(BaseModel):
 class RiwayatDonorCreate(BaseModel):
     id_pendonor: int
     golongan_darah: Optional[GolonganDarahEnum] = None
+    bukti_donor: Optional[str] = None
 
 
 class RiwayatDonorUpdate(BaseModel):
     id_pendonor: Optional[int] = None
     golongan_darah: Optional[GolonganDarahEnum] = None
+    bukti_donor: Optional[str] = None
 
 
 class RiwayatDonorVerifikasi(BaseModel):
@@ -155,8 +157,9 @@ class RiwayatDonorResponse(BaseModel):
     id_riwayat: int
     id_pendonor: int
     id_pengguna: Optional[int] = None
-    golongan_darah: GolonganDarahEnum
+    golongan_darah: str
     status_verifikasi: bool
+    bukti_donor: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -179,3 +182,8 @@ class BloodStockItem(BaseModel):
 
 class PublicBloodStockResponse(BaseModel):
     blood_stock: list[BloodStockItem]
+
+
+class BroadcastRequest(BaseModel):
+    golongan_darah: GolonganDarahEnum
+    pesan: str = Field(..., min_length=1)

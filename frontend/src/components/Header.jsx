@@ -60,6 +60,7 @@ export const Header = () => {
   const navLinks = [
     { name: 'Beranda', href: '/' },
     { name: 'Tentang', href: '/#about' },
+    { name: 'Titik Donor', href: '/points' },
     { name: 'Fitur', href: '/#features' },
   ];
 

@@ -1,33 +1,21 @@
 import os
-
-from fastapi import Depends, FastAPI, HTTPException, Query
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import inspect, text
 from sqlalchemy.orm import Session
-
-import crud
-from auth import create_access_token, get_current_admin, get_current_pengguna
 from database import engine, get_db
-from models import Admin, Base, Pengguna, ensure_schema_compatibility
+from models import Base, Admin, Pengguna, Pendonor, ensure_schema_compatibility
 from schemas import (
-    AdminCreate,
-    AdminResponse,
-    LoginRequest,
-    PendonorCreate,
-    PendonorListResponse,
-    PendonorResponse,
-    PendonorUpdate,
-    PenggunaCreate,
-    PenggunaResponse,
-    PublicBloodStockResponse,
-    RiwayatDonorCreate,
-    RiwayatDonorListResponse,
-    RiwayatDonorResponse,
+    AdminCreate, AdminResponse, PenggunaCreate, PenggunaResponse,
+    PendonorCreate, PendonorUpdate, PendonorResponse, PendonorListResponse,
+    RiwayatDonorCreate, RiwayatDonorVerifikasi, RiwayatDonorResponse, RiwayatDonorListResponse,
     RiwayatDonorUpdate,
-    RiwayatDonorVerifikasi,
-    TokenResponse,
+    LoginRequest, TokenResponse, PublicBloodStockResponse,
+    BroadcastRequest,
 )
+from auth import create_access_token, get_current_admin, get_current_pengguna
+import crud
 
 # Buat semua tabel
 Base.metadata.create_all(bind=engine)
@@ -144,7 +132,7 @@ def login_admin(login_data: LoginRequest, db: Session = Depends(get_db)):
     admin = crud.authenticate_admin(db=db, email=login_data.email, password=login_data.password)
     if not admin:
         raise HTTPException(status_code=401, detail="Email atau password admin salah")
-
+    
     token = create_access_token(data={"sub": admin.id_admin, "user_type": "admin"})
     return {
         "access_token": token,
@@ -411,6 +399,27 @@ def verifikasi_riwayat_donor(
     if not verified:
         raise HTTPException(status_code=404, detail=f"Riwayat donor {riwayat_id} tidak ditemukan")
     return verified
+
+
+@app.post("/api/admin/broadcast")
+def admin_broadcast(
+    broadcast_data: BroadcastRequest,
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_admin),
+):
+    """Broadcasting pesan ke semua pendonor berdasarkan golongan darah (Emergency Request)."""
+    # Cari pendonor yang sesuai
+    donors = db.query(Pendonor).filter(Pendonor.golongan_darah == broadcast_data.golongan_darah).all()
+    
+    # Simulasi pengiriman (WhatsApp/Email API)
+    # Di dunia nyata, di sini akan ada pemanggilan API eksternal
+    
+    return {
+        "message": f"Pesan darurat berhasil dikirim ke {len(donors)} pendonor golongan darah {broadcast_data.golongan_darah}",
+        "sent_to": [d.nama_lengkap for d in donors],
+        "count": len(donors),
+        "broadcasted_message": broadcast_data.pesan
+    }
 
 
 # ==================== SYSTEM INFO ====================

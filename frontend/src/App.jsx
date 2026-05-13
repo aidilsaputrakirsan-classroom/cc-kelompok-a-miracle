@@ -9,8 +9,8 @@ import { DonorList } from './pages/DonorList';
 import { VerificationQueue } from './pages/VerificationQueue';
 import { DonorRegistration } from './pages/DonorRegistration';
 import { PublicStock } from './pages/PublicStock';
+import { DonationPoints } from './pages/DonationPoints';
 import { AdminLayout } from './components/AdminLayout';
-import AboutPage from "./components/AboutPage";
 import { apiService } from './services/api';
 
 // ================= ADMIN ROUTE =================
@@ -85,33 +85,13 @@ const UserRoute = ({ children }) => {
 
 // ================= APP =================
 export default function App() {
-  const [darkMode, setDarkMode] = useState(false);
-
   // Load theme dari localStorage
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme");
     if (savedTheme === "dark") {
-      setDarkMode(true);
       document.documentElement.classList.add("dark");
     }
   }, []);
-
-  // Toggle dark mode
-  const toggleDarkMode = () => {
-    setDarkMode((prev) => {
-      const newMode = !prev;
-
-      if (newMode) {
-        document.documentElement.classList.add("dark");
-        localStorage.setItem("theme", "dark");
-      } else {
-        document.documentElement.classList.remove("dark");
-        localStorage.setItem("theme", "light");
-      }
-
-      return newMode;
-    });
-  };
 
   return (
     <Router>
@@ -121,7 +101,7 @@ export default function App() {
         <Route path="/user/register" element={<UserRegister />} />
         <Route path="/register" element={<DonorRegistration />} />
         <Route path="/stock" element={<PublicStock />} />
-        <Route path="/about" element={<AboutPage />} />
+        <Route path="/points" element={<DonationPoints />} />
 
         <Route path="/admin" element={
           <AdminRoute>

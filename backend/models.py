@@ -1,23 +1,8 @@
-import enum
-
-from sqlalchemy import (
-    Boolean,
-    Column,
-    Date,
-    DateTime,
-    Enum,
-    Float,
-    ForeignKey,
-    Integer,
-    String,
-    Text,
-    inspect,
-    text,
-)
+from sqlalchemy import Column, Date, DateTime, Enum, Float, Integer, String, Text, Boolean, ForeignKey, inspect, text
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-
 from database import Base, engine
+import enum
 
 
 def ensure_schema_compatibility() -> None:
@@ -30,15 +15,21 @@ def ensure_schema_compatibility() -> None:
             return
 
         riwayat_columns = {col["name"]: col for col in inspector.get_columns("riwayat_donor")}
-        if "id_pengguna" in riwayat_columns:
-            return
-
-        connection.execute(
-            text(
-                "ALTER TABLE riwayat_donor "
-                "ADD COLUMN id_pengguna INTEGER REFERENCES pengguna(id_pengguna)"
+        if "id_pengguna" not in riwayat_columns:
+            connection.execute(
+                text(
+                    "ALTER TABLE riwayat_donor "
+                    "ADD COLUMN id_pengguna INTEGER REFERENCES pengguna(id_pengguna)"
+                )
             )
-        )
+        
+        if "bukti_donor" not in riwayat_columns:
+            connection.execute(
+                text(
+                    "ALTER TABLE riwayat_donor "
+                    "ADD COLUMN bukti_donor TEXT"
+                )
+            )
 
 class GolonganDarahEnum(str, enum.Enum):
     O_POSITIF = "O+"
@@ -106,6 +97,7 @@ class RiwayatDonor(Base):
     id_pengguna = Column(Integer, ForeignKey("pengguna.id_pengguna"), nullable=True, index=True)
     golongan_darah = Column(Enum(GolonganDarahEnum), nullable=False)
     status_verifikasi = Column(Boolean, nullable=False, default=False)
+    bukti_donor = Column(Text, nullable=True)
 
     pendonor = relationship("Pendonor", back_populates="riwayat_donor")
     pengguna = relationship("Pengguna", back_populates="riwayat_donor")

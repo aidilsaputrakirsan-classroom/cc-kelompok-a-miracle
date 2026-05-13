@@ -60,6 +60,9 @@ export const apiService = {
   getPendingVerifications: (params) => api.get('/riwayat-donor', { params: { ...params, status_verifikasi: false } }),
   verifyRiwayatDonor: (id, data) => api.post(`/riwayat-donor/${id}/verifikasi`, data),
 
+  // Broadcasting
+  adminBroadcast: (data) => api.post('/admin/broadcast', data),
+
   // Riwayat Donor (Pengguna)
   createRiwayatDonorPengguna: (data) => api.post('/pengguna/riwayat-donor', data),
   getRiwayatDonorPengguna: (params) => api.get('/pengguna/riwayat-donor', { params }),

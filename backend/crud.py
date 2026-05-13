@@ -1,13 +1,13 @@
+import datetime
 from sqlalchemy import func
 from sqlalchemy.orm import Session
-
 from auth import hash_password, verify_password
-from models import Admin, GolonganDarahEnum, Pendonor, Pengguna, RiwayatDonor
+from models import Admin, Pengguna, Pendonor, RiwayatDonor, GolonganDarahEnum
 from schemas import (
     AdminCreate,
+    PenggunaCreate,
     PendonorCreate,
     PendonorUpdate,
-    PenggunaCreate,
     RiwayatDonorCreate,
     RiwayatDonorUpdate,
     RiwayatDonorVerifikasi,
@@ -16,6 +16,24 @@ from schemas import (
 
 def _normalize_email(email: str) -> str:
     return email.strip().lower()
+
+
+def _add_eligibility_info(pendonor: Pendonor):
+    if not pendonor.tanggal_terakhir_donor:
+        pendonor.is_eligible = True
+        pendonor.days_until_eligible = 0
+        return pendonor
+    
+    today = datetime.date.today()
+    diff = (today - pendonor.tanggal_terakhir_donor).days
+    
+    if diff >= 90:
+        pendonor.is_eligible = True
+        pendonor.days_until_eligible = 0
+    else:
+        pendonor.is_eligible = False
+        pendonor.days_until_eligible = 90 - diff
+    return pendonor
 
 
 def create_admin(db: Session, admin_data: AdminCreate) -> Admin | None:
@@ -132,11 +150,14 @@ def create_pendonor(db: Session, pendonor_data: PendonorCreate) -> Pendonor:
 
     db.commit()
     db.refresh(db_pendonor)
-    return db_pendonor
+    return _add_eligibility_info(db_pendonor)
 
 
 def get_pendonor(db: Session, pendonor_id: int) -> Pendonor | None:
-    return db.query(Pendonor).filter(Pendonor.id_pendonor == pendonor_id).first()
+    pendonor = db.query(Pendonor).filter(Pendonor.id_pendonor == pendonor_id).first()
+    if pendonor:
+        return _add_eligibility_info(pendonor)
+    return None
 
 
 def get_pendonor_all(
@@ -164,6 +185,10 @@ def get_pendonor_all(
 
     total = query.count()
     pendonor = query.order_by(Pendonor.created_at.desc()).offset(skip).limit(limit).all()
+    
+    for p in pendonor:
+        _add_eligibility_info(p)
+        
     return {"total": total, "pendonor": pendonor}
 
 
@@ -204,7 +229,7 @@ def update_pendonor(db: Session, pendonor_id: int, pendonor_data: PendonorUpdate
 
     db.commit()
     db.refresh(db_pendonor)
-    return db_pendonor
+    return _add_eligibility_info(db_pendonor)
 
 
 def delete_pendonor(db: Session, pendonor_id: int) -> bool:
@@ -233,6 +258,7 @@ def create_riwayat_donor(
         id_pengguna=id_pengguna,
         golongan_darah=donor_golongan_darah,
         status_verifikasi=False,
+        bukti_donor=riwayat_data.bukti_donor,
     )
     db.add(db_riwayat)
     db.commit()
@@ -339,6 +365,8 @@ def verifikasi_riwayat_donor(db: Session, riwayat_id: int, verifikasi_data: Riwa
         pendonor = db.query(Pendonor).filter(Pendonor.id_pendonor == db_riwayat.id_pendonor).first()
         if pendonor:
             pendonor.total_donor = (pendonor.total_donor or 0) + 1
+            # Update tanggal terakhir donor sesuai tanggal verifikasi (hari ini)
+            pendonor.tanggal_terakhir_donor = func.current_date()
 
     db.commit()
     db.refresh(db_riwayat)
@@ -373,7 +401,7 @@ def get_public_blood_stock(db: Session) -> dict:
             func.count(func.distinct(Pendonor.id_pendonor))
         )
         .join(RiwayatDonor, Pendonor.id_pendonor == RiwayatDonor.id_pendonor)
-        .filter(RiwayatDonor.status_verifikasi)
+        .filter(RiwayatDonor.status_verifikasi == True)
         .group_by(Pendonor.golongan_darah)
         .all()
     )

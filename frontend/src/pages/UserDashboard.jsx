@@ -20,7 +20,9 @@ import { id } from 'date-fns/locale';
 import { Header } from '../components/Header';
 import { apiService } from '../services/api';
 import { LoadingSpinner } from '../components/LoadingSpinner';
+import { DigitalDonorCard } from '../components/DigitalDonorCard';
 import Swal from 'sweetalert2';
+import { QrCode, Upload, Image as ImageIcon } from 'lucide-react';
 
 const emptyForm = {
   id_pendonor: '',
@@ -46,6 +48,7 @@ export const UserDashboard = () => {
   const [editingItem, setEditingItem] = useState(null);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState(emptyForm);
+  const [activePendonor, setActivePendonor] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -107,6 +110,11 @@ export const UserDashboard = () => {
 
       const enrichedHistory = await enrichRiwayatWithPendonor(rawHistory);
       setHistory(enrichedHistory);
+      
+      // Ambil pendonor profil (dari riwayat terbaru)
+      if (enrichedHistory.length > 0) {
+        setActivePendonor(enrichedHistory[0].pendonor);
+      }
     } catch (err) {
       console.error('Error fetching history:', err);
       setHistory([]);
@@ -128,6 +136,7 @@ export const UserDashboard = () => {
     const payload = {
       id_pendonor: Number(formData.id_pendonor),
       golongan_darah: formData.golongan_darah || undefined,
+      bukti_donor: formData.bukti_donor || undefined,
     };
 
     const donorPayload = {
@@ -192,6 +201,7 @@ export const UserDashboard = () => {
       alamat: item.pendonor?.alamat || '',
       riwayat_kesehatan: item.pendonor?.riwayat_kesehatan || '',
       golongan_darah: item.golongan_darah || item.pendonor?.golongan_darah || '',
+      bukti_donor: item.bukti_donor || '',
     });
     setIsModalOpen(true);
   };
@@ -279,11 +289,37 @@ export const UserDashboard = () => {
         </div>
 
         <div className="px-6 max-w-full mx-auto pt-16">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
-            <motion.div 
-              whileHover={{ y: -5 }}
-              className="bg-white p-10 rounded-[3rem] shadow-xl border border-slate-100 dark:bg-slate-900 dark:border-slate-800 transition-all flex flex-col items-center text-center group"
-            >
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 mb-16">
+            <div className="lg:col-span-1">
+               <DigitalDonorCard pendonor={activePendonor} />
+               {activePendonor && !activePendonor.is_eligible && (
+                 <motion.div 
+                   initial={{ opacity: 0, scale: 0.9 }}
+                   animate={{ opacity: 1, scale: 1 }}
+                   className="mt-6 p-6 bg-red-50 dark:bg-red-950/30 border border-red-100 dark:border-red-900 rounded-3xl text-center"
+                 >
+                   <p className="text-red-600 dark:text-red-400 font-bold text-sm mb-1 uppercase tracking-wider">Belum Bisa Donor</p>
+                   <div className="text-3xl font-black text-red-700 dark:text-red-300 mb-1">{activePendonor.days_until_eligible}</div>
+                   <p className="text-red-600/60 dark:text-red-400/60 text-[10px] font-bold uppercase tracking-widest">Hari Lagi</p>
+                 </motion.div>
+               )}
+               {activePendonor && activePendonor.is_eligible && (
+                 <motion.div 
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="mt-6 p-6 bg-green-50 dark:bg-green-950/30 border border-green-100 dark:border-green-900 rounded-3xl text-center"
+                 >
+                    <CheckCircle2 className="w-8 h-8 text-green-600 dark:text-green-400 mx-auto mb-2" />
+                    <p className="text-green-600 dark:text-green-400 font-bold text-sm tracking-tight">Anda Siap Donor!</p>
+                 </motion.div>
+               )}
+            </div>
+
+            <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-8">
+              <motion.div 
+                whileHover={{ y: -5 }}
+                className="bg-white p-10 rounded-[3rem] shadow-xl border border-slate-100 dark:bg-slate-900 dark:border-slate-800 transition-all flex flex-col items-center text-center group"
+              >
               <div className="w-16 h-16 bg-[#660000]/10 rounded-[1.5rem] flex items-center justify-center text-[#660000] dark:bg-red-400/10 dark:text-red-400 mb-6 group-hover:scale-110 transition-transform duration-500 shadow-inner">
                 <History className="w-8 h-8" />
               </div>
@@ -313,6 +349,7 @@ export const UserDashboard = () => {
               <div className="text-amber-600/60 dark:text-amber-500/60 font-black uppercase text-[10px] tracking-[0.2em]">Menunggu</div>
             </motion.div>
           </div>
+        </div>
 
           <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-md border border-slate-100 dark:border-slate-800 overflow-hidden transition-colors">
             <div className="px-8 py-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-gradient-to-r from-slate-50 to-white dark:from-slate-900 dark:to-slate-900">
@@ -593,6 +630,44 @@ export const UserDashboard = () => {
                       value={formData.riwayat_kesehatan}
                       onChange={(e) => setFormData({ ...formData, riwayat_kesehatan: e.target.value })}
                     />
+                  </div>
+
+                  <div className="space-y-2 md:col-span-2">
+                    <label className="text-sm font-bold text-slate-700 dark:text-slate-300 ml-1">Upload Bukti Donor (Foto Sertifikat/Kartu)</label>
+                    <div className="relative">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        id="bukti-donor-upload"
+                        onChange={(e) => {
+                          const file = e.target.files[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onloadend = () => {
+                              setFormData({ ...formData, bukti_donor: reader.result });
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                      />
+                      <label
+                        htmlFor="bukti-donor-upload"
+                        className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-all group"
+                      >
+                        {formData.bukti_donor ? (
+                          <div className="flex items-center gap-3">
+                            <img src={formData.bukti_donor} alt="Preview" className="w-20 h-20 object-cover rounded-xl border border-slate-200" />
+                            <span className="text-sm font-bold text-green-600">Terpilih (Ganti)</span>
+                          </div>
+                        ) : (
+                          <>
+                            <Upload className="w-8 h-8 text-slate-400 group-hover:text-[#660000] transition-colors mb-2" />
+                            <span className="text-sm font-bold text-slate-500">Klik untuk upload foto</span>
+                          </>
+                        )}
+                      </label>
+                    </div>
                   </div>
                 </div>
 

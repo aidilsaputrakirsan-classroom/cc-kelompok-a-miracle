@@ -24,6 +24,8 @@ import {
 } from 'recharts';
 import { apiService } from '../services/api';
 import { LoadingSpinner } from '../components/LoadingSpinner';
+import { Megaphone, Send, AlertTriangle } from 'lucide-react';
+import Swal from 'sweetalert2';
 
 const StatCard = ({ title, value, icon: Icon, trend, color }) => (
   <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm dark:bg-slate-900 dark:border-slate-800 transition-colors">
@@ -46,6 +48,11 @@ const StatCard = ({ title, value, icon: Icon, trend, color }) => (
 export const AdminDashboard = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [broadcasting, setBroadcasting] = useState(false);
+  const [broadcastForm, setBroadcastForm] = useState({
+    golongan_darah: 'O+',
+    pesan: 'Dibutuhkan segera pendonor darah golongan O+ untuk pasien darurat di RS terdekat. Mohon bantuannya bagi yang sudah bisa mendonor kembali.'
+  });
   const isDark = document.documentElement.classList.contains('dark');
 
   useEffect(() => {
@@ -69,6 +76,41 @@ export const AdminDashboard = () => {
   const bloodDistribution = stats.stok_darah_by_golongan_darah || stats.pendonor_by_golongan_darah || {};
   const bloodData = Object.entries(bloodDistribution).map(([name, value]) => ({ name, value }));
   const genderData = Object.entries(stats.pendonor_by_jenis_kelamin || {}).map(([name, value]) => ({ name, value }));
+
+  const handleBroadcast = async (e) => {
+    e.preventDefault();
+    const result = await Swal.fire({
+      title: 'Kirim Broadcast Darurat?',
+      text: `Pesan ini akan dikirimkan secara simulasi ke semua pendonor golongan darah ${broadcastForm.golongan_darah}.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#660000',
+      confirmButtonText: 'Ya, Kirim Sekarang!',
+      cancelButtonText: 'Batal'
+    });
+
+    if (!result.isConfirmed) return;
+
+    setBroadcasting(true);
+    try {
+      const res = await apiService.adminBroadcast(broadcastForm);
+      Swal.fire({
+        title: 'Broadcast Berhasil!',
+        text: res.data.message,
+        icon: 'success',
+        confirmButtonColor: '#660000'
+      });
+    } catch (err) {
+      console.error('Broadcast failed:', err);
+      Swal.fire({
+        title: 'Gagal!',
+        text: 'Terjadi kesalahan saat mengirim broadcast.',
+        icon: 'error'
+      });
+    } finally {
+      setBroadcasting(false);
+    }
+  };
 
   const COLORS = ['#660000', '#3b82f6', '#f59e0b', '#10b981', '#6366f1', '#8b5cf6', '#d946ef', '#f97316'];
 
@@ -189,6 +231,67 @@ export const AdminDashboard = () => {
               ))}
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Emergency Broadcast Section */}
+      <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-xl overflow-hidden mb-12">
+        <div className="bg-gradient-to-r from-red-600 to-[#660000] p-8 text-white flex items-center gap-4">
+          <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-md">
+            <Megaphone className="w-8 h-8" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-black">Emergency Request</h2>
+            <p className="text-white/70 text-sm font-bold">Kirim pesan darurat ke semua pendonor tertentu.</p>
+          </div>
+        </div>
+        <form onSubmit={handleBroadcast} className="p-8 grid grid-cols-1 md:grid-cols-3 gap-8 items-end">
+          <div className="space-y-2">
+            <label className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 ml-1">Golongan Darah Target</label>
+            <select
+              className="w-full px-4 py-4 bg-slate-50 dark:bg-slate-800 border-none rounded-2xl focus:ring-2 focus:ring-red-500 text-slate-900 dark:text-white font-bold transition-all"
+              value={broadcastForm.golongan_darah}
+              onChange={(e) => setBroadcastForm({ ...broadcastForm, golongan_darah: e.target.value })}
+            >
+              <option value="O+">O+</option>
+              <option value="O-">O-</option>
+              <option value="A+">A+</option>
+              <option value="A-">A-</option>
+              <option value="B+">B+</option>
+              <option value="B-">B-</option>
+              <option value="AB+">AB+</option>
+              <option value="AB-">AB-</option>
+            </select>
+          </div>
+          <div className="md:col-span-2 space-y-2">
+            <label className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 ml-1">Isi Pesan Broadcast</label>
+            <div className="flex gap-4">
+              <input
+                type="text"
+                className="flex-1 px-4 py-4 bg-slate-50 dark:bg-slate-800 border-none rounded-2xl focus:ring-2 focus:ring-red-500 text-slate-900 dark:text-white transition-all"
+                placeholder="Tulis pesan darurat di sini..."
+                value={broadcastForm.pesan}
+                onChange={(e) => setBroadcastForm({ ...broadcastForm, pesan: e.target.value })}
+                required
+              />
+              <button
+                type="submit"
+                disabled={broadcasting}
+                className="px-8 py-4 bg-red-600 hover:bg-red-700 text-white rounded-2xl font-black flex items-center gap-2 shadow-lg shadow-red-600/20 disabled:opacity-50 transition-all active:scale-95"
+              >
+                {broadcasting ? (
+                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <Send className="w-5 h-5" />
+                )}
+                <span>KIRIM</span>
+              </button>
+            </div>
+          </div>
+        </form>
+        <div className="px-8 pb-8 flex items-center gap-2 text-[10px] text-amber-600 font-bold uppercase tracking-widest bg-amber-50/30 dark:bg-amber-900/10">
+          <AlertTriangle className="w-3 h-3" />
+          <span>Hati-hati: Pesan akan dikirimkan ke banyak orang sekaligus. Gunakan hanya dalam keadaan kritis.</span>
         </div>
       </div>
     </div>
