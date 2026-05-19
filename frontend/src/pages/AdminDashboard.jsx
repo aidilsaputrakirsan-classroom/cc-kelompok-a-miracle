@@ -1,27 +1,7 @@
 import { useEffect, useState } from 'react';
-import { 
-  Users, 
-  Droplets, 
-  CheckCircle, 
-  Clock, 
-  TrendingUp,
-  ArrowUpRight,
-  PieChart as PieChartIcon,
-  ArrowLeft
-} from 'lucide-react';
+import { Users, Droplets, CheckCircle, Clock, TrendingUp, ArrowUpRight, PieChart as PieChartIcon, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell
-} from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { apiService } from '../services/api';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 

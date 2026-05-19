@@ -1,15 +1,14 @@
 # ============================================================
 # Stage 1: Build — Install deps & build React app
 # ============================================================
-FROM node:20-slim AS builder #versi Node.js yang lebih ringan dari node:20
+FROM node:20-slim AS builder
 
 WORKDIR /app
 
 # Copy package files
-COPY package.json package-lock.json* ./  #untuk layer caching (kalau tidak ada perubahan di package.json, npm install tidak dijalankan ulang)
+COPY package.json package-lock.json* ./
 
-# Gunakan npm install (bukan ci) untuk membiarkan npm mendeteksi 
-# binary native yang benar untuk Linux (amd64)
+# Install dependencies
 RUN npm install
 
 # Copy source code
@@ -19,7 +18,7 @@ COPY . .
 ARG VITE_API_URL=http://localhost:3000
 ENV VITE_API_URL=$VITE_API_URL
 
-# Build React app → output di /app/dist/
+# Build React app
 RUN npm run build
 
 # ============================================================
@@ -36,11 +35,9 @@ COPY --from=builder /app/dist/ /usr/share/nginx/html/
 # Copy custom nginx config
 COPY nginx.conf /etc/nginx/nginx.conf
 
-# Nginx default port
 EXPOSE 80
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:80/ || exit 1
 
-# Nginx berjalan di foreground
 CMD ["nginx", "-g", "daemon off;"]

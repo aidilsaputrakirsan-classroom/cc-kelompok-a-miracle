@@ -1,8 +1,23 @@
-from sqlalchemy import Column, Date, DateTime, Enum, Float, Integer, String, Text, Boolean, ForeignKey, inspect, text
+import enum
+
+from sqlalchemy import (
+    Boolean,
+    Column,
+    Date,
+    DateTime,
+    Enum,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    inspect,
+    text,
+)
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
+
 from database import Base, engine
-import enum
 
 
 def ensure_schema_compatibility() -> None:

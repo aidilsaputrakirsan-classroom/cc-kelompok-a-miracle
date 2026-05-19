@@ -1,12 +1,13 @@
 from sqlalchemy import func
 from sqlalchemy.orm import Session
+
 from auth import hash_password, verify_password
-from models import Admin, Pengguna, Pendonor, RiwayatDonor, GolonganDarahEnum
+from models import Admin, GolonganDarahEnum, Pendonor, Pengguna, RiwayatDonor
 from schemas import (
     AdminCreate,
-    PenggunaCreate,
     PendonorCreate,
     PendonorUpdate,
+    PenggunaCreate,
     RiwayatDonorCreate,
     RiwayatDonorUpdate,
     RiwayatDonorVerifikasi,
@@ -372,7 +373,7 @@ def get_public_blood_stock(db: Session) -> dict:
             func.count(func.distinct(Pendonor.id_pendonor))
         )
         .join(RiwayatDonor, Pendonor.id_pendonor == RiwayatDonor.id_pendonor)
-        .filter(RiwayatDonor.status_verifikasi == True)
+        .filter(RiwayatDonor.status_verifikasi)
         .group_by(Pendonor.golongan_darah)
         .all()
     )

@@ -11,6 +11,7 @@ import { DonorRegistration } from './pages/DonorRegistration';
 import { PublicStock } from './pages/PublicStock';
 import { AdminLayout } from './components/AdminLayout';
 import AboutPage from "./components/AboutPage";
+import ErrorBoundary from './components/ErrorBoundary';
 import { apiService } from './services/api';
 
 // ================= ADMIN ROUTE =================
@@ -114,14 +115,15 @@ export default function App() {
   };
 
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/user/register" element={<UserRegister />} />
-        <Route path="/register" element={<DonorRegistration />} />
-        <Route path="/stock" element={<PublicStock />} />
-        <Route path="/about" element={<AboutPage />} />
+    <ErrorBoundary>
+      <Router>
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/user/register" element={<UserRegister />} />
+          <Route path="/register" element={<DonorRegistration />} />
+          <Route path="/stock" element={<PublicStock />} />
+          <Route path="/about" element={<AboutPage />} />
 
         <Route path="/admin" element={
           <AdminRoute>
@@ -148,5 +150,6 @@ export default function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
+  </ErrorBoundary>
   );
 }

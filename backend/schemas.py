@@ -1,8 +1,10 @@
+import re
 from datetime import date, datetime
 from enum import Enum
 from typing import Optional
-import re
+
 from pydantic import BaseModel, EmailStr, Field, field_validator
+
 
 class GolonganDarahEnum(str, Enum):
     O_POSITIF = "O+"
