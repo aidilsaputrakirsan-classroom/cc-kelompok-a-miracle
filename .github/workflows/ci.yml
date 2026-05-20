@@ -166,7 +166,7 @@ jobs:
           cache-to: type=gha,mode=max
 
    # ============================================================
-  # Deploy to Railway (CD) - FIXED
+  # Deploy to Railway (CD) - FIXED VERSION
   # ============================================================
   deploy:
     name: 🚀 Deploy to Railway
@@ -185,26 +185,26 @@ jobs:
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
-          echo "Deploying Backend..."
+          echo "=== Deploying Backend ==="
           cd backend
-          railway up --service backend --detach || echo "Backend deploy failed but continuing..."
+          railway deploy --service backend --detach || echo "⚠️ Backend deploy failed (continuing...)"
 
       - name: 🚀 Deploy Frontend
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
-          echo "Deploying Frontend..."
+          echo "=== Deploying Frontend ==="
           cd frontend
-          railway up --service frontend --detach || echo "Frontend deploy failed but continuing..."
+          railway deploy --service frontend --detach || echo "⚠️ Frontend deploy failed (continuing...)"
 
       - name: ✅ Deployment Summary
         if: always()
         run: |
-          echo "## 🚀 Deployment Attempt Completed" >> $GITHUB_STEP_SUMMARY
+          echo "## 🚀 Deployment Process Selesai" >> $GITHUB_STEP_SUMMARY
+          echo "**Status**: Cek Railway Dashboard untuk hasil akhir" >> $GITHUB_STEP_SUMMARY
           echo "**Commit**: [${{ github.sha }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }})" >> $GITHUB_STEP_SUMMARY
           echo "**Waktu**: $(date '+%Y-%m-%d %H:%M:%S WITA')" >> $GITHUB_STEP_SUMMARY
-          echo "Cek Railway Dashboard untuk status deployment yang sebenarnya."
-
+          
   # ============================================================
   # Notify PR (FIXED 
   # ============================================================
