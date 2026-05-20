@@ -4,7 +4,7 @@
 # Pipeline ini berjalan otomatis saat:
 # - Push ke branch main
 # - Pull Request ke branch main
-# 
+#
 # Jobs:
 # 1. test-backend: Install deps + run pytest
 # 2. test-frontend: Install deps + run vitest
@@ -86,7 +86,7 @@ jobs:
       - name: Run health check test
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tracelt_test
-          SECRET_KEY: test-secret-key-for-ci
+          SECRET_KEY: 0c0e1ed2-77b5-474d-8fcc-e5e7fcf07f39
           ALGORITHM: HS256
           ACCESS_TOKEN_EXPIRE_MINUTES: 60
           ALLOWED_ORIGINS: http://localhost:3000
@@ -207,7 +207,7 @@ jobs:
           echo "- **Frontend**: https://tracelt-frontend.up.railway.app" >> $GITHUB_STEP_SUMMARY
 
   # ============================================================
-  # Notify PR (FIXED 
+  # Notify PR (FIXED
   # ============================================================
   notify-pr:
     name: 📝 CI Status Report
