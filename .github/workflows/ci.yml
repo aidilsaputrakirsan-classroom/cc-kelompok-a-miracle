@@ -10,6 +10,10 @@
 # 2. test-frontend: Install deps + run vitest
 # 3. build-docker: Build Docker images (pastikan Dockerfile valid)
 
+# ==============================================
+# CI/CD Pipeline — Cloud Team XX
+# ==============================================
+
 name: CI/CD Pipeline
 
 on:
@@ -22,9 +26,6 @@ permissions:
   contents: read
   pull-requests: write
 
-# ========================================
-# Cancel workflow lama jika ada push baru
-# ========================================
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
@@ -118,14 +119,32 @@ jobs:
           VITE_API_URL: http://localhost:3000
 
   # ============================================================
-   # ================================
-  # JOB: Build & Push Docker Images
-  # ================================
+  # Lint
+  # ============================================================
+  lint:
+    name: 🔍 Lint (Ruff)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Ruff
+        run: pip install ruff
+      - name: Run Ruff
+        run: ruff check .
+
+  # ============================================================
+  # Build & Push Docker
+  # ============================================================
   docker:
     name: 🐳 Build & Push Docker Images
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    needs: [lint, test-backend, build-frontend]   # Tambah lint
+    needs: [lint, test-backend, build-frontend]
 
     steps:
       - name: 📥 Checkout code
@@ -163,69 +182,13 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-
-  # ================================
-  # JOB BARU: Lint (Ruff)
-  # ================================
-  lint:
-    name: 🔍 Lint (Ruff)
-    runs-on: ubuntu-latest
-
-    defaults:
-      run:
-        working-directory: ./backend
-
-    steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v4
-
-      - name: 🐍 Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: 📦 Install Ruff
-        run: |
-          python -m pip install --upgrade pip
-          pip install ruff
-
-      - name: 🔍 Run Ruff Linter
-        run: ruff check .
-
-  # ========================================
-  # Job: Notify PR if CI fails
-  # ========================================
-  notify-failure:
-    name: Notify CI Failure
-    runs-on: ubuntu-latest
-
-    needs:
-      - test-backend
-      - build-frontend
-      - docker
-      - lint
-
-    if: failure() && github.event_name == 'pull_request'
-
-    steps:
-      - name: Comment on PR when CI fails
-        uses: actions/github-script@v7
-        with:
-          script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: '❌ CI Pipeline gagal. Silakan cek GitHub Actions logs untuk detail error.'
-            })
-
-# ========================================
-# JOB BARU: DEPLOY TO RAILWAY (CD)
-# ========================================
+  # ============================================================
+  # Deploy to Railway (CD)
+  # ============================================================
   deploy:
     name: 🚀 Deploy to Railway
     runs-on: ubuntu-latest
-    needs: [docker]                    # Deploy hanya jika build docker sukses
+    needs: [docker]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     steps:
@@ -250,9 +213,59 @@ jobs:
           railway up --service frontend --detach
 
       - name: ✅ Deployment Summary
+        id: summary
         run: |
+          TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S WITA')
+          
           echo "## 🚀 Deployment Berhasil!" >> $GITHUB_STEP_SUMMARY
           echo "**Repository**: ${{ github.repository }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Time**: $(date)" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Backend & Frontend telah di-deploy ke Railway." >> $GITHUB_STEP_SUMMARY
+          echo "**Commit**: [${{ github.sha }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }})" >> $GITHUB_STEP_SUMMARY
+          echo "**Waktu Deploy**: $TIMESTAMP" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🌐 Deployment URLs" >> $GITHUB_STEP_SUMMARY
+          echo "- **Backend**: https://cc-kelompok-a-miracle-backend.up.railway.app" >> $GITHUB_STEP_SUMMARY
+          echo "- **Frontend**: https://cc-kelompok-a-miracle-frontend.up.railway.app" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Deployment selesai." >> $GITHUB_STEP_SUMMARY
+
+          # Simpan untuk PR comment jika diperlukan
+          echo "timestamp=$TIMESTAMP" >> $GITHUB_OUTPUT
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ============================================================
+  # Notify PR (Success + Summary)
+  # ============================================================
+  notify-pr:
+    name: 📝 Post Deployment Summary to PR
+    runs-on: ubuntu-latest
+    needs: [deploy]
+    if: always() && github.event_name == 'pull_request'
+
+    steps:
+      - name: Comment on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const success = '${{ needs.deploy.result }}' === 'success';
+            const sha = '${{ github.sha }}'.substring(0, 7);
+            const timestamp = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Makassar' });
+            
+            let body = `## ${success ? '✅ Deployment Preview' : '❌ Deployment Gagal'}\n\n`;
+            body += `**Commit**: ${sha}\n`;
+            body += `**Waktu**: ${timestamp} WITA\n\n`;
+            
+            if (success) {
+              body += '### 🌐 Deployment URLs\n';
+              body += '- **Backend**: https://cc-kelompok-a-miracle-backend.up.railway.app\n';
+              body += '- **Frontend**: https://cc-kelompok-a-miracle-frontend.up.railway.app\n';
+            } else {
+              body += '❌ Deploy gagal. Cek log workflow untuk detailnya.';
+            }
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
