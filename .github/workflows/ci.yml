@@ -168,45 +168,41 @@ jobs:
   # ============================================================
   # Deploy to Railway (CD) - FIXED + DEBUG
   # ============================================================
-  deploy:
+   deploy:
     name: 🚀 Deploy to Railway
     runs-on: ubuntu-latest
     needs: [docker]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: 🚂 Install Railway CLI
+      - name: Install Railway CLI
         run: npm install -g @railway/cli
 
-      - name: 🚀 Deploy Backend
+      - name: Deploy Backend
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
-          echo "=== Starting Backend Deployment ==="
           cd backend
-          railway deploy --service backend --detach || echo "❌ Backend deploy failed with exit code $?"
-          echo "Backend deployment attempt completed."
+          echo "Deploying Backend..."
+          railway deploy --service backend --detach
 
-      - name: 🚀 Deploy Frontend
+      - name: Deploy Frontend
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
-          echo "=== Starting Frontend Deployment ==="
           cd frontend
-          railway deploy --service frontend --detach || echo "❌ Frontend deploy failed with exit code $?"
-          echo "Frontend deployment attempt completed."
+          echo "Deploying Frontend..."
+          railway deploy --service frontend --detach
 
-      - name: ✅ Deployment Summary
+      - name: Deployment Summary
         if: always()
         run: |
-          echo "## 🚀 Deployment Process Selesai" >> $GITHUB_STEP_SUMMARY
-          echo "**Commit**: [${{ github.sha }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }})" >> $GITHUB_STEP_SUMMARY
+          echo "## 🚀 Deployment Selesai" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
           echo "**Waktu**: $(date '+%Y-%m-%d %H:%M:%S WITA')" >> $GITHUB_STEP_SUMMARY
-          echo "**Catatan**: Cek Railway Dashboard untuk status service yang sebenarnya." >> $GITHUB_STEP_SUMMARY
-
+          
   # ============================================================
   # Notify PR (FIXED 
   # ============================================================
