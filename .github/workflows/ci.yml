@@ -165,8 +165,8 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-   # ============================================================
-  # Deploy to Railway (CD) - FIXED VERSION
+  # ============================================================
+  # Deploy to Railway (CD) - FIXED + DEBUG
   # ============================================================
   deploy:
     name: 🚀 Deploy to Railway
@@ -185,26 +185,28 @@ jobs:
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
-          echo "=== Deploying Backend ==="
+          echo "=== Starting Backend Deployment ==="
           cd backend
-          railway deploy --service backend --detach || echo "⚠️ Backend deploy failed (continuing...)"
+          railway deploy --service backend --detach || echo "❌ Backend deploy failed with exit code $?"
+          echo "Backend deployment attempt completed."
 
       - name: 🚀 Deploy Frontend
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
-          echo "=== Deploying Frontend ==="
+          echo "=== Starting Frontend Deployment ==="
           cd frontend
-          railway deploy --service frontend --detach || echo "⚠️ Frontend deploy failed (continuing...)"
+          railway deploy --service frontend --detach || echo "❌ Frontend deploy failed with exit code $?"
+          echo "Frontend deployment attempt completed."
 
       - name: ✅ Deployment Summary
         if: always()
         run: |
           echo "## 🚀 Deployment Process Selesai" >> $GITHUB_STEP_SUMMARY
-          echo "**Status**: Cek Railway Dashboard untuk hasil akhir" >> $GITHUB_STEP_SUMMARY
           echo "**Commit**: [${{ github.sha }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }})" >> $GITHUB_STEP_SUMMARY
           echo "**Waktu**: $(date '+%Y-%m-%d %H:%M:%S WITA')" >> $GITHUB_STEP_SUMMARY
-          
+          echo "**Catatan**: Cek Railway Dashboard untuk status service yang sebenarnya." >> $GITHUB_STEP_SUMMARY
+
   # ============================================================
   # Notify PR (FIXED 
   # ============================================================
