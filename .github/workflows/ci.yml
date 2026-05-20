@@ -137,14 +137,14 @@ jobs:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
           cd backend
-          railway deploy --service tracelt-backend --detach
+          railway up --service tracelt-backend --detach
 
       - name: Deploy Frontend
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
           cd frontend
-          railway deploy --service tracelt-frontend --detach
+          railway up --service tracelt-frontend --detach
 
       - name: Deployment Summary
         if: always()
