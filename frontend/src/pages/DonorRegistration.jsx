@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { apiService } from '../services/api';
+import useDarkMode from '../hooks/useDarkMode';
 
 export const DonorRegistration = () => {
   const navigate = useNavigate();
@@ -40,6 +41,9 @@ export const DonorRegistration = () => {
   });
 
   const todayISO = new Date().toISOString().split('T')[0];
+
+  const isDark = useDarkMode();
+  const primaryColor = isDark ? '#991b1b' : '#660000';
 
   const getAgeFromDate = (value) => {
     const birthDate = new Date(value);
@@ -189,18 +193,18 @@ export const DonorRegistration = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-6">
       <div className="w-full max-w-2xl">
-        <Link to="/" className="inline-flex items-center gap-2 text-slate-500 hover:text-slate-900 mb-8 font-medium transition-colors">
+        <Link to="/" className="inline-flex items-center gap-2 text-slate-500 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white mb-8 font-medium transition-colors">
           <ChevronLeft className="w-4 h-4" />
           Kembali ke Beranda
         </Link>
 
-        <div className="bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
-          <div className="h-2 bg-slate-100 flex">
+        <div className="bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden dark:bg-slate-950/90 dark:border-slate-800 dark:shadow-black/20">
+          <div className="h-2 bg-slate-100 dark:bg-slate-800 flex">
             <div 
-              className="bg-[#660000] transition-all duration-500" 
-              style={{ width: `${(step / 4) * 100}%` }} 
+              className="transition-all duration-500" 
+              style={{ width: `${(step / 4) * 100}%`, backgroundColor: primaryColor }} 
             />
           </div>
 
@@ -212,8 +216,8 @@ export const DonorRegistration = () => {
                 className="space-y-8"
               >
                 <div>
-                  <h1 className="text-3xl font-bold text-slate-900">Data Pribadi</h1>
-                  <p className="text-slate-500 mt-2">Lengkapi informasi dasar Anda untuk bergabung sebagai pendonor.</p>
+                  <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-50">Data Pribadi</h1>
+                  <p className="text-slate-500 dark:text-slate-400 mt-2">Lengkapi informasi dasar Anda untuk bergabung sebagai pendonor.</p>
                 </div>
 
                 {/* <div className="rounded-2xl border border-[#660000]/20 bg-[#660000]/5 p-4 text-sm text-[#660000]">
@@ -227,7 +231,7 @@ export const DonorRegistration = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold text-slate-700 ml-1 flex justify-between">
+                    <label className="text-sm font-semibold text-slate-700 dark:text-slate-200 ml-1 flex justify-between">
                       Nama Lengkap <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
@@ -236,7 +240,7 @@ export const DonorRegistration = () => {
                         type="text" 
                         required
                         placeholder="Contoh: Budi Santoso"
-                        className={`w-full pl-12 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-[#660000] transition-all ${errors.nama_lengkap ? 'ring-2 ring-red-500' : ''}`}
+                        className={`w-full pl-12 pr-4 py-3.5 bg-slate-50 text-slate-900 placeholder:text-slate-500 dark:bg-slate-800/90 dark:text-slate-50 dark:placeholder:text-slate-400 border border-slate-200 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#660000] transition-all ${errors.nama_lengkap ? 'ring-2 ring-red-500' : ''}`}
                         value={formData.nama_lengkap}
                         onChange={(e) => {
                           setFormData({...formData, nama_lengkap: e.target.value});
@@ -248,7 +252,7 @@ export const DonorRegistration = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold text-slate-700 ml-1 flex justify-between">
+                    <label className="text-sm font-semibold text-slate-700 dark:text-slate-200 ml-1 flex justify-between">
                       No. Telepon <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
@@ -257,7 +261,7 @@ export const DonorRegistration = () => {
                         type="tel" 
                         required
                         placeholder="0812..."
-                        className={`w-full pl-12 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-[#660000] transition-all ${errors.no_telepon ? 'ring-2 ring-red-500' : ''}`}
+                        className={`w-full pl-12 pr-4 py-3.5 bg-slate-50 text-slate-900 placeholder:text-slate-500 dark:bg-slate-800/90 dark:text-slate-50 dark:placeholder:text-slate-400 border border-slate-200 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#660000] transition-all ${errors.no_telepon ? 'ring-2 ring-red-500' : ''}`}
                         value={formData.no_telepon}
                         onChange={(e) => {
                           setFormData({...formData, no_telepon: e.target.value});
@@ -270,7 +274,7 @@ export const DonorRegistration = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold text-slate-700 ml-1 flex justify-between">
+                    <label className="text-sm font-semibold text-slate-700 dark:text-slate-200 ml-1 flex justify-between">
                       Email <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
@@ -279,7 +283,7 @@ export const DonorRegistration = () => {
                         type="email" 
                         required
                         placeholder="Contoh: budi@student.itk.ac.id"
-                        className={`w-full pl-12 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-[#660000] transition-all ${errors.email ? 'ring-2 ring-red-500' : ''}`}
+                        className={`w-full pl-12 pr-4 py-3.5 bg-slate-50 text-slate-900 placeholder:text-slate-500 dark:bg-slate-800/90 dark:text-slate-50 dark:placeholder:text-slate-400 border border-slate-200 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#660000] transition-all ${errors.email ? 'ring-2 ring-red-500' : ''}`}
                         value={formData.email}
                         onChange={(e) => {
                           setFormData({...formData, email: e.target.value});
@@ -291,9 +295,9 @@ export const DonorRegistration = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold text-slate-700 ml-1">Jenis Kelamin</label>
+                    <label className="text-sm font-semibold text-slate-700 dark:text-slate-200 ml-1">Jenis Kelamin</label>
                     <select 
-                      className="w-full px-4 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-[#660000] transition-all"
+                      className="w-full px-4 py-3.5 bg-slate-50 text-slate-900 placeholder:text-slate-500 dark:bg-slate-800/90 dark:text-slate-50 dark:placeholder:text-slate-400 border border-slate-200 dark:border-slate-700 rounded-2xl appearance-none focus:outline-none focus:ring-2 focus:ring-[#660000] transition-all"
                       value={formData.jenis_kelamin}
                       onChange={(e) => setFormData({...formData, jenis_kelamin: e.target.value})}
                     >
@@ -303,7 +307,7 @@ export const DonorRegistration = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold text-slate-700 ml-1 flex justify-between">
+                    <label className="text-sm font-semibold text-slate-700 dark:text-slate-200 ml-1 flex justify-between">
                       Tanggal Lahir <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
@@ -311,7 +315,7 @@ export const DonorRegistration = () => {
                       <input 
                         type="date" 
                         required
-                        className={`w-full pl-12 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-[#660000] transition-all ${errors.tanggal_lahir ? 'ring-2 ring-red-500' : ''}`}
+                        className={`w-full pl-12 pr-4 py-3.5 bg-slate-50 text-slate-900 placeholder:text-slate-500 dark:bg-slate-800/90 dark:text-slate-50 dark:placeholder:text-slate-400 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-[#660000] transition-all ${errors.tanggal_lahir ? 'ring-2 ring-red-500' : ''}`}
                         value={formData.tanggal_lahir}
                         onChange={(e) => {
                           const dateVal = e.target.value;
@@ -330,7 +334,7 @@ export const DonorRegistration = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold text-slate-700 ml-1 flex justify-between">
+                  <label className="text-sm font-semibold text-slate-700 dark:text-slate-200 ml-1 flex justify-between">
                     Alamat Domisili <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
@@ -339,7 +343,7 @@ export const DonorRegistration = () => {
                       required
                       rows={3}
                       placeholder="Alamat lengkap di Balikpapan..."
-                      className={`w-full pl-12 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-[#660000] transition-all ${errors.alamat ? 'ring-2 ring-red-500' : ''}`}
+                      className={`w-full pl-12 pr-4 py-3.5 bg-slate-50 text-slate-900 placeholder:text-slate-500 dark:bg-slate-800/90 dark:text-slate-50 dark:placeholder:text-slate-400 border border-slate-200 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#660000] transition-all ${errors.alamat ? 'ring-2 ring-red-500' : ''}`}
                       value={formData.alamat}
                       onChange={(e) => {
                         setFormData({...formData, alamat: e.target.value});
@@ -368,8 +372,8 @@ export const DonorRegistration = () => {
                 className="space-y-8"
               >
                 <div>
-                  <h1 className="text-3xl font-bold text-slate-900">Kesehatan & Fisik</h1>
-                  <p className="text-slate-500 mt-2">Informasi ini penting untuk menentukan kelayakan donor Anda.</p>
+                  <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-50">Kesehatan & Fisik</h1>
+                  <p className="text-slate-500 dark:text-slate-400 mt-2">Informasi ini penting untuk menentukan kelayakan donor Anda.</p>
                 </div>
 
                 {/* <div className="rounded-2xl border border-[#660000]/20 bg-[#660000]/5 p-4 text-sm text-[#660000]">
@@ -383,7 +387,7 @@ export const DonorRegistration = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold text-slate-700 ml-1 flex justify-between">
+                  <label className="text-sm font-semibold text-slate-700 dark:text-slate-200 ml-1 flex justify-between">
                       Berat Badan (kg) <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
@@ -392,7 +396,7 @@ export const DonorRegistration = () => {
                         type="number" 
                         required
                         placeholder="Contoh: 65"
-                        className={`w-full pl-12 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-[#660000] transition-all ${errors.berat_badan ? 'ring-2 ring-red-500' : ''}`}
+                        className={`w-full pl-12 pr-4 py-3.5 bg-slate-50 text-slate-900 placeholder:text-slate-500 dark:bg-slate-800/90 dark:text-slate-50 dark:placeholder:text-slate-400 border border-slate-200 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#660000] transition-all ${errors.berat_badan ? 'ring-2 ring-red-500' : ''}`}
                         value={formData.berat_badan}
                         onChange={(e) => {
                           setFormData({...formData, berat_badan: e.target.value});
@@ -404,7 +408,7 @@ export const DonorRegistration = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold text-slate-700 ml-1 flex justify-between">
+                  <label className="text-sm font-semibold text-slate-700 dark:text-slate-200 ml-1 flex justify-between">
                       Tinggi Badan (cm) <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
@@ -413,7 +417,7 @@ export const DonorRegistration = () => {
                         type="number" 
                         required
                         placeholder="Contoh: 170"
-                        className={`w-full pl-12 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-[#660000] transition-all ${errors.tinggi_badan ? 'ring-2 ring-red-500' : ''}`}
+                        className={`w-full pl-12 pr-4 py-3.5 bg-slate-50 text-slate-900 placeholder:text-slate-500 dark:bg-slate-800/90 dark:text-slate-50 dark:placeholder:text-slate-400 border border-slate-200 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#660000] transition-all ${errors.tinggi_badan ? 'ring-2 ring-red-500' : ''}`}
                         value={formData.tinggi_badan}
                         onChange={(e) => {
                           setFormData({...formData, tinggi_badan: e.target.value});
@@ -425,11 +429,11 @@ export const DonorRegistration = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold text-slate-700 ml-1">Golongan Darah</label>
+                    <label className="text-sm font-semibold text-slate-700 dark:text-slate-200 ml-1">Golongan Darah</label>
                     <div className="relative">
                       <Droplets className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
                       <select 
-                        className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-[#660000] transition-all"
+                        className="w-full pl-12 pr-4 py-3.5 bg-slate-50 text-slate-900 placeholder:text-slate-500 dark:bg-slate-800/90 dark:text-slate-50 dark:placeholder:text-slate-400 border border-slate-200 dark:border-slate-700 rounded-2xl appearance-none focus:outline-none focus:ring-2 focus:ring-[#660000] transition-all"
                         value={formData.golongan_darah}
                         onChange={(e) => setFormData({...formData, golongan_darah: e.target.value})}
                       >
@@ -449,7 +453,7 @@ export const DonorRegistration = () => {
                 <div className="flex gap-4">
                   <button 
                     onClick={() => setStep(1)}
-                    className="flex-1 bg-slate-100 text-slate-600 py-4 rounded-2xl font-bold hover:bg-slate-200 transition-all"
+                    className="flex-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 py-4 rounded-2xl font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
                   >
                     Kembali
                   </button>
@@ -471,8 +475,8 @@ export const DonorRegistration = () => {
                 className="space-y-8"
               >
                 <div>
-                  <h1 className="text-3xl font-bold text-slate-900">Riwayat Donor</h1>
-                  <p className="text-slate-500 mt-2">Informasi riwayat donor dan kesehatan Anda.</p>
+                  <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-50 mb-4">Riwayat Donor</h1>
+                  <p className="text-slate-500 dark:text-slate-400 mt-2">Informasi riwayat donor dan kesehatan Anda.</p>
                 </div>
 
                 {/* <div className="rounded-2xl border border-[#660000]/20 bg-[#660000]/5 p-4 text-sm text-[#660000]">
@@ -488,7 +492,7 @@ export const DonorRegistration = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-3">
                       <div className={`space-y-2 transition-opacity ${neverDonated ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
-                        <label className="text-sm font-semibold text-slate-700 ml-1 flex justify-between">
+                        <label className="text-sm font-semibold text-slate-700 dark:text-slate-200 ml-1 flex justify-between">
                           Tanggal Terakhir Donor {!neverDonated && <span className="text-red-500">*</span>}
                         </label>
                         <div className="relative">
@@ -496,7 +500,7 @@ export const DonorRegistration = () => {
                           <input 
                             type="date" 
                             disabled={neverDonated}
-                            className={`w-full pl-12 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-[#660000] transition-all ${errors.tanggal_terakhir_donor ? 'ring-2 ring-red-500' : ''}`}
+                            className={`w-full pl-12 pr-4 py-3.5 bg-slate-50 text-slate-900 placeholder:text-slate-500 dark:bg-slate-800/90 dark:text-slate-50 dark:placeholder:text-slate-400 border border-slate-200 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#660000] transition-all ${errors.tanggal_terakhir_donor ? 'ring-2 ring-red-500' : ''}`}
                             value={formData.tanggal_terakhir_donor}
                             onChange={(e) => {
                               setFormData({...formData, tanggal_terakhir_donor: e.target.value});
@@ -515,14 +519,14 @@ export const DonorRegistration = () => {
                           checked={neverDonated}
                           onChange={handleNeverDonatedChange}
                         />
-                        <label htmlFor="neverDonated" className="text-xs font-medium text-slate-500 cursor-pointer">
+                        <label htmlFor="neverDonated" className="text-xs font-medium text-slate-500 dark:text-slate-400 cursor-pointer">
                           Belum pernah mendonor sama sekali
                         </label>
                       </div>
                     </div>
 
                     <div className={`space-y-2 transition-opacity ${neverDonated ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
-                      <label className="text-sm font-semibold text-slate-700 ml-1 flex justify-between">
+                    <label className="text-sm font-semibold text-slate-700 dark:text-slate-200 ml-1 flex justify-between">
                         Total Donor (Kali) {!neverDonated && <span className="text-red-500">*</span>}
                       </label>
                       <input 
@@ -530,7 +534,7 @@ export const DonorRegistration = () => {
                         min={0}
                         disabled={neverDonated}
                         placeholder="0"
-                        className={`w-full px-4 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-[#660000] transition-all ${errors.total_donor ? 'ring-2 ring-red-500' : ''}`}
+                        className={`w-full px-4 py-3.5 bg-slate-50 text-slate-900 placeholder:text-slate-500 dark:bg-slate-800/90 dark:text-slate-50 dark:placeholder:text-slate-400 border border-slate-200 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#660000] transition-all ${errors.total_donor ? 'ring-2 ring-red-500' : ''}`}
                         value={formData.total_donor}
                         onChange={(e) => {
                           setFormData({...formData, total_donor: e.target.value});
@@ -542,13 +546,13 @@ export const DonorRegistration = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold text-slate-700 ml-1 flex justify-between">
+                    <label className="text-sm font-semibold text-slate-700 dark:text-slate-200 ml-1 flex justify-between">
                       Riwayat Kesehatan <span className="text-red-500">*</span>
                     </label>
                     <textarea 
                       rows={4}
                       placeholder="Contoh: Tidak ada penyakit bawaan, alergi obat tertentu, dsb."
-                      className={`w-full px-4 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-[#660000] transition-all ${errors.riwayat_kesehatan ? 'ring-2 ring-red-500' : ''}`}
+                      className={`w-full px-4 py-3.5 bg-slate-50 text-slate-900 placeholder:text-slate-500 dark:bg-slate-800/90 dark:text-slate-50 dark:placeholder:text-slate-400 border border-slate-200 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#660000] transition-all ${errors.riwayat_kesehatan ? 'ring-2 ring-red-500' : ''}`}
                       value={formData.riwayat_kesehatan}
                       onChange={(e) => {
                         setFormData({...formData, riwayat_kesehatan: e.target.value});
@@ -562,14 +566,15 @@ export const DonorRegistration = () => {
                 <div className="flex gap-4">
                   <button 
                     onClick={() => setStep(2)}
-                    className="flex-1 bg-slate-50 text-slate-600 py-4 rounded-2xl font-bold hover:bg-slate-100 transition-all"
+                    className="flex-1 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 py-4 rounded-2xl font-bold hover:bg-slate-100 dark:hover:bg-slate-700 transition-all"
                   >
                     Kembali
                   </button>
                   <button 
                     onClick={handleSubmit}
                     disabled={loading}
-                    className={`flex-[2] bg-[#660000] text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-black/10 ${loading ? 'opacity-70 cursor-not-allowed' : 'hover:bg-[#550000]'}`}
+                    style={{ backgroundColor: primaryColor }}
+                    className={`flex-[2] text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-black/10 ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
                   >
                     {loading ? (
                       <>
@@ -596,8 +601,8 @@ export const DonorRegistration = () => {
                 <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-8">
                   <CheckCircle2 className="w-12 h-12" />
                 </div>
-                <h1 className="text-3xl font-bold text-slate-900 mb-4">Pendaftaran Berhasil!</h1>
-                <p className="text-slate-500 mb-10 max-w-sm mx-auto">
+                  <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-50 mb-4">Pendaftaran Berhasil!</h1>
+                  <p className="text-slate-500 dark:text-slate-400 mb-10 max-w-sm mx-auto">
                   Terima kasih telah bergabung. Data Anda telah tersimpan di sistem TRACELT ITK.
                 </p>
                 <Link to="/" className="inline-block bg-slate-900 text-white px-10 py-4 rounded-2xl font-bold hover:bg-slate-800 transition-all">
