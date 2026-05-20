@@ -17,11 +17,16 @@ jobs:
       - name: Install Railway CLI
         run: npm install -g @railway/cli
 
+      - name: Link Railway Project
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: railway link --project 195e962a-39ca-46fe-9707-15df5a085364
+
          # === DEPLOY BACKEND ===
       - name: Deploy Backend
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-        run: railway up --ci --service backend
+        run: railway up --ci --service tracelt-backend
 
       - name: Health Check Backend
         env:
@@ -34,11 +39,10 @@ jobs:
         timeout-minutes: 5
 
       # === DEPLOY FRONTEND ===
-      # === DEPLOY FRONTEND ===
       - name: Deploy Frontend
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-        run: railway up --ci --service frontend
+        run: railway up --ci --service tracelt-frontend
 
       - name: Health Check Frontend
         env:
