@@ -256,3 +256,109 @@ jobs:
           echo "**Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
           echo "**Time**: $(date)" >> $GITHUB_STEP_SUMMARY
           echo "✅ Backend & Frontend telah di-deploy ke Railway." >> $GITHUB_STEP_SUMMARY
+
+# ========================================
+
+name: CI/CD - Deploy to Railway
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  test-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python (untuk backend test)
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies & Test Backend
+        run: |
+          cd backend
+          pip install -r requirements.txt
+          pytest
+
+      - name: Setup Node (untuk frontend test)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Test Frontend
+        run: |
+          cd frontend
+          npm ci
+          npm test
+
+      # ==================== DEPLOY SECTION ====================
+      - name: Setup Railway CLI
+        run: curl -fsSL https://railway.app/cli.sh | sh
+
+      - name: Deploy Backend to Railway
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          cd backend
+          railway up --service backend -y
+
+      - name: Deploy Frontend to Railway
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          cd frontend
+          railway up --service frontend -y
+
+      # ==================== TUGAS KHUSUS LEAD CI/CD ====================
+      - name: 🚀 Deployment Summary & Notification
+        env:
+          BACKEND_URL: https://backend-kamu.up.railway.app     # GANTI dengan URL asli kamu
+          FRONTEND_URL: https://frontend-kamu.up.railway.app   # GANTI dengan URL asli kamu
+          COMMIT_SHA: ${{ github.sha }}
+          COMMIT_MSG: ${{ github.event.head_commit.message || 'Manual trigger' }}
+          TIMESTAMP: ${{ format('{0}', steps.current-time.outputs.time) }}
+        run: |
+          echo "========================================"
+          echo "✅ DEPLOYMENT BERHASIL!"
+          echo "========================================"
+          echo "📅 Waktu     : $(date '+%Y-%m-%d %H:%M:%S WITA')"
+          echo "🔗 Backend   : $BACKEND_URL"
+          echo "🔗 Frontend  : $FRONTEND_URL"
+          echo "📌 Commit    : $COMMIT_SHA"
+          echo "💬 Pesan     : $COMMIT_MSG"
+          echo "========================================"
+
+          # Buat file untuk PR Comment
+          cat << EOF > deployment-summary.md
+          ## 🚀 Deployment Summary
+
+          **Status:** ✅ Success
+          **Tanggal:** $(date '+%d %B %Y, %H:%M WITA')
+          **Commit:** [${COMMIT_SHA:0:7}](https://github.com/${{ github.repository }}/commit/${COMMIT_SHA})
+          **Pesan Commit:** ${COMMIT_MSG}
+
+          ### 🌐 Production Links
+          - **Frontend** → [${FRONTEND_URL}](${FRONTEND_URL})
+          - **Backend API** → [${BACKEND_URL}](${BACKEND_URL})
+          - **API Docs** → [${BACKEND_URL}/docs](${BACKEND_URL}/docs)
+
+          Deployment dilakukan secara otomatis via GitHub Actions.
+          EOF
+
+      # Tambahkan comment ke PR (jika merge dari PR)
+      - name: 💬 Add Summary to PR Comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const body = fs.readFileSync('deployment-summary.md', 'utf8');
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
