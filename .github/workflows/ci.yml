@@ -1,16 +1,4 @@
 # ==============================================
-# CI Pipeline — Cloud Team XX
-# ==============================================
-# Pipeline ini berjalan otomatis saat:
-# - Push ke branch main
-# - Pull Request ke branch main
-#
-# Jobs:
-# 1. test-backend: Install deps + run pytest
-# 2. test-frontend: Install deps + run vitest
-# 3. build-docker: Build Docker images (pastikan Dockerfile valid)
-
-# ==============================================
 # CI/CD Pipeline — Cloud Team XX
 # ==============================================
 
@@ -165,8 +153,8 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-    # ============================================================
-  # Deploy to Railway (SUDAH BENAR)
+  # ============================================================
+  # Deploy to Railway
   # ============================================================
   deploy:
     name: 🚀 Deploy to Railway
@@ -207,7 +195,7 @@ jobs:
           echo "- **Frontend**: https://tracelt-frontend.up.railway.app" >> $GITHUB_STEP_SUMMARY
 
   # ============================================================
-  # Notify PR (FIXED
+  # Notify PR
   # ============================================================
   notify-pr:
     name: 📝 CI Status Report
