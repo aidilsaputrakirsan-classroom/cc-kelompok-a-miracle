@@ -17,22 +17,17 @@ jobs:
       - name: Install Railway CLI
         run: npm install -g @railway/cli
 
-      - name: Link Railway Project
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-        run: railway link --project 195e962a-39ca-46fe-9707-15df5a085364
-
-         # === DEPLOY BACKEND ===
+      # === DEPLOY BACKEND ===
       - name: Deploy Backend
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-        run: railway up --ci --service tracelt-backend
+        run: railway up --service tracelt-backend --ci
 
       - name: Health Check Backend
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
-          echo "🔍 Waiting for Backend..."
+          echo "🔍 Waiting for Backend deployment..."
           sleep 20
           curl -f --retry 12 --retry-delay 10 --retry-all-errors \
             https://backend-production-c556.up.railway.app/health || exit 1
@@ -42,14 +37,17 @@ jobs:
       - name: Deploy Frontend
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-        run: railway up --ci --service tracelt-frontend
+        run: railway up --service tracelt-frontend --ci
 
       - name: Health Check Frontend
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
-          echo "🔍 Waiting for Frontend..."
+          echo "🔍 Waiting for Frontend deployment..."
           sleep 15
           curl -f --retry 8 --retry-delay 8 --retry-all-errors \
             https://tracelt-frontend-production.up.railway.app || exit 1
         timeout-minutes: 4
+
+      - name: 🎉 Deployment Completed
+        run: echo "Deployment berhasil dengan health check!"
