@@ -165,8 +165,8 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  # ============================================================
-  # Deploy to Railway (CD) - SUDAH BENAR
+    # ============================================================
+  # Deploy to Railway (SUDAH BENAR)
   # ============================================================
   deploy:
     name: 🚀 Deploy to Railway
@@ -200,12 +200,9 @@ jobs:
       - name: ✅ Deployment Summary
         if: always()
         run: |
-          echo "## 🚀 Deployment Berhasil!" >> $GITHUB_STEP_SUMMARY
-          echo "**Repository**: ${{ github.repository }}" >> $GITHUB_STEP_SUMMARY
+          echo "## 🚀 Deployment Summary" >> $GITHUB_STEP_SUMMARY
           echo "**Commit**: [${{ github.sha }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }})" >> $GITHUB_STEP_SUMMARY
           echo "**Waktu**: $(date '+%Y-%m-%d %H:%M:%S WITA')" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 🌐 Service URLs" >> $GITHUB_STEP_SUMMARY
           echo "- **Backend**: https://tracelt-backend.up.railway.app" >> $GITHUB_STEP_SUMMARY
           echo "- **Frontend**: https://tracelt-frontend.up.railway.app" >> $GITHUB_STEP_SUMMARY
 
