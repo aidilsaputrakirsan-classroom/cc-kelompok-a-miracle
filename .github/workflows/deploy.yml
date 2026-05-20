@@ -17,9 +17,6 @@ jobs:
       - name: Install Railway CLI
         run: npm install -g @railway/cli
 
-      - name: Login to Railway
-        run: railway login --token ${{ secrets.RAILWAY_TOKEN }}
-
       # === DEPLOY BACKEND ===
       - name: Deploy Backend
         env:
@@ -51,3 +48,6 @@ jobs:
           curl -f --retry 6 --retry-delay 5 --retry-all-errors \
             https://tracelt-frontend-production.up.railway.app || exit 1
         timeout-minutes: 3
+
+      - name: 🎉 Deployment Completed
+        run: echo "Deployment berhasil dengan health check!"
