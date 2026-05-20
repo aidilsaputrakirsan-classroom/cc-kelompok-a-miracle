@@ -22,27 +22,32 @@ jobs:
 
       # === DEPLOY BACKEND ===
       - name: Deploy Backend
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: railway deploy --service backend
 
       - name: Health Check Backend
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
-          echo "Waiting for Backend deployment..."
+          echo "🔍 Waiting for Backend deployment..."
           sleep 15
-          curl -f --retry 7 --retry-delay 10 --retry-all-errors \
+          curl -f --retry 10 --retry-delay 8 --retry-all-errors \
             https://backend-production-c556.up.railway.app/health || exit 1
-        timeout-minutes: 3
+        timeout-minutes: 4
 
       # === DEPLOY FRONTEND ===
       - name: Deploy Frontend
-        run: railway deploy --service frontend
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: railway deploy --service tracelt-frontend
 
       - name: Health Check Frontend
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
-          echo "Waiting for Frontend deployment..."
+          echo "🔍 Waiting for Frontend deployment..."
           sleep 10
-          curl -f --retry 5 --retry-delay 8 --retry-all-errors \
+          curl -f --retry 6 --retry-delay 5 --retry-all-errors \
             https://tracelt-frontend-production.up.railway.app || exit 1
-        timeout-minutes: 2
-
-      - name: Deployment Success Notification
-        run: echo "🎉 Deployment berhasil ke Railway!"
+        timeout-minutes: 3
