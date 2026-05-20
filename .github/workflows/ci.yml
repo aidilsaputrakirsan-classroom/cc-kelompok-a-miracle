@@ -166,43 +166,49 @@ jobs:
           cache-to: type=gha,mode=max
 
   # ============================================================
-  # Deploy to Railway (CD) - FIXED + DEBUG
+  # Deploy to Railway (CD) - SUDAH BENAR
   # ============================================================
-   deploy:
+  deploy:
     name: 🚀 Deploy to Railway
     runs-on: ubuntu-latest
     needs: [docker]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     steps:
-      - uses: actions/checkout@v4
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
 
-      - name: Install Railway CLI
+      - name: 🚂 Install Railway CLI
         run: npm install -g @railway/cli
 
-      - name: Deploy Backend
+      - name: 🚀 Deploy Backend
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
+          echo "🚀 Deploying Backend..."
           cd backend
-          echo "Deploying Backend..."
-          railway deploy --service backend --detach
+          railway deploy --service tracelt-backend --detach
 
-      - name: Deploy Frontend
+      - name: 🚀 Deploy Frontend
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
+          echo "🚀 Deploying Frontend..."
           cd frontend
-          echo "Deploying Frontend..."
-          railway deploy --service frontend --detach
+          railway deploy --service tracelt-frontend --detach
 
-      - name: Deployment Summary
+      - name: ✅ Deployment Summary
         if: always()
         run: |
-          echo "## 🚀 Deployment Selesai" >> $GITHUB_STEP_SUMMARY
-          echo "**Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "## 🚀 Deployment Berhasil!" >> $GITHUB_STEP_SUMMARY
+          echo "**Repository**: ${{ github.repository }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit**: [${{ github.sha }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }})" >> $GITHUB_STEP_SUMMARY
           echo "**Waktu**: $(date '+%Y-%m-%d %H:%M:%S WITA')" >> $GITHUB_STEP_SUMMARY
-          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🌐 Service URLs" >> $GITHUB_STEP_SUMMARY
+          echo "- **Backend**: https://tracelt-backend.up.railway.app" >> $GITHUB_STEP_SUMMARY
+          echo "- **Frontend**: https://tracelt-frontend.up.railway.app" >> $GITHUB_STEP_SUMMARY
+
   # ============================================================
   # Notify PR (FIXED 
   # ============================================================
