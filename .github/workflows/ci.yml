@@ -1,5 +1,5 @@
 # ==============================================
-# CI/CD Pipeline — Cloud Team XX
+# CI/CD Pipeline - Cloud Team XX
 # ==============================================
 
 name: CI/CD Pipeline
@@ -12,6 +12,7 @@ on:
 
 permissions:
   contents: read
+  issues: write
   pull-requests: write
 
 concurrency:
@@ -20,22 +21,27 @@ concurrency:
 
 jobs:
   lint:
-    name: 🔍 Lint (Ruff)
+    name: Lint (Ruff)
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: ./backend
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install ruff
-      - run: ruff check .
-      - run: pip install ruff
-      - run: ruff check .
 
-  test-backend:
+      - name: Install Ruff
+        run: pip install ruff
+
+      - name: Run Ruff
+        run: ruff check .
+
+  test_backend:
     name: Test Backend
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -49,63 +55,77 @@ jobs:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: tracelt_test
-        ports: ["5432:5432"]
-        ports: ["5432:5432"]
+        ports:
+          - 5432:5432
         options: >-
           --health-cmd "pg_isready -U postgres"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-          cache: "pip"
-      - run: pip install -r requirements.txt
-      - name: Health Check Test
-      - run: pip install -r requirements.txt
-      - name: Health Check Test
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Health check test
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tracelt_test
           SECRET_KEY: 0c0e1ed2-77b5-474d-8fcc-e5e7fcf07f39
         run: |
           python -c "
-          from main import app
           from fastapi.testclient import TestClient
+          from main import app
+
           client = TestClient(app)
           response = client.get('/health')
           assert response.status_code == 200
-          print('✅ Health check passed')
-          print('✅ Health check passed')
+          print('Health check passed')
           "
 
-  build-frontend:
+  build_frontend:
     name: Build Frontend
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: ./frontend
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm ci
-      - run: npm run build
-          node-version: 20
-      - run: npm ci
-      - run: npm run build
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build frontend
         env:
           VITE_API_URL: http://localhost:3000
+        run: npm run build
 
   docker:
-    name: 🐳 Build & Push Docker Images
+    name: Build and Push Docker Images
     runs-on: ubuntu-latest
-    needs: [lint, test-backend, build-frontend]
+    needs: [lint, test_backend, build_frontend]
     steps:
-      - uses: actions/checkout@v4
-      - uses: docker/setup-buildx-action@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: Login to Docker Hub
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -114,86 +134,98 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build & Push Backend
+      - name: Build backend image
+        if: github.event_name == 'pull_request'
         uses: docker/build-push-action@v6
         with:
           context: ./backend
-          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          push: false
+
+      - name: Build frontend image
+        if: github.event_name == 'pull_request'
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          push: false
+
+      - name: Build and push backend image
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          push: true
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/cc-kelompok-a-miracle-backend:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/cc-kelompok-a-miracle-backend:${{ github.sha }}
 
-      - name: Build & Push Frontend
+      - name: Build and push frontend image
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: docker/build-push-action@v6
         with:
           context: ./frontend
-          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          push: true
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/cc-kelompok-a-miracle-frontend:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/cc-kelompok-a-miracle-frontend:${{ github.sha }}
 
   deploy:
-    name: 🚀 Deploy to Railway
+    name: Deploy to Railway
     runs-on: ubuntu-latest
     needs: [docker]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:
-      - uses: actions/checkout@v4
-      - run: npm install -g @railway/cli
-      - uses: actions/checkout@v4
-      - run: npm install -g @railway/cli
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Deploy Backend
-      - name: Deploy Backend
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Deploy backend
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-        run: |
-          cd backend
-          railway up --service tracelt-backend --detach --ci
+        run: railway up --service tracelt-backend --detach --ci
+        working-directory: ./backend
 
-      - name: Deploy Frontend
-      - name: Deploy Frontend
+      - name: Deploy frontend
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-        run: |
-          cd frontend
-          railway up --service tracelt-frontend --detach --ci
+        run: railway up --service tracelt-frontend --detach --ci
+        working-directory: ./frontend
 
-      - name: Deployment Summary
-        if: always()
-      - name: Deployment Summary
+      - name: Deployment summary
         if: always()
         run: |
-          echo "## 🚀 Deployment Summary" >> $GITHUB_STEP_SUMMARY
-          echo "## 🚀 Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
           echo "**Commit**: [${{ github.sha }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }})" >> $GITHUB_STEP_SUMMARY
-          echo "**Waktu**: $(date '+%Y-%m-%d %H:%M:%S WITA')" >> $GITHUB_STEP_SUMMARY
-          echo "- Backend: https://tracelt-backend.up.railway.app" >> $GITHUB_STEP_SUMMARY
-          echo "- Frontend: https://tracelt-frontend.up.railway.app" >> $GITHUB_STEP_SUMMARY
-
-          echo "**Waktu**: $(date '+%Y-%m-%d %H:%M:%S WITA')" >> $GITHUB_STEP_SUMMARY
+          echo "**Waktu**: $(TZ='Asia/Makassar' date '+%Y-%m-%d %H:%M:%S WITA')" >> $GITHUB_STEP_SUMMARY
           echo "- Backend: https://tracelt-backend.up.railway.app" >> $GITHUB_STEP_SUMMARY
           echo "- Frontend: https://tracelt-frontend.up.railway.app" >> $GITHUB_STEP_SUMMARY
 
   notify-pr:
-    name: 📝 CI Status
-    name: 📝 CI Status
+    name: CI Status
     runs-on: ubuntu-latest
-    needs: [lint, test-backend, build-frontend, docker]
-    needs: [lint, test-backend, build-frontend, docker]
+    needs: [lint, test_backend, build_frontend, docker]
     if: always() && github.event_name == 'pull_request'
     steps:
-      - uses: actions/github-script@v7
-      - uses: actions/github-script@v7
+      - name: Comment CI status
+        uses: actions/github-script@v7
         with:
           script: |
-            const success = true;
-            const success = true;
+            const results = {
+              lint: '${{ needs.lint.result }}',
+              backend: '${{ needs.test_backend.result }}',
+              frontend: '${{ needs.build_frontend.result }}',
+              docker: '${{ needs.docker.result }}',
+            };
+
+            const passed = Object.values(results).every((result) => result === 'success');
             const sha = '${{ github.sha }}'.substring(0, 7);
-            github.rest.issues.createComment({
+            const status = passed ? 'CI Berhasil' : 'CI Gagal';
+            const icon = passed ? 'OK' : 'FAILED';
+
+            await github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `## ✅ CI Berhasil\n\n**Commit**: ${sha}\nDeployment hanya jalan saat merge ke main.`
-              body: `## ✅ CI Berhasil\n\n**Commit**: ${sha}\nDeployment hanya jalan saat merge ke main.`
+              body: `## ${icon} ${status}\n\n**Commit**: ${sha}\n\n- Lint: ${results.lint}\n- Backend: ${results.backend}\n- Frontend: ${results.frontend}\n- Docker: ${results.docker}\n\nDeployment hanya jalan saat merge ke main.`
             });
