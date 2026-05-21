@@ -9,8 +9,6 @@
 # 1. test-backend: Install deps + run pytest
 # 2. test-frontend: Install deps + run vitest
 # 3. build-docker: Build Docker images (pastikan Dockerfile valid)
-# CI/CD Pipeline - Cloud Team XX
-# ==============================================
 
 name: CI/CD Pipeline
 
@@ -115,11 +113,9 @@ jobs:
     needs: [lint, test_backend, build_frontend]
     steps:
       - uses: actions/checkout@v4
-      
-    - name: Set up Docker Buildx
+
+      - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-        
-      - uses: docker/setup-buildx-action@v3
 
       - name: Build & Push Backend
         if: github.ref == 'refs/heads/main'
@@ -187,7 +183,6 @@ jobs:
           done
           
           echo "⚠️ Health check gagal, tapi deployment sudah dilakukan."
-          # exit 1  # Dinonaktifkan sementara
 
       - name: 🏥 Health Check Frontend
         run: |
