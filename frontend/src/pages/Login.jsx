@@ -42,7 +42,7 @@ export const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden bg-gradient-to-br from-slate-50 via-white to-[#660000]/5">
+    <div className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden bg-gradient-to-br from-slate-50 via-white to-[#660000]/5 dark:from-slate-950 dark:via-slate-900 dark:to-[#660000]/10">
       {/* Background decorative elements */}
       <div className="absolute top-20 left-10 w-72 h-72 bg-[#660000]/10 rounded-full blur-3xl"></div>
       <div className="absolute bottom-20 right-10 w-96 h-96 bg-blue-100/10 rounded-full blur-3xl"></div>
@@ -53,7 +53,7 @@ export const Login = () => {
         transition={{ duration: 0.5 }}
         className="w-full max-w-md relative z-10"
       >
-        <Link to="/" className="inline-flex items-center gap-2 mb-8 font-semibold text-slate-600 hover:text-[#660000] transition-colors group">
+        <Link to="/" className="inline-flex items-center gap-2 mb-8 font-semibold text-slate-600 hover:text-[#660000] dark:text-slate-400 dark:hover:text-red-400 transition-colors group">
           <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
           Kembali ke Beranda
         </Link>
@@ -71,10 +71,10 @@ export const Login = () => {
               <Droplets className="w-10 h-10" />
             )}
           </motion.div>
-          <h1 className="text-4xl font-black mb-2 text-slate-900">
+          <h1 className="text-4xl font-black mb-2 text-slate-900 dark:text-white">
             {isAdminLogin ? 'PORTAL ADMIN' : 'TRACELT'}
           </h1>
-          <p className="text-slate-500 text-sm font-semibold">
+          <p className="text-slate-500 dark:text-slate-400 text-sm font-semibold">
             {isAdminLogin ? 'Masuk untuk mengelola sistem donor darah' : 'Pantau riwayat donor Anda'}
           </p>
         </div>
@@ -83,18 +83,18 @@ export const Login = () => {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="p-8 rounded-3xl backdrop-blur-xl border bg-white shadow-xl shadow-slate-200/50 border-slate-100"
+          className="p-8 rounded-3xl backdrop-blur-xl border bg-white dark:bg-slate-900 shadow-xl shadow-slate-200/50 dark:shadow-black/20 border-slate-100 dark:border-slate-800"
         >
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
-              <div className="p-4 rounded-2xl text-sm flex items-center gap-3 border bg-[#660000]/5 text-[#660000] border-[#660000]/10">
+              <div className="p-4 rounded-2xl text-sm flex items-center gap-3 border bg-[#660000]/5 text-[#660000] dark:bg-red-500/10 dark:text-red-400 border-[#660000]/10 dark:border-red-500/20">
                 <AlertCircle className="w-5 h-5 shrink-0" />
                 <span>{error}</span>
               </div>
             )}
 
             <div className="space-y-2">
-              <label className="text-sm font-semibold ml-1 flex items-center gap-1 text-slate-700">
+              <label className="text-sm font-semibold ml-1 flex items-center gap-1 text-slate-700 dark:text-slate-300">
                 <Mail className="w-4 h-4" />
                 Email <span className="text-red-500">*</span>
               </label>
@@ -103,7 +103,7 @@ export const Login = () => {
                   type="email" 
                   required
                   placeholder={loginType === 'admin' ? "admin@itk.ac.id" : "budi@student.itk.ac.id"}
-                  className="w-full px-4 py-3.5 border-2 border-transparent rounded-2xl focus:outline-none focus:ring-4 transition-all font-medium bg-slate-100 text-slate-900 focus:bg-white focus:border-[#660000] focus:ring-[#660000]/10"
+                  className="w-full px-4 py-3.5 border-2 border-transparent rounded-2xl focus:outline-none focus:ring-4 transition-all font-medium bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:border-[#660000] dark:focus:border-red-500 focus:ring-[#660000]/10 dark:focus:ring-red-500/20 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
@@ -111,7 +111,7 @@ export const Login = () => {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-semibold ml-1 flex items-center gap-1 text-slate-700">
+              <label className="text-sm font-semibold ml-1 flex items-center gap-1 text-slate-700 dark:text-slate-300">
                 <Lock className="w-4 h-4" />
                 Kata Sandi <span className="text-red-500">*</span>
               </label>
@@ -120,14 +120,14 @@ export const Login = () => {
                   type={showPassword ? "text" : "password"} 
                   required
                   placeholder="••••••••"
-                  className="w-full px-4 py-3.5 border-2 border-transparent rounded-2xl focus:outline-none focus:ring-4 transition-all font-medium pr-12 bg-slate-100 text-slate-900 focus:bg-white focus:border-[#660000] focus:ring-[#660000]/10"
+                  className="w-full px-4 py-3.5 border-2 border-transparent rounded-2xl focus:outline-none focus:ring-4 transition-all font-medium pr-12 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:border-[#660000] dark:focus:border-red-500 focus:ring-[#660000]/10 dark:focus:ring-red-500/20 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
                 <button 
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 transition-colors p-1 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-200"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 transition-colors p-1 rounded-lg text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-800"
                 >
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
@@ -157,9 +157,9 @@ export const Login = () => {
         </motion.div>
 
         {!isAdminLogin && (
-          <p className="text-center text-slate-600 text-sm mt-8 font-medium">
+          <p className="text-center text-slate-600 dark:text-slate-400 text-sm mt-8 font-medium">
             Belum punya akun? 
-            <Link to="/user/register" className="text-[#660000] hover:text-[#440000] font-bold ml-2 transition-colors">
+            <Link to="/user/register" className="text-[#660000] hover:text-[#440000] dark:text-red-400 dark:hover:text-red-300 font-bold ml-2 transition-colors">
               Daftar di sini
             </Link>
           </p>
