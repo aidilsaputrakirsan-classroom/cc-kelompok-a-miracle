@@ -1,5 +1,5 @@
 # ==============================================
-# CI Pipeline — Cloud Team XX
+# CI Pipeline — Miracle
 # ==============================================
 # Pipeline ini berjalan otomatis saat:
 # - Push ke branch main
@@ -9,10 +9,6 @@
 # 1. test-backend: Install deps + run pytest
 # 2. test-frontend: Install deps + run vitest
 # 3. build-docker: Build Docker images (pastikan Dockerfile valid)
-
-# ==============================================
-# CI/CD Pipeline — Cloud Team XX
-# ==============================================
 
 name: CI/CD Pipeline
 
@@ -188,9 +184,10 @@ jobs:
   deploy:
     name: 🚀 Deploy to Railway
     runs-on: ubuntu-latest
-    needs: [docker]
+    needs: [test-backend, test-frontend, build-docker]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-
+  #  ↑ HANYA deploy saat push/merge ke main (bukan saat PR)
+  
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
@@ -212,6 +209,48 @@ jobs:
           cd frontend
           railway up --service frontend --detach
 
+  # ============================================================
+  # HEALTH CHECK & SUMMARY
+  # ============================================================
+- name: 🏥 Health Check Backend
+        run: |
+          echo "⏳ Menunggu backend siap..."
+          sleep 25
+          
+          HEALTH_URL="https://backend-production-c556.up.railway.app/health"
+          
+          echo "Checking Backend: $HEALTH_URL"
+          
+          for i in {1..8}; do
+            HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" $HEALTH_URL)
+            if [ "$HTTP_STATUS" == "200" ]; then
+              echo "✅ Backend Health Check PASSED (HTTP $HTTP_STATUS)"
+              exit 0
+            fi
+            echo "⏳ Attempt $i/8 - Status: $HTTP_STATUS (waiting 10s...)"
+            sleep 10
+          done
+          
+          echo "❌ Backend Health Check FAILED!"
+          exit 1
+
+      - name: 🏥 Health Check Frontend
+        run: |
+          echo "⏳ Menunggu frontend siap..."
+          sleep 15
+          
+          FRONTEND_URL="https://tracelt-frontend-production.up.railway.app"
+          
+          echo "Checking Frontend: $FRONTEND_URL"
+          
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" $FRONTEND_URL)
+          
+          if [ "$HTTP_STATUS" == "200" ] || [ "$HTTP_STATUS" == "301" ] || [ "$HTTP_STATUS" == "302" ]; then
+            echo "✅ Frontend Health Check PASSED (HTTP $HTTP_STATUS)"
+          else
+            echo "⚠️ Frontend returned HTTP $HTTP_STATUS"
+          fi
+
       - name: ✅ Deployment Summary
         id: summary
         run: |
@@ -223,10 +262,11 @@ jobs:
           echo "**Waktu Deploy**: $TIMESTAMP" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 🌐 Deployment URLs" >> $GITHUB_STEP_SUMMARY
-          echo "- **Backend**: https://cc-kelompok-a-miracle-backend.up.railway.app" >> $GITHUB_STEP_SUMMARY
-          echo "- **Frontend**: https://cc-kelompok-a-miracle-frontend.up.railway.app" >> $GITHUB_STEP_SUMMARY
+          echo "- **Backend**: https://backend-production-c556.up.railway.app" >> $GITHUB_STEP_SUMMARY
+          echo "- **Frontend**: https://tracelt-frontend-production.up.railway.app" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "✅ Deployment selesai." >> $GITHUB_STEP_SUMMARY
+          echo "✅ Health Check selesai." >> $GITHUB_STEP_SUMMARY
 
           # Simpan untuk PR comment jika diperlukan
           echo "timestamp=$TIMESTAMP" >> $GITHUB_OUTPUT
