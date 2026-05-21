@@ -128,7 +128,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ./backend
-          push: true
+          push: false
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/cc-kelompok-a-miracle-backend:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/cc-kelompok-a-miracle-backend:${{ github.sha }}
@@ -138,7 +138,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ./frontend
-          push: true
+          push: false
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/cc-kelompok-a-miracle-frontend:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/cc-kelompok-a-miracle-frontend:${{ github.sha }}
