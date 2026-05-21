@@ -262,8 +262,8 @@ jobs:
           echo "✅ Deployment selesai." >> $GITHUB_STEP_SUMMARY
           echo "✅ Health Check selesai." >> $GITHUB_STEP_SUMMARY
           echo "**Waktu**: $(TZ='Asia/Makassar' date '+%Y-%m-%d %H:%M:%S WITA')" >> $GITHUB_STEP_SUMMARY
-          echo "- Backend: https://tracelt-backend.up.railway.app" >> $GITHUB_STEP_SUMMARY
-          echo "- Frontend: https://tracelt-frontend.up.railway.app" >> $GITHUB_STEP_SUMMARY
+          echo "- Backend: https://backend-production-c556.up.railway.app" >> $GITHUB_STEP_SUMMARY
+          echo "- Frontend:  https://tracelt-frontend-production.up.railway.app" >> $GITHUB_STEP_SUMMARY
 
   notify-pr:
     name: CI Status
