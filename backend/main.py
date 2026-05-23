@@ -1,5 +1,3 @@
-import os
-
 from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -8,6 +6,7 @@ from sqlalchemy.orm import Session
 
 import crud
 from auth import create_access_token, get_current_admin, get_current_pengguna
+from config import settings
 from database import engine, get_db
 from models import Admin, Base, Pengguna, ensure_schema_compatibility
 from schemas import (
@@ -88,8 +87,7 @@ def startup_maintenance() -> None:
     _cleanup_duplicate_admins()
 
 # ==================== CORS ====================
-allowed_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173")
-origins_list = [origin.strip() for origin in allowed_origins.split(",")]
+origins_list = settings.CORS_ORIGINS
 
 app.add_middleware(
     CORSMiddleware,

@@ -120,7 +120,7 @@ export default function App() {
       return newMode;
     });
   };
-
+  
   return (
     <ErrorBoundary>
       <Router>
