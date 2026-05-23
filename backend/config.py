@@ -36,7 +36,10 @@ class Settings:
         self.ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
 
         # CORS
-        cors_value = os.getenv("CORS_ORIGINS", "http://localhost:5173,http://localhost:3000")
+        cors_value = os.getenv("CORS_ORIGINS") or os.getenv(
+            "ALLOWED_ORIGINS",
+            "http://localhost:5173,http://localhost:3000",
+        )
         self.CORS_ORIGINS: list[str] = [origin.strip() for origin in cors_value.split(",") if origin.strip()]
 
         # Logging
