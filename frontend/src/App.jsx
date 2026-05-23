@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { useEffect, useState, lazy, Suspense } from 'react';
+import { lazy, Suspense, useState, useEffect } from 'react';
 const LandingPage = lazy(() => import('./pages/LandingPage').then((module) => ({ default: module.LandingPage })));
 const Login = lazy(() => import('./pages/Login').then((module) => ({ default: module.Login })));
 const UserRegister = lazy(() => import('./pages/UserRegister').then((module) => ({ default: module.UserRegister })));
@@ -86,39 +86,6 @@ const UserRoute = ({ children }) => {
 
 // ================= APP =================
 export default function App() {
-  const [darkMode, setDarkMode] = useState(false);
-
-  // Load theme dari localStorage
-  useEffect(() => {
-    const savedTheme = localStorage.getItem("theme");
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const shouldUseDark = savedTheme === "dark" || (!savedTheme && prefersDark);
-
-    setDarkMode(shouldUseDark);
-    if (shouldUseDark) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-  }, []);
-
-  // Toggle dark mode
-  const toggleDarkMode = () => {
-    setDarkMode((prev) => {
-      const newMode = !prev;
-
-      if (newMode) {
-        document.documentElement.classList.add("dark");
-        localStorage.setItem("theme", "dark");
-      } else {
-        document.documentElement.classList.remove("dark");
-        localStorage.setItem("theme", "light");
-      }
-
-      return newMode;
-    });
-  };
-
   return (
     <ErrorBoundary>
       <Router>

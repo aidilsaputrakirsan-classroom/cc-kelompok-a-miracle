@@ -1,39 +1,78 @@
 import { useEffect, useState } from 'react';
 
 export default function useDarkMode() {
-  const getInitial = () => {
-    try {
-      const saved = localStorage.getItem('theme');
-      if (saved === 'dark') return true;
-      if (saved === 'light') return false;
-    } catch (e) {
-      // ignore
-    }
-    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const getSystemPreference = () => {
+    if (typeof window === 'undefined' || !window.matchMedia) return false;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
   };
 
-  const [isDark, setIsDark] = useState(getInitial);
+  const getSavedTheme = () => {
+    try {
+      return localStorage.getItem('theme');
+    } catch (error) {
+      return null;
+    }
+  };
+
+  const [isDark, setIsDark] = useState(() => {
+    const saved = getSavedTheme();
+    if (saved === 'dark') return true;
+    if (saved === 'light') return false;
+    return getSystemPreference();
+  });
+  const [hasUserPreference, setHasUserPreference] = useState(() => {
+    const saved = getSavedTheme();
+    return saved === 'dark' || saved === 'light';
+  });
 
   useEffect(() => {
-    const onStorage = () => {
-      try {
-        const saved = localStorage.getItem('theme');
-        if (saved === 'dark') setIsDark(true);
-        else if (saved === 'light') setIsDark(false);
-      } catch (e) {}
+    document.documentElement.classList.toggle('dark', isDark);
+  }, [isDark]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return undefined;
+
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleMediaChange = (event) => {
+      if (!hasUserPreference) {
+        setIsDark(event.matches);
+      }
     };
 
-    const mq = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
-    const onMedia = (e) => setIsDark(e.matches);
+    mediaQuery.addEventListener?.('change', handleMediaChange);
+    return () => mediaQuery.removeEventListener?.('change', handleMediaChange);
+  }, [hasUserPreference]);
 
-    window.addEventListener('storage', onStorage);
-    if (mq && mq.addEventListener) mq.addEventListener('change', onMedia);
+  useEffect(() => {
+    const handleStorage = (event) => {
+      if (event.key !== 'theme') return;
 
-    return () => {
-      window.removeEventListener('storage', onStorage);
-      if (mq && mq.removeEventListener) mq.removeEventListener('change', onMedia);
+      if (event.newValue === 'dark') {
+        setHasUserPreference(true);
+        setIsDark(true);
+      } else if (event.newValue === 'light') {
+        setHasUserPreference(true);
+        setIsDark(false);
+      } else {
+        setHasUserPreference(false);
+        setIsDark(getSystemPreference());
+      }
     };
+
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
   }, []);
 
-  return isDark;
+  const toggleDarkMode = () => {
+    const nextDark = !isDark;
+    setHasUserPreference(true);
+    setIsDark(nextDark);
+    try {
+      localStorage.setItem('theme', nextDark ? 'dark' : 'light');
+    } catch (error) {
+      // ignore
+    }
+  };
+
+  return [isDark, toggleDarkMode];
 }

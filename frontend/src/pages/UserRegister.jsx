@@ -23,6 +23,21 @@ export const UserRegister = () => {
       return;
     }
 
+    // Validasi sisi-klien agar sesuai aturan backend
+    const validatePassword = (pwd) => {
+      if (!pwd || pwd.length < 8) return 'Kata sandi harus minimal 8 karakter.';
+      if (!/[A-Z]/.test(pwd)) return 'Kata sandi harus mengandung minimal 1 huruf besar.';
+      if (!/[a-z]/.test(pwd)) return 'Kata sandi harus mengandung minimal 1 huruf kecil.';
+      if (!/[0-9]/.test(pwd)) return 'Kata sandi harus mengandung minimal 1 angka.';
+      return null;
+    };
+
+    const pwErr = validatePassword(password);
+    if (pwErr) {
+      setError(pwErr);
+      return;
+    }
+
     setLoading(true);
     setError('');
     
@@ -34,7 +49,21 @@ export const UserRegister = () => {
       });
       navigate('/login?type=user');
     } catch (err) {
-      setError(err.response?.data?.detail || 'Gagal mendaftar. Silakan coba lagi.');
+      // Parsing error response FastAPI (string detail atau list validation errors)
+      const resp = err.response?.data;
+      if (resp) {
+        if (err.response?.status === 422 && Array.isArray(resp.detail)) {
+          // Format: [{loc:..., msg:..., type:...}, ...] — simpan sebagai array pesan
+          const msgsArray = resp.detail.map((d) => d.msg || JSON.stringify(d)).filter(Boolean);
+          setError(msgsArray.length ? msgsArray : ['Data tidak valid. Periksa input.']);
+        } else if (typeof resp.detail === 'string') {
+          setError(resp.detail);
+        } else {
+          setError(resp.message || 'Gagal mendaftar. Silakan coba lagi.');
+        }
+      } else {
+        setError(err.message || 'Gagal mendaftar. Silakan coba lagi.');
+      }
     } finally {
       setLoading(false);
     }
@@ -78,9 +107,19 @@ export const UserRegister = () => {
         >
           <form onSubmit={handleSubmit} className="space-y-5">
             {error && (
-              <div className="p-4 bg-[#660000]/5 text-[#660000] dark:bg-red-500/10 dark:text-red-400 rounded-2xl text-sm flex items-center gap-3 border border-[#660000]/10 dark:border-red-500/20">
-                <AlertCircle className="w-5 h-5 shrink-0" />
-                <span>{error}</span>
+              <div className="p-4 bg-[#660000]/5 text-[#660000] dark:bg-red-500/10 dark:text-red-400 rounded-2xl text-sm flex items-start gap-3 border border-[#660000]/10 dark:border-red-500/20">
+                <AlertCircle className="w-5 h-5 shrink-0 mt-1" />
+                <div className="flex-1">
+                  {Array.isArray(error) ? (
+                    <ul className="list-disc ml-4 space-y-1 text-sm">
+                      {error.map((msg, idx) => (
+                        <li key={idx} className="text-sm">{msg}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <span>{error}</span>
+                  )}
+                </div>
               </div>
             )}
 
