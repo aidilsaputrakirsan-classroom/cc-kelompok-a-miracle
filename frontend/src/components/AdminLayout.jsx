@@ -14,6 +14,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import useDarkMode from '../hooks/useDarkMode';
 
 function cn(...inputs) {
   return twMerge(clsx(inputs));
@@ -38,19 +39,7 @@ export const AdminLayout = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isDark, setIsDark] = useState(document.documentElement.classList.contains('dark'));
-
-  const toggleDarkMode = () => {
-    const newDarkMode = !isDark;
-    setIsDark(newDarkMode);
-    if (newDarkMode) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    }
-  };
+  const [isDark, toggleDarkMode] = useDarkMode();
 
   const menuItems = [
     { icon: PieChartIcon, label: 'Statistik', path: '/admin' },
@@ -138,17 +127,28 @@ export const AdminLayout = ({ children }) => {
             ))}
             <button 
               onClick={handleLogout}
-              className="flex items-center gap-3 px-4 py-3 text-slate-500"
+              className="flex items-center gap-3 px-4 py-3 text-slate-500 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"
             >
               <LogOut className="w-5 h-5" />
               <span>Keluar</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                toggleDarkMode();
+                setIsMobileMenuOpen(false);
+              }}
+              className="flex items-center gap-3 px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 transition-all"
+            >
+              {isDark ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5 text-red-400" />}
+              {isDark ? 'Mode Terang' : 'Mode Gelap'}
             </button>
           </nav>
         </motion.div>
       )}
 
       {/* Main Content */}
-      <main className="flex-1 lg:ml-64 p-6 lg:p-10 pt-20 lg:pt-10">
+      <main className="flex-1 lg:ml-64 p-6 lg:p-10 pt-20 lg:pt-10 min-h-screen">
         {children}
       </main>
     </div>

@@ -3,6 +3,7 @@ import { Users, Droplets, CheckCircle, Clock, ArrowUpRight, ArrowLeft } from 'lu
 import { Link } from 'react-router-dom';
 import { apiService } from '../services/api';
 import { LoadingSpinner } from '../components/LoadingSpinner';
+import useDarkMode from '../hooks/useDarkMode';
 
 const AdminDashboardCharts = lazy(() => import('../components/AdminDashboardCharts').then((module) => ({ default: module.AdminDashboardCharts })));
 
@@ -27,7 +28,7 @@ const StatCard = ({ title, value, icon: Icon, trend, color }) => (
 export const AdminDashboard = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
-  const isDark = document.documentElement.classList.contains('dark');
+  const [isDark] = useDarkMode();
 
   useEffect(() => {
     const fetchStats = async () => {

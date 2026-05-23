@@ -2,26 +2,16 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Droplets, Menu, X, Sun, Moon, ArrowRight } from 'lucide-react';
+import useDarkMode from '../hooks/useDarkMode';
 
 export const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [isDark, setIsDark] = useState(false);
+  const [isDark, toggleDarkMode] = useDarkMode();
 
   useEffect(() => {
-    // Initial theme check
-    const savedTheme = localStorage.getItem('theme');
-    const isDarkMode = savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches);
-    
-    setIsDark(isDarkMode);
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
     };
@@ -44,18 +34,6 @@ export const Header = () => {
       window.removeEventListener('storage', handleStorageChange);
     };
   }, []);
-
-  const toggleDarkMode = () => {
-    const newDarkMode = !isDark;
-    setIsDark(newDarkMode);
-    if (newDarkMode) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    }
-  };
 
   const navLinks = [
     { name: 'Beranda', href: '/' },
@@ -271,6 +249,17 @@ export const Header = () => {
                   Dashboard
                 </Link>
               )}
+              <button
+                type="button"
+                onClick={() => {
+                  toggleDarkMode();
+                  setIsMobileMenuOpen(false);
+                }}
+                className="mt-4 w-full inline-flex items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-6 py-4 text-lg font-semibold text-slate-900 transition-colors hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700"
+              >
+                {isDark ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5 text-red-400" />}
+                {isDark ? 'Mode Terang' : 'Mode Gelap'}
+              </button>
             </div>
           </motion.div>
         )}
