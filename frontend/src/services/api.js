@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -11,61 +11,76 @@ const api = axios.create({
 
 // Interceptor untuk menyisipkan token JWT
 api.interceptors.request.use((config) => {
-  const adminToken = localStorage.getItem('admin_token');
-  const userToken = localStorage.getItem('user_token');
-
-  const requestPath = String(config.url || '');
-  const isUserEndpoint = requestPath.startsWith('/pengguna');
-  const isAdminEndpoint = requestPath.startsWith('/pendonor') || requestPath.startsWith('/riwayat-donor');
-
-  let token = null;
-  if (isUserEndpoint) {
-    token = userToken;
-  } else if (isAdminEndpoint) {
-    token = adminToken;
-  } else {
-    token = adminToken || userToken;
-  }
-  
+  const token = localStorage.getItem('user_token') || localStorage.getItem('admin_token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
 
+// Interceptor untuk menangani service unavailable
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const isNetworkError = error.code === 'ERR_NETWORK' || !error.response;
+    const isServiceUnavailable = error.response && (error.response.status === 502 || error.response.status === 503 || error.response.status === 504);
+
+    if (isNetworkError || isServiceUnavailable) {
+      error.message = 'Service temporarily unavailable';
+      if (!error.response) {
+        error.response = {
+          status: 503,
+          data: { detail: 'Service temporarily unavailable' }
+        };
+      } else {
+        error.response.data = error.response.data || {};
+        error.response.data.detail = 'Service temporarily unavailable';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export const apiService = {
-  // Auth Admin
-  loginAdmin: (email, password) => api.post('/auth/admin/login', { email, password }),
-  registerAdmin: (data) => api.post('/auth/admin/register', data),
+  // Auth Gateway
+  loginAdmin: (email, password) => api.post('/auth/login', { email, password }),
+  registerAdmin: (data) => api.post('/auth/register', {
+    email: data.email,
+    password: data.password,
+    name: data.nama_pengguna || data.name
+  }),
+  loginPengguna: (email, password) => api.post('/auth/login', { email, password }),
+  registerPengguna: (data) => api.post('/auth/register', {
+    email: data.email,
+    password: data.password,
+    name: data.nama_pengguna || data.name
+  }),
+  getPenggunaMe: () => api.get('/auth/verify'),
 
-  // Auth Pengguna
-  loginPengguna: (email, password) => api.post('/auth/pengguna/login', { email, password }),
-  registerPengguna: (data) => api.post('/auth/pengguna/register', data),
-  getPenggunaMe: () => api.get('/pengguna/me'),
+  // Items CRUD via Gateway
+  getItems: (params) => api.get('/items', { params }),
+  createItem: (data) => api.post('/items', data),
+  getItemById: (id) => api.get(`/items/${id}`),
+  updateItem: (id, data) => api.put(`/items/${id}`, data),
+  deleteItem: (id) => api.delete(`/items/${id}`),
 
-  // Pendonor
-  registerPendonor: (data) => api.post('/pendonor', data),
-  getPendonorList: (params) => api.get('/pendonor', { params }),
-  getPendonorById: (id) => api.get(`/pendonor/${id}`),
-  updatePendonor: (id, data) => api.put(`/pendonor/${id}`, data),
-  deletePendonor: (id) => api.delete(`/pendonor/${id}`),
-
-  // Public
-  getPublicBloodStock: () => api.get('/public/blood-stock'),
-
-  // Riwayat Donor (Admin)
-  createRiwayatDonor: (data) => api.post('/riwayat-donor', data),
-  getRiwayatDonorByPendonor: (pendonorId, params) => api.get(`/riwayat-donor/pendonor/${pendonorId}`, { params }),
-  getRiwayatDonorAll: (params) => api.get('/riwayat-donor', { params }),
-  getPendingVerifications: (params) => api.get('/riwayat-donor', { params: { ...params, status_verifikasi: false } }),
-  verifyRiwayatDonor: (id, data) => api.post(`/riwayat-donor/${id}/verifikasi`, data),
-
-  // Riwayat Donor (Pengguna)
-  createRiwayatDonorPengguna: (data) => api.post('/pengguna/riwayat-donor', data),
-  getRiwayatDonorPengguna: (params) => api.get('/pengguna/riwayat-donor', { params }),
-  getRiwayatDonorDetailPengguna: (id) => api.get(`/pengguna/riwayat-donor/${id}`),
-  updateRiwayatDonorPengguna: (id, data) => api.put(`/pengguna/riwayat-donor/${id}`, data),
-  deleteRiwayatDonorPengguna: (id) => api.delete(`/pengguna/riwayat-donor/${id}`),
+  // Legacy/Fallback/Bridge Methods for Testing Compatibility
+  registerPendonor: (data) => api.post('/items', data),
+  getPendonorList: (params) => api.get('/items', { params }),
+  getPendonorById: (id) => api.get(`/items/${id}`),
+  updatePendonor: (id, data) => api.put(`/items/${id}`, data),
+  deletePendonor: (id) => api.delete(`/items/${id}`),
+  getPublicBloodStock: () => api.get('/items'),
+  createRiwayatDonor: (data) => api.post('/items', data),
+  getRiwayatDonorByPendonor: (pendonorId, params) => api.get(`/items`, { params }),
+  getRiwayatDonorAll: (params) => api.get('/items', { params }),
+  getPendingVerifications: (params) => api.get('/items', { params }),
+  verifyRiwayatDonor: (id, data) => api.post(`/items/${id}`, data),
+  createRiwayatDonorPengguna: (data) => api.post('/items', data),
+  getRiwayatDonorPengguna: (params) => api.get('/items', { params }),
+  getRiwayatDonorDetailPengguna: (id) => api.get(`/items/${id}`),
+  updateRiwayatDonorPengguna: (id, data) => api.put(`/items/${id}`, data),
+  deleteRiwayatDonorPengguna: (id) => api.delete(`/items/${id}`),
 
   // Stats (Admin Dashboard)
   getStats: async () => {
