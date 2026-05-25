@@ -1,16 +1,16 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { useEffect, useState } from 'react';
-import { LandingPage } from './pages/LandingPage';
-import { Login } from './pages/Login';
-import { UserRegister } from './pages/UserRegister';
-import { AdminDashboard } from './pages/AdminDashboard';
-import { UserDashboard } from './pages/UserDashboard';
-import { DonorList } from './pages/DonorList';
-import { VerificationQueue } from './pages/VerificationQueue';
-import { DonorRegistration } from './pages/DonorRegistration';
-import { PublicStock } from './pages/PublicStock';
+import { lazy, Suspense, useState, useEffect } from 'react';
+const LandingPage = lazy(() => import('./pages/LandingPage').then((module) => ({ default: module.LandingPage })));
+const Login = lazy(() => import('./pages/Login').then((module) => ({ default: module.Login })));
+const UserRegister = lazy(() => import('./pages/UserRegister').then((module) => ({ default: module.UserRegister })));
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard').then((module) => ({ default: module.AdminDashboard })));
+const UserDashboard = lazy(() => import('./pages/UserDashboard').then((module) => ({ default: module.UserDashboard })));
+const DonorList = lazy(() => import('./pages/DonorList').then((module) => ({ default: module.DonorList })));
+const VerificationQueue = lazy(() => import('./pages/VerificationQueue').then((module) => ({ default: module.VerificationQueue })));
+const DonorRegistration = lazy(() => import('./pages/DonorRegistration').then((module) => ({ default: module.DonorRegistration })));
+const PublicStock = lazy(() => import('./pages/PublicStock').then((module) => ({ default: module.PublicStock })));
+const AboutPage = lazy(() => import('./components/AboutPage'));
 import { AdminLayout } from './components/AdminLayout';
-import AboutPage from "./components/AboutPage";
 import ErrorBoundary from './components/ErrorBoundary';
 import { apiService } from './services/api';
 
@@ -86,70 +86,56 @@ const UserRoute = ({ children }) => {
 
 // ================= APP =================
 export default function App() {
-  const [darkMode, setDarkMode] = useState(false);
-
-  // Load theme dari localStorage
-  useEffect(() => {
-    const savedTheme = localStorage.getItem("theme");
-    if (savedTheme === "dark") {
-      setDarkMode(true);
-      document.documentElement.classList.add("dark");
-    }
-  }, []);
-
-  // Toggle dark mode
-  const toggleDarkMode = () => {
-    setDarkMode((prev) => {
-      const newMode = !prev;
-
-      if (newMode) {
-        document.documentElement.classList.add("dark");
-        localStorage.setItem("theme", "dark");
-      } else {
-        document.documentElement.classList.remove("dark");
-        localStorage.setItem("theme", "light");
-      }
-
-      return newMode;
-    });
-  };
-
   return (
     <ErrorBoundary>
       <Router>
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/user/register" element={<UserRegister />} />
-          <Route path="/register" element={<DonorRegistration />} />
-          <Route path="/stock" element={<PublicStock />} />
-          <Route path="/about" element={<AboutPage />} />
+        <Suspense fallback={<div className="flex items-center justify-center h-screen">Memuat halaman...</div>}>
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/user/register" element={<UserRegister />} />
+            <Route path="/register" element={<DonorRegistration />} />
+            <Route path="/stock" element={<PublicStock />} />
+            <Route path="/about" element={<AboutPage />} />
 
-        <Route path="/admin" element={
-          <AdminRoute>
-            <AdminDashboard />
-          </AdminRoute>
-        } />
-        <Route path="/admin/donors" element={
-          <AdminRoute>
-            <DonorList />
-          </AdminRoute>
-        } />
-        <Route path="/admin/verify" element={
-          <AdminRoute>
-            <VerificationQueue />
-          </AdminRoute>
-        } />
+            <Route
+              path="/admin"
+              element={
+                <AdminRoute>
+                  <AdminDashboard />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/admin/donors"
+              element={
+                <AdminRoute>
+                  <DonorList />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/admin/verify"
+              element={
+                <AdminRoute>
+                  <VerificationQueue />
+                </AdminRoute>
+              }
+            />
 
-        <Route path="/user/dashboard" element={
-          <UserRoute>
-            <UserDashboard />
-          </UserRoute>
-        } />
+            <Route
+              path="/user/dashboard"
+              element={
+                <UserRoute>
+                  <UserDashboard />
+                </UserRoute>
+              }
+            />
 
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </Router>
-  </ErrorBoundary>
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Suspense>
+      </Router>
+    </ErrorBoundary>
   );
 }
