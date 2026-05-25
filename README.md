@@ -1,14 +1,4 @@
-# ☁️ Tracelt - [Miracle]
-
-![CI/CD Pipeline](https://github.com/aidilsaputrakirsan-classroom/cc-kelompok-a-miracle/actions/workflows/ci.yml/badge.svg)
-
-TraceIt merupakan aplikasi berbasis web yang dirancang untuk membantu civitas akademika Institut Teknologi Kalimantan dalam mengajukan permohonan data pendonor darah sukarela. Melalui platform ini, pengguna dapat mengunggah data pribadi, berupa nama lengkap, jenis kelamin, berat badan, tinggi badan, golongan darah, usia, tanggal lahir, tanggal terakhir donor, riwayat donor (total donor), alamat dan riwayat kesehatan. Sistem akan menampilkan daftar laporan pendonor sukarela yang dapat difilter berdasarkan nama, jenis kelamin, umur dan golongan darah untuk mempermudah proses verifikasi kesiapan pendonor dalam menjadi pendonor darah.
-
-
 # 🩸 Tracelt<font color="gray"><sup><sup>by Miracle</sup><sup></font>
-
-# ☁️ Cloud App - TraceIt
-
 [![CI/CD Pipeline](https://github.com/aidilsaputrakirsan-classroom/cc-kelompok-a-miracle/actions/workflows/ci.yml/badge.svg)](https://github.com/aidilsaputrakirsan-classroom/cc-kelompok-a-miracle/actions/workflows/ci.yml)
 
 
@@ -476,8 +466,8 @@ make pr-check
 | 3      | React Frontend         | ✅     |
 | 4      | Full-Stack Integration | ✅     |
 | 5-7    | Docker & Compose       | ✅     |
-| 8      | UTS Demo               | ⬜     |
-| 9-11   | CI/CD Pipeline         | ⬜     |
+| 8      | UTS Demo               | ✅     |
+| 9-11   | CI/CD Pipeline         | ✅     |
 | 12-14  | Microservices          | ⬜     |
 | 15-16  | Final & UAS            | ⬜     |
 
