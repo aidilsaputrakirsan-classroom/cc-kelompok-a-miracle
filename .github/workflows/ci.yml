@@ -155,7 +155,7 @@ jobs:
           echo "Waiting for backend deployment to be ready..."
           sleep 30
           
-          HEALTH_URL="https://backend-production-c556.up.railway.app/health"
+          HEALTH_URL="https://tracelt-backend-production.up.railway.app/health"
           for i in {1..10}; do
             if curl -s -f $HEALTH_URL > /dev/null; then
               echo "✅ Backend Health check passed!"
@@ -170,5 +170,5 @@ jobs:
       - name: ✅ Deploy complete
         run: |
           echo "✅ Deployment successful!"
-          echo "Backend : https://backend-production-c556.up.railway.app"
+          echo "Backend : https://tracelt-backend-production.up.railway.app"
           echo "Frontend: https://tracelt-frontend-production.up.railway.app"
