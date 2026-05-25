@@ -42,7 +42,7 @@ export const DonorRegistration = () => {
 
   const todayISO = new Date().toISOString().split('T')[0];
 
-  const isDark = useDarkMode();
+  const [isDark] = useDarkMode();
   const primaryColor = isDark ? '#991b1b' : '#660000';
 
   const getAgeFromDate = (value) => {
