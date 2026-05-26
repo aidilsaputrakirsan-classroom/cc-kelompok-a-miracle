@@ -59,6 +59,10 @@ export const DonorRegistration = () => {
   };
 
   const parseBackendError = (err) => {
+    if (!err?.response) {
+      return { _general: 'Gagal terhubung ke server. Pastikan backend sudah berjalan pada port yang benar.' };
+    }
+
     const detail = err?.response?.data?.detail;
     if (Array.isArray(detail)) {
       const mapped = {};
