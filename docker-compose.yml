@@ -1,5 +1,5 @@
 # ============================================================
-# Docker Compose — Tracelt
+# Docker Compose — Tracelt Microservices
 # Komputasi Awan — SI ITK
 # ============================================================
 # Usage:
@@ -10,43 +10,76 @@
 # ============================================================
 
 services:
-  # ==================== DATABASE ====================
-  db:
+  # ==================== DATABASES ====================
+  auth-db:
     image: postgres:15
-    container_name: tracelt-db
+    container_name: tracelt-auth-db
     environment:
+      POSTGRES_DB: auth_db
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: tracelt
-    ports:
-      - "5433:5432"   # Host 5433 → Container 5432 (hindari bentrok dgn PostgreSQL lokal)
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - auth_db_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d tracelt"]
-      interval: 10s
-      timeout: 5s
+      test: ["CMD-SHELL", "pg_isready -U postgres -d auth_db"]
+      interval: 5s
+      timeout: 3s
       retries: 5
       start_period: 10s
     restart: unless-stopped
 
-  # ==================== BACKEND ====================
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: tracelt-backend
-    env_file:
-      - ./backend/.env.docker
-    ports:
-      - "8000:8000"
+  item-db:
+    image: postgres:15
+    container_name: tracelt-item-db
+    environment:
+      POSTGRES_DB: item_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - item_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d item_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  # ==================== MICROSERVICES ====================
+  auth-service:
+    build: ./services/auth-service
+    container_name: tracelt-auth-service
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@auth-db:5432/auth_db
+      SECRET_KEY: ${SECRET_KEY:-supersecretkeychangeme123}
+      CORS_ORIGINS: "http://localhost,http://localhost:5173,http://127.0.0.1,http://localhost:80"
     depends_on:
-      db:
+      auth-db:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
+
+  item-service:
+    build: ./services/item-service
+    container_name: tracelt-item-service
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@item-db:5432/item_db
+      AUTH_SERVICE_URL: http://auth-service:8001
+      CORS_ORIGINS: "http://localhost,http://localhost:5173,http://localhost:80"
+    depends_on:
+      item-db:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      interval: 10s
+      timeout: 5s
       retries: 3
       start_period: 15s
     restart: unless-stopped
@@ -57,13 +90,10 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: http://localhost:3000
+        VITE_API_URL: http://localhost
     container_name: tracelt-frontend
-    ports:
-      - "3000:80"
-    depends_on:
-      backend:
-        condition: service_healthy
+    # Tidak expose port 3000 lagi (karena di-serve oleh gateway)
+    depends_on: []
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:80/"]
       interval: 30s
@@ -72,13 +102,25 @@ services:
       start_period: 10s
     restart: unless-stopped
 
-# ==================== VOLUMES ====================
-volumes:
-  pgdata:
-    name: tracelt-pgdata
+  # ==================== GATEWAY (Nginx) ====================
+  gateway:
+    image: nginx:alpine
+    container_name: tracelt-gateway
+    ports:
+      - "80:80"
+    volumes:
+      - ./services/gateway/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - auth-service
+      - item-service
+      - frontend
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
 
-# ==================== NETWORKS ====================
-networks:
-  cloudnet:
-    name: tracelt-network
-    driver: bridge
+volumes:
+  auth_db_data:
+  item_db_data:
