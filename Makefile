@@ -1,65 +1,76 @@
-.PHONY: up down build logs ps clean restart
+# ==============================================
+# Makefile — Tracelt Microservices
+# ==============================================
 
-# Lint (cek code style)
-lint:
-	@echo "Running linter..."
-	# contoh (sesuaikan dengan project)
-	# backend (python)
-	docker compose exec backend flake8 || true
-	# frontend (optional)
-	# docker compose exec frontend npm run lint || true
+.PHONY: up down build logs ps restart clean help
 
-# Test (placeholder dulu)
-test:
-	@echo "Running tests..."
-	@echo "No tests implemented yet"
-
-# Build docker
-build:
-	@echo "Building containers..."
-	docker compose build
-
-# PR check (dipakai sebelum PR / CI)
-pr-check: build test
-	@echo "PR check completed"
-
-# Start semua services
+# Default
 up:
-	docker compose up -d
-
-# Start dengan rebuild
-build:
 	docker compose up --build -d
 
-# Stop & remove containers
+# Start tanpa build (lebih cepat)
+up-fast:
+	docker compose up -d
+
+# Stop semua container
 down:
 	docker compose down
 
-# Stop, remove, DAN hapus volumes (⚠️ data hilang!)
+# Stop + hapus volume (hati-hati, data hilang!)
 clean:
-	docker compose down -v
-	docker system prune -f
+	docker compose down -v --rmi local
 
-# Restart semua
-restart:
-	docker compose restart
+# Build ulang semua image
+build:
+	docker compose build --no-cache
 
-# Lihat logs (semua services)
-logs:
-	docker compose logs -f
-
-# Lihat logs backend saja
-logs-backend:
-	docker compose logs -f backend
-
-# Lihat status
+# Lihat status semua container
 ps:
 	docker compose ps
 
-# Masuk ke backend shell
-shell-backend:
-	docker compose exec backend bash
+# Lihat logs semua service
+logs:
+	docker compose logs -f
 
-# Masuk ke database
-shell-db:
-	docker compose exec db psql -U postgres -d tracelt
+# Logs per service
+auth-logs:
+	docker compose logs -f auth-service
+
+item-logs:
+	docker compose logs -f item-service
+
+frontend-logs:
+	docker compose logs -f frontend
+
+gateway-logs:
+	docker compose logs -f gateway
+
+# Restart semua service
+restart:
+	docker compose restart
+
+# Restart satu service
+restart-auth:
+	docker compose restart auth-service
+
+restart-item:
+	docker compose restart item-service
+
+# Health check manual
+health:
+	@echo "=== Health Check All Services ==="
+	curl -s http://localhost/health | jq || echo "Gateway: Failed"
+	curl -s http://localhost/auth/health | jq || echo "Auth Service: Failed"
+
+# Help
+help:
+	@echo "=== Tracelt Microservices Commands ==="
+	@echo "make up           : Start all services with build"
+	@echo "make up-fast      : Start without rebuild"
+	@echo "make down         : Stop services"
+	@echo "make ps           : Show container status"
+	@echo "make logs         : Show all logs"
+	@echo "make build        : Rebuild all images"
+	@echo "make clean        : Clean everything (careful!)"
+	@echo "make health       : Manual health check"
+	@echo "make help         : Show this help"
