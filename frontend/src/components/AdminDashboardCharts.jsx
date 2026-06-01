@@ -7,6 +7,8 @@ export const AdminDashboardCharts = ({ bloodData, genderData, isDark }) => {
   const [components, setComponents] = useState(null);
   const [loadError, setLoadError] = useState(false);
 
+  const resolveModule = (module, name) => module?.default || module?.[name] || module;
+
   useEffect(() => {
     let cancelled = false;
 
@@ -36,16 +38,16 @@ export const AdminDashboardCharts = ({ bloodData, genderData, isDark }) => {
       ]) => {
         if (!cancelled) {
           setComponents({
-            BarChart: BarChartModule.default,
-            CartesianGrid: CartesianGridModule.default,
-            XAxis: XAxisModule.default,
-            YAxis: YAxisModule.default,
-            Bar: BarModule.default,
-            Tooltip: TooltipModule.default,
-            ResponsiveContainer: ResponsiveContainerModule.default,
-            PieChart: PieChartModule.default,
-            Pie: PieModule.default,
-            Cell: CellModule.default,
+            BarChart: resolveModule(BarChartModule, 'BarChart'),
+            CartesianGrid: resolveModule(CartesianGridModule, 'CartesianGrid'),
+            XAxis: resolveModule(XAxisModule, 'XAxis'),
+            YAxis: resolveModule(YAxisModule, 'YAxis'),
+            Bar: resolveModule(BarModule, 'Bar'),
+            Tooltip: resolveModule(TooltipModule, 'Tooltip'),
+            ResponsiveContainer: resolveModule(ResponsiveContainerModule, 'ResponsiveContainer'),
+            PieChart: resolveModule(PieChartModule, 'PieChart'),
+            Pie: resolveModule(PieModule, 'Pie'),
+            Cell: resolveModule(CellModule, 'Cell'),
           });
         }
       })

@@ -90,6 +90,26 @@ const UserRoute = ({ children }) => {
 export default function App() {
   const [darkMode, setDarkMode] = useState(false);
 
+  // Background polling for health status to detect if auth service is down
+  useEffect(() => {
+    const checkHealth = async () => {
+      try {
+        const res = await apiService.getHealth();
+        const authStatus = res.data?.dependencies?.['auth-service'];
+        if (authStatus) {
+          const isUnavailable = authStatus.status === 'unavailable' || authStatus.circuit_breaker?.state !== 'CLOSED';
+          apiService.setAuthDownStatus(isUnavailable);
+        }
+      } catch (err) {
+        console.error('Health check failed:', err);
+      }
+    };
+
+    checkHealth();
+    const interval = setInterval(checkHealth, 10000); // 10 seconds polling
+    return () => clearInterval(interval);
+  }, []);
+
   // Load theme dari localStorage
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme");

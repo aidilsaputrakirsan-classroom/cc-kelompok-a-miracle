@@ -25,10 +25,12 @@ import { apiService } from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import useDarkMode from '../hooks/useDarkMode';
 import Swal from 'sweetalert2';
+import { ServiceUnavailable } from '../components/ServiceUnavailable';
 
 export const DonorList = () => {
   const [donors, setDonors] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDonor, setSelectedDonor] = useState(null);
   const [isEditingDonor, setIsEditingDonor] = useState(false);
@@ -47,6 +49,7 @@ export const DonorList = () => {
 
   const fetchDonors = async () => {
     setLoading(true);
+    setError(null);
     try {
       const params = {
         nama: searchTerm || undefined,
@@ -68,6 +71,7 @@ export const DonorList = () => {
       await Promise.all(donorList.map(donor => loadDonorVerificationStatus(donor.id_pendonor)));
     } catch (err) {
       console.error('Gagal mengambil data pendonor:', err);
+      setError(err);
     } finally {
       setLoading(false);
     }
@@ -365,6 +369,12 @@ export const DonorList = () => {
                       <div className="w-8 h-8 border-3 border-[#660000]/30 border-t-[#660000] dark:border-red-500/30 dark:border-t-red-500 rounded-full animate-spin" />
                       <span>Memuat data pendonor...</span>
                     </div>
+                  </td>
+                </tr>
+              ) : error ? (
+                <tr>
+                  <td colSpan={5} className="px-6 py-12">
+                    <ServiceUnavailable onRetry={fetchDonors} error={error} />
                   </td>
                 </tr>
               ) : filteredDonors.length === 0 ? (

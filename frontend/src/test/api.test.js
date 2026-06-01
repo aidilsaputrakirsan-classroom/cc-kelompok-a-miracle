@@ -28,12 +28,12 @@ describe('API Service', () => {
   });
 
   it('getPublicBloodStock calls correct endpoint', async () => {
-    const mockData = { data: { total: 0, items: [] } };
+    const mockData = { data: { blood_stock: [] } };
     apiInstance.get.mockResolvedValue(mockData);
 
     const result = await apiService.getPublicBloodStock();
     
-    expect(apiInstance.get).toHaveBeenCalledWith('/items');
+    expect(apiInstance.get).toHaveBeenCalledWith('/api/public/blood-stock');
     expect(result).toEqual(mockData);
   });
 
@@ -44,7 +44,7 @@ describe('API Service', () => {
 
     const result = await apiService.loginAdmin(credentials.email, credentials.password);
     
-    expect(apiInstance.post).toHaveBeenCalledWith('/auth/login', credentials);
+    expect(apiInstance.post).toHaveBeenCalledWith('/auth/admin/login', credentials);
     expect(result).toEqual(mockResponse);
   });
 });

@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { apiService } from '../services/api';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import useDarkMode from '../hooks/useDarkMode';
+import { ServiceUnavailable } from '../components/ServiceUnavailable';
 
 const AdminDashboardCharts = lazy(() => import('../components/AdminDashboardCharts').then((module) => ({ default: module.AdminDashboardCharts })));
 
@@ -28,21 +29,30 @@ const StatCard = ({ title, value, icon: Icon, trend, color }) => (
 export const AdminDashboard = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [isDark] = useDarkMode();
 
+  const fetchStats = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await apiService.getStats();
+      setStats(res.data);
+    } catch (err) {
+      console.error('Gagal mengambil statistik:', err);
+      setError(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const res = await apiService.getStats();
-        setStats(res.data);
-      } catch (err) {
-        console.error('Gagal mengambil statistik:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchStats();
   }, []);
+
+  if (error) {
+    return <ServiceUnavailable onRetry={fetchStats} error={error} fullPage />;
+  }
 
   if (loading || !stats) {
     return <LoadingSpinner fullPage />;
