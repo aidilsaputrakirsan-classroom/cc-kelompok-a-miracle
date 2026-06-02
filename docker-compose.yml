@@ -60,6 +60,18 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
       interval: 10s
       timeout: 5s
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: auth_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - auth_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d auth_db"]
+      interval: 5s
+      timeout: 3s
       retries: 5
       start_period: 15s
     restart: unless-stopped
@@ -89,6 +101,61 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+  item-db:
+    image: postgres:15
+    container_name: tracelt-item-db
+    ports:
+      - "5434:5432"
+    environment:
+      POSTGRES_DB: item_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - item_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d item_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  # ==================== MICROSERVICES ====================
+  auth-service:
+    build: ./services/auth-service
+    container_name: tracelt-auth-service
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@auth-db:5432/auth_db
+      SECRET_KEY: ${SECRET_KEY:-supersecretkeychangeme123}
+      CORS_ORIGINS: "http://localhost,http://localhost:5173,http://127.0.0.1,http://localhost:80"
+    depends_on:
+      auth-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
+
+  item-service:
+    build: ./services/item-service
+    container_name: tracelt-item-service
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@item-db:5432/item_db
+      AUTH_SERVICE_URL: http://auth-service:8001
+      CORS_ORIGINS: "http://localhost,http://localhost:5173,http://localhost:80"
+    depends_on:
+      item-db:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
       start_period: 15s
     restart: unless-stopped
     deploy:
@@ -135,6 +202,9 @@ services:
         condition: service_healthy
       frontend:
         condition: service_healthy
+      - auth-service
+      - item-service
+      - frontend
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost/health"]
       interval: 10s

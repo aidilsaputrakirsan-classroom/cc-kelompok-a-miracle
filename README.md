@@ -686,6 +686,124 @@ Pengujian dilakukan dengan langkah berikut:
 | Docker network                              | Ketiga container terhubung |
 | Docker volume `pgdata`                      | Terdeteksi                 |
 
+### Production End-to-End Testing
+
+Pengujian end-to-end pada production URL dilakukan oleh Lead QA & Docs untuk memastikan service backend, koneksi database, endpoint publik, dan autentikasi pengguna berjalan setelah deployment.
+
+| Endpoint | Method | Status | Hasil QA |
+| --- | --- | --- | --- |
+| `/health` | `GET` | `200` | Backend sehat dan database terhubung |
+| `/api/public/blood-stock` | `GET` | `200` | Stok darah publik berhasil ditampilkan |
+| `/api/auth/admin/register` | `POST` | `201` | Registrasi admin berhasil dibuat |
+| `/api/auth/admin/login` | `POST` | Belum dieksekusi | Perlu diuji sebagai follow-up |
+| `/api/auth/pengguna/register` | `POST` | `400` | Validasi email duplikat berjalan |
+| `/api/auth/pengguna/login` | `POST` | `200` | Login pengguna berhasil dan token bearer diterima |
+
+#### Detail Hasil API Production
+
+**GET `/health`**
+
+```json
+{
+  "status": "healthy",
+  "service": "backend",
+  "version": "1.0.0",
+  "database": "connected"
+}
+```
+
+**GET `/api/public/blood-stock`**
+
+```json
+[
+  { "golongan_darah": "O", "jumlah_stok": 0 },
+  { "golongan_darah": "A+", "jumlah_stok": 0 },
+  { "golongan_darah": "A-", "jumlah_stok": 0 },
+  { "golongan_darah": "B+", "jumlah_stok": 0 },
+  { "golongan_darah": "B-", "jumlah_stok": 0 },
+  { "golongan_darah": "AB+", "jumlah_stok": 0 },
+  { "golongan_darah": "AB-", "jumlah_stok": 0 }
+]
+```
+
+**POST `/api/auth/admin/register`**
+
+Request:
+
+```json
+{
+  "nama_admin": "Admin ITK",
+  "email": "admin@itk.ac.id",
+  "password": "AdminPass123!"
+}
+```
+
+Response `201`:
+
+```json
+{
+  "id_admin": 0,
+  "nama_admin": "string",
+  "email": "string"
+}
+```
+
+**POST `/api/auth/admin/login`**
+
+Request:
+
+```json
+{
+  "email": "admin@itk.ac.id",
+  "password": "AdminPass123!"
+}
+```
+
+Status: belum dieksekusi.
+
+**POST `/api/auth/pengguna/register`**
+
+Request:
+
+```json
+{
+  "nama_pengguna": "Budi Santoso",
+  "email": "pengguna@example.com",
+  "password": "UserPass123!"
+}
+```
+
+Response `400`:
+
+```json
+{
+  "detail": "Email pengguna sudah terdaftar"
+}
+```
+
+**POST `/api/auth/pengguna/login`**
+
+Request:
+
+```json
+{
+  "email": "pengguna@example.com",
+  "password": "UserPass123!"
+}
+```
+
+Response `200`:
+
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "bearer",
+  "user_type": "pengguna"
+}
+```
+
+Kesimpulan QA: production backend dapat diakses, database terhubung, endpoint publik berjalan, validasi registrasi pengguna duplikat aktif, dan login pengguna berhasil. Skenario yang masih perlu ditindaklanjuti adalah eksekusi login admin production.
+
 ### Image Size
 
 | Image              | Tag     | Size    |

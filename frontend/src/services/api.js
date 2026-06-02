@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+// Default fallback points to backend dev port 8000 when VITE_API_URL tidak diset
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -11,56 +12,106 @@ const api = axios.create({
 
 // Interceptor untuk menyisipkan token JWT
 api.interceptors.request.use((config) => {
-  const adminToken = localStorage.getItem('admin_token');
-  const userToken = localStorage.getItem('user_token');
-
-  const requestPath = String(config.url || '');
-  const isUserEndpoint = requestPath.startsWith('/pengguna');
-  const isAdminEndpoint = requestPath.startsWith('/pendonor') || requestPath.startsWith('/riwayat-donor');
-
-  let token = null;
-  if (isUserEndpoint) {
-    token = userToken;
-  } else if (isAdminEndpoint) {
-    token = adminToken;
-  } else {
-    token = adminToken || userToken;
-  }
-  
+  const token = localStorage.getItem('user_token') || localStorage.getItem('admin_token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
 
-export const apiService = {
-  // Auth Admin
-  loginAdmin: (email, password) => api.post('/auth/admin/login', { email, password }),
-  registerAdmin: (data) => api.post('/auth/admin/register', data),
+let authIsDown = false;
+const authStatusCallbacks = new Set();
 
-  // Auth Pengguna
+const setAuthDown = (isDown) => {
+  if (authIsDown !== isDown) {
+    authIsDown = isDown;
+    authStatusCallbacks.forEach((cb) => cb(isDown));
+  }
+};
+
+// Interceptor untuk menangani service unavailable
+api.interceptors.response.use(
+  (response) => {
+    // If request succeeded, and it was to auth-service, we know auth-service is UP!
+    if (response.config && response.config.url && response.config.url.includes('/auth/')) {
+      setAuthDown(false);
+    }
+    return response;
+  },
+  (error) => {
+    const isNetworkError = error.code === 'ERR_NETWORK' || !error.response;
+    const isServiceUnavailable = error.response && (error.response.status === 502 || error.response.status === 503 || error.response.status === 504);
+
+    if (isNetworkError || isServiceUnavailable) {
+      error.message = 'Layanan sementara tidak tersedia';
+
+      // If the failed request was to auth-service, auth is definitely down!
+      if (error.config && error.config.url && error.config.url.includes('/auth/')) {
+        setAuthDown(true);
+      }
+
+      if (!error.response) {
+        error.response = {
+          status: 503,
+          data: { detail: 'Layanan sementara tidak tersedia' }
+        };
+      } else {
+        if (!error.response.data || typeof error.response.data !== 'object') {
+          error.response.data = { detail: 'Layanan sementara tidak tersedia' };
+        } else {
+          error.response.data.detail = 'Layanan sementara tidak tersedia';
+        }
+      }
+    } else if (error.response && error.response.status === 401) {
+      // 401 is from auth-service, so the service is UP!
+      if (error.config && error.config.url && error.config.url.includes('/auth/')) {
+        setAuthDown(false);
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
+export const apiService = {
+  // Health check endpoint
+  getHealth: () => api.get('/health'),
+
+  // Auth Health Status Observers
+  subscribeToAuthStatus: (callback) => {
+    authStatusCallbacks.add(callback);
+    callback(authIsDown);
+    return () => authStatusCallbacks.delete(callback);
+  },
+  isAuthDown: () => authIsDown,
+  setAuthDownStatus: (isDown) => setAuthDown(isDown),
+
+  // Auth Gateway
+  loginAdmin: (email, password) => api.post('/auth/admin/login', { email, password }),
+  registerAdmin: (data) => api.post('/auth/admin/register', {
+    email: data.email,
+    password: data.password,
+    nama_admin: data.nama_pengguna || data.name
+  }),
   loginPengguna: (email, password) => api.post('/auth/pengguna/login', { email, password }),
-  registerPengguna: (data) => api.post('/auth/pengguna/register', data),
+  registerPengguna: (data) => api.post('/auth/pengguna/register', {
+    email: data.email,
+    password: data.password,
+    nama_pengguna: data.nama_pengguna || data.name
+  }),
   getPenggunaMe: () => api.get('/pengguna/me'),
 
-  // Pendonor
+  // Pendonor, riwayat, and public blood stock
   registerPendonor: (data) => api.post('/pendonor', data),
   getPendonorList: (params) => api.get('/pendonor', { params }),
   getPendonorById: (id) => api.get(`/pendonor/${id}`),
   updatePendonor: (id, data) => api.put(`/pendonor/${id}`, data),
   deletePendonor: (id) => api.delete(`/pendonor/${id}`),
-
-  // Public
-  getPublicBloodStock: () => api.get('/public/blood-stock'),
-
-  // Riwayat Donor (Admin)
+  getPublicBloodStock: () => api.get('/api/public/blood-stock'),
   createRiwayatDonor: (data) => api.post('/riwayat-donor', data),
   getRiwayatDonorByPendonor: (pendonorId, params) => api.get(`/riwayat-donor/pendonor/${pendonorId}`, { params }),
   getRiwayatDonorAll: (params) => api.get('/riwayat-donor', { params }),
-  getPendingVerifications: (params) => api.get('/riwayat-donor', { params: { ...params, status_verifikasi: false } }),
+  getPendingVerifications: (params) => api.get('/riwayat-donor', { params: { status_verifikasi: false, ...params } }),
   verifyRiwayatDonor: (id, data) => api.post(`/riwayat-donor/${id}/verifikasi`, data),
-
-  // Riwayat Donor (Pengguna)
   createRiwayatDonorPengguna: (data) => api.post('/pengguna/riwayat-donor', data),
   getRiwayatDonorPengguna: (params) => api.get('/pengguna/riwayat-donor', { params }),
   getRiwayatDonorDetailPengguna: (id) => api.get(`/pengguna/riwayat-donor/${id}`),

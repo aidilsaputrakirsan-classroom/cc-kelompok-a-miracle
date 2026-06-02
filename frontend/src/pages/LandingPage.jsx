@@ -46,7 +46,7 @@ export const LandingPage = () => {
   return (
     <div className="min-h-screen bg-white font-sans dark:bg-slate-950 transition-colors duration-500">
       <Header />
-      <div className="bg-[#660000] text-white dark:bg-[#1a0000] transition-colors duration-500">
+      <div className="bg-[#660000] text-white dark:bg-slate-950 transition-colors duration-500">
         {/* Hero Section */}
         <section className="relative overflow-visible pt-32 pb-24 lg:pt-48 lg:pb-32 px-6">
           {/* Background gradient elements with lower z-index */}

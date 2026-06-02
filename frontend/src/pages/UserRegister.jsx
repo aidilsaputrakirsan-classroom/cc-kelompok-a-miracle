@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Droplets, Mail, Lock, ArrowRight, AlertCircle, ChevronLeft, User, Eye, EyeOff } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
+import { AuthServiceBanner } from '../components/AuthServiceBanner';
 import { apiService } from '../services/api';
 
 export const UserRegister = () => {
@@ -98,6 +99,7 @@ export const UserRegister = () => {
           <h1 className="text-4xl font-black text-slate-900 dark:text-white mb-2">DAFTAR TRACELT</h1>
           <p className="text-slate-600 dark:text-slate-400 font-medium">Buat akun pengguna untuk mulai berkontribusi</p>
         </div>
+        <AuthServiceBanner />
 
         <motion.div
           initial={{ opacity: 0, y: 10 }}
