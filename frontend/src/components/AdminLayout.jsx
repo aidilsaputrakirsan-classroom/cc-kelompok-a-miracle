@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Users, 
   Droplets, 
@@ -8,13 +8,15 @@ import {
   X,
   Sun,
   Moon,
-  PieChart as PieChartIcon
+  PieChart as PieChartIcon,
+  AlertCircle
 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import useDarkMode from '../hooks/useDarkMode';
+import { apiService } from '../services/api';
 
 function cn(...inputs) {
   return twMerge(clsx(inputs));
@@ -40,6 +42,14 @@ export const AdminLayout = ({ children }) => {
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDark, toggleDarkMode] = useDarkMode();
+  const [authIsDown, setAuthIsDown] = useState(false);
+
+  useEffect(() => {
+    const unsubscribeAuth = apiService.subscribeToAuthStatus((isDown) => {
+      setAuthIsDown(isDown);
+    });
+    return () => unsubscribeAuth();
+  }, []);
 
   const menuItems = [
     { icon: PieChartIcon, label: 'Statistik', path: '/admin' },
@@ -148,8 +158,26 @@ export const AdminLayout = ({ children }) => {
       )}
 
       {/* Main Content */}
-      <main className="flex-1 lg:ml-64 p-6 lg:p-10 pt-20 lg:pt-10 min-h-screen">
-        {children}
+      <main className="flex-1 lg:ml-64 p-6 lg:p-10 pt-20 lg:pt-10 min-h-screen flex flex-col">
+        <AnimatePresence>
+          {authIsDown && (
+            <motion.div
+              initial={{ height: 0, opacity: 0, marginBottom: 0 }}
+              animate={{ height: 'auto', opacity: 1, marginBottom: 24 }}
+              exit={{ height: 0, opacity: 0, marginBottom: 0 }}
+              className="bg-gradient-to-r from-red-650 via-amber-600 to-red-650 text-white text-xs md:text-sm font-bold p-4 rounded-2xl flex items-center gap-3 shadow-md border border-red-750/20 overflow-hidden shrink-0"
+            >
+              <AlertCircle className="w-5 h-5 animate-pulse shrink-0" />
+              <div>
+                <p className="font-extrabold leading-none">Some features temporarily unavailable</p>
+                <p className="text-white/80 font-medium text-xs mt-1">Layanan autentikasi sedang offline. Beberapa fitur administrasi tidak dapat digunakan.</p>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        <div className="flex-1">
+          {children}
+        </div>
       </main>
     </div>
   );

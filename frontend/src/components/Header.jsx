@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Droplets, Menu, X, Sun, Moon, ArrowRight } from 'lucide-react';
+import { Droplets, Menu, X, Sun, Moon, ArrowRight, AlertCircle } from 'lucide-react';
 import useDarkMode from '../hooks/useDarkMode';
+import { apiService } from '../services/api';
 
 export const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -10,6 +11,7 @@ export const Header = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isDark, toggleDarkMode] = useDarkMode();
+  const [authIsDown, setAuthIsDown] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -26,12 +28,18 @@ export const Header = () => {
     window.addEventListener('scroll', handleScroll);
     window.addEventListener('storage', handleStorageChange);
     
+    // Subscribe to auth status change
+    const unsubscribeAuth = apiService.subscribeToAuthStatus((isDown) => {
+      setAuthIsDown(isDown);
+    });
+
     // Initial check
     handleStorageChange();
 
     return () => {
       window.removeEventListener('scroll', handleScroll);
       window.removeEventListener('storage', handleStorageChange);
+      unsubscribeAuth();
     };
   }, []);
 
@@ -49,6 +57,21 @@ export const Header = () => {
           : 'bg-transparent py-6'
       }`}
     >
+      <AnimatePresence>
+        {authIsDown && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="bg-gradient-to-r from-red-650 via-amber-600 to-red-650 text-white text-xs md:text-sm font-bold text-center py-2.5 px-4 flex items-center justify-center gap-2 shadow-inner border-b border-red-700/30 overflow-hidden"
+          >
+            <AlertCircle className="w-4 h-4 animate-pulse shrink-0" />
+            <span>
+              <strong>Some features temporarily unavailable.</strong> Layanan autentikasi sedang offline.
+            </span>
+          </motion.div>
+        )}
+      </AnimatePresence>
       <nav className="max-w-full mx-auto px-6 flex items-center justify-between">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2 group relative">
