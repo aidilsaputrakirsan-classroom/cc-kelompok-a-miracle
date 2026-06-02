@@ -511,6 +511,7 @@ cc-kelompok-a-miracle/
 │   ├── docker-architecture.md       # Dokumentasi arsitektur Docker
 │   ├── laporan-CICD-image-optimation.md  # Laporan optimasi image
 │   ├── member-*.md                  # Dokumentasi anggota tim
+│   ├── milestone2-release.md        # Ringkasan release Milestone 2
 │   ├── release-notes-m2.md          # Release notes Milestone 2
 │   ├── ui-test-results.md           # Hasil pengujian UI
 │   ├── UTS-demo-langkah.md          # Langkah-langkah demo UTS
@@ -936,7 +937,7 @@ docker run -d --name frontend -p 3000:80 <DOCKERHUB_USERNAME>/frontend:v1
 
 ## Dokumentasi Milestone 2
 
-Release notes Milestone 2 tersedia di [`docs/release-notes-m2.md`](docs/release-notes-m2.md), mencakup fitur yang sudah tersedia, URL production, hasil testing production, tech stack, known issues, dan tag release `v2.0`.
+Release notes Milestone 2 tersedia di [`docs/release-notes-m2.md`](docs/release-notes-m2.md) dan [`docs/milestone2-release.md`](docs/milestone2-release.md), mencakup fitur yang sudah tersedia, URL production, hasil testing production, tech stack, known issues, dan tag release `v2.0`.
 
 ## Dokumentasi Week 1
 
