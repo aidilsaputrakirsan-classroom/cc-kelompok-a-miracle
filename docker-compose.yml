@@ -14,6 +14,8 @@ services:
   auth-db:
     image: postgres:15
     container_name: tracelt-auth-db
+    ports:
+      - "5433:5432"
     environment:
       POSTGRES_DB: auth_db
       POSTGRES_USER: postgres
@@ -31,6 +33,8 @@ services:
   item-db:
     image: postgres:15
     container_name: tracelt-item-db
+    ports:
+      - "5434:5432"
     environment:
       POSTGRES_DB: item_db
       POSTGRES_USER: postgres
