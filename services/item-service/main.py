@@ -36,12 +36,20 @@ app.add_middleware(
 # ENDPOINTS
 # =====================
 
+from auth_client import auth_circuit  # Import circuit breaker instance
+
 @app.get("/health")
 def health_check():
+    cb_status = auth_circuit.get_status()
+    overall = "healthy" if cb_status["state"] == "CLOSED" else "degraded"
+
     return {
-        "status": "healthy",
-        "service": "traceit-donation-service",
-        "version": "2.0.0",
+        "status": overall,
+        "service": "item-service",
+        "version": "2.1.0",
+        "dependencies": {
+            "auth-service": cb_status,
+        },
     }
 
 
