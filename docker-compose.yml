@@ -60,9 +60,17 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
       interval: 10s
       timeout: 5s
-      retries: 3
+      retries: 5
       start_period: 15s
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.2'
+          memory: 256M
 
   item-service:
     build: ./services/item-service
@@ -70,19 +78,24 @@ services:
     environment:
       DATABASE_URL: postgresql://postgres:postgres@item-db:5432/item_db
       AUTH_SERVICE_URL: http://auth-service:8001
-      CORS_ORIGINS: "http://localhost,http://localhost:5173,http://localhost:80"
+      CORS_ORIGINS: "http://localhost,http://localhost:5173,http://127.0.0.1,http://localhost:80"
     depends_on:
       item-db:
         condition: service_healthy
       auth-service:
-        condition: service_started
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
       interval: 10s
       timeout: 5s
-      retries: 3
+      retries: 5
       start_period: 15s
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M 
 
   # ==================== FRONTEND ====================
   frontend:
@@ -101,6 +114,11 @@ services:
       retries: 3
       start_period: 10s
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.3'
+          memory: 300M
 
   # ==================== GATEWAY (Nginx) ====================
   gateway:
@@ -111,9 +129,12 @@ services:
     volumes:
       - ./services/gateway/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
-      - auth-service
-      - item-service
-      - frontend
+      auth-service:
+        condition: service_healthy
+      item-service:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost/health"]
       interval: 10s
