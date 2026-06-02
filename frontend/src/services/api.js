@@ -44,20 +44,23 @@ api.interceptors.response.use(
 
     if (isNetworkError || isServiceUnavailable) {
       error.message = 'Layanan sementara tidak tersedia';
-      
+
       // If the failed request was to auth-service, auth is definitely down!
       if (error.config && error.config.url && error.config.url.includes('/auth/')) {
         setAuthDown(true);
       }
-      
+
       if (!error.response) {
         error.response = {
           status: 503,
           data: { detail: 'Layanan sementara tidak tersedia' }
         };
       } else {
-        error.response.data = error.response.data || {};
-        error.response.data.detail = 'Layanan sementara tidak tersedia';
+        if (!error.response.data || typeof error.response.data !== 'object') {
+          error.response.data = { detail: 'Layanan sementara tidak tersedia' };
+        } else {
+          error.response.data.detail = 'Layanan sementara tidak tersedia';
+        }
       }
     } else if (error.response && error.response.status === 401) {
       // 401 is from auth-service, so the service is UP!

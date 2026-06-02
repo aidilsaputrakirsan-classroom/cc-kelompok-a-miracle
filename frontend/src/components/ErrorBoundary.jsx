@@ -4,19 +4,18 @@ import { isAxiosError } from 'axios';
 function getFriendlyErrorMessage(error) {
   if (!error) return 'Terjadi kesalahan yang tidak diketahui. Silakan coba lagi nanti.';
 
-  if (error.message === 'Layanan sementara tidak tersedia') {
+  const isTemporaryUnavailable = error.message === 'Service temporarily unavailable' ||
+    error.message?.includes('Network Error') ||
+    error.message?.includes('Service temporarily unavailable') ||
+    error.code === 'ERR_NETWORK' ||
+    (isAxiosError(error) && error.response && [502, 503, 504].includes(error.response.status));
+
+  if (isTemporaryUnavailable) {
     return 'Layanan sementara tidak tersedia. Silakan coba lagi nanti.';
   }
 
   if (isAxiosError(error)) {
-    if (error.message?.includes('Network Error') || error.message?.includes('Layanan sementara tidak tersedia') || error.message?.includes('Service temporarily unavailable') || error.code === 'ERR_NETWORK') {
-      return 'Layanan sementara tidak tersedia. Silakan coba lagi nanti.';
-    }
-
     if (error.response) {
-      if (error.response.status === 502 || error.response.status === 503 || error.response.status === 504) {
-        return 'Layanan sementara tidak tersedia. Silakan coba lagi nanti.';
-      }
       return `Permintaan ke API gagal dengan status ${error.response.status}. Silakan muat ulang atau coba lagi nanti.`;
     }
 
