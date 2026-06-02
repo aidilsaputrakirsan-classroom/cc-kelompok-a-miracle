@@ -698,7 +698,7 @@ Pengujian dilakukan dengan langkah berikut:
 
 ### Production End-to-End Testing
 
-Pengujian end-to-end pada production URL dilakukan oleh Lead QA & Docs untuk memastikan service backend, koneksi database, endpoint publik, dan autentikasi pengguna berjalan setelah deployment.
+Pengujian end-to-end pada production URL dilakukan oleh Lead QA & Docs untuk memastikan service backend, koneksi database, endpoint publik, dan autentikasi pengguna berjalan setelah deployment. Dokumentasi lengkap tersedia di [`docs/production-test.md`](docs/production-test.md).
 
 | Endpoint | Method | Status | Hasil QA |
 | --- | --- | --- | --- |
