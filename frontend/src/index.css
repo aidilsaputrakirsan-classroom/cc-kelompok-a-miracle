@@ -15,77 +15,53 @@
 
   .dark {
     color-scheme: dark;
+    /* Clean Custom Dark Velvet-Crimson & Rose-Silver Palette (Matches Image perfectly, very warm & eye-safe) */
+    --color-slate-950: #1b0404;    /* Beautiful background color from your image */
+    --color-slate-900: #280708;    /* Relaxed card & panel overlay background */
+    --color-slate-800: #380a0b;    /* Highlight panels / active table headings */
+    --color-slate-700: #501011;    /* Borders and active focus lines */
+    --color-slate-600: #811d1f;    /* Warm accent details / hover borders */
+    --color-slate-500: #f1cccc;    /* Soft description / paragraph body text (warm & friendly) */
+    --color-slate-450: #fae3e3;    /* Secondary high contrast text */
+    --color-slate-400: #ffffff;    /* Highly legible warm soft-white text */
+    --color-slate-300: #ffd1d1;    /* Highlight/Badge tags text */
+    --color-slate-200: #fee2e2;
+    --color-slate-100: #fef2f2;
+    --color-slate-50: #fff9f9;
   }
 
   body {
     @apply bg-slate-50 text-slate-900 font-sans transition-colors duration-500 ease-in-out dark:bg-slate-950 dark:text-slate-50;
   }
 
-  input,
-  textarea,
-  select {
-    color: inherit;
-  }
-
-  .dark input,
-  .dark textarea,
-  .dark select {
-    color: #ffffff;
-    background-color: #0f172a;
-    border-color: #334155;
-  }
-
-  .dark input::placeholder,
-  .dark textarea::placeholder {
-    color: #94a3b8;
-  }
-
-  /* Additional dark mode tweaks for better contrast and focus */
-  .dark input,
-  .dark textarea,
-  .dark select {
-    background-image: none;
-    -webkit-text-fill-color: #f8fafc;
-  }
-
-  .dark input:focus,
-  .dark textarea:focus,
-  .dark select:focus {
-    outline: none;
-    box-shadow: 0 0 0 4px rgba(153,27,27,0.12); /* subtle red focus */
-    border-color: #7f1d1d;
-  }
-
-  .dark button {
-    color: #f8fafc;
-  }
-
-  .dark button[disabled] {
-    opacity: 0.65;
-  }
-
-  /* Make sure selects keep readable arrow and background */
-  .dark select {
-    background-color: #0b1220;
-    border-color: #334155;
-  }
-
-  /* Utility for progress fills when not using Tailwind classes */
-  .dark .progress-fill {
-    background-color: #991b1b !important;
-  }
-
-  /* Cards and panels */
-  .dark .card,
-  .dark .panel {
-    background-color: #0b1220;
-    border-color: #1f2937;
-    color: #e6eef8;
-  }
-
   /* Ensure all interactive elements have transitions */
   * {
     @apply transition-colors duration-300;
+  }
+
+  /* Custom premium scrollbar */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-slate-50 dark:bg-slate-950;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-slate-300 hover:bg-slate-400 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-full;
+  }
+
+  /* Styled Swal Popups for standard Dark experience */
+  .dark .swal2-popup {
+    background-color: #0f172a !important;
+    border: 1px solid #1e293b !important;
+    color: #f1f5f9 !important;
+  }
+  .dark .swal2-title {
+    color: #ffffff !important;
+  }
+  .dark .swal2-html-container {
+    color: #cbd5e1 !important;
   }
 }
 

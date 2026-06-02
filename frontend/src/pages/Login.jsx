@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Droplets, Mail, Lock, ArrowRight, AlertCircle, ChevronLeft, Eye, EyeOff, Shield } from 'lucide-react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
+import { AuthServiceBanner } from '../components/AuthServiceBanner';
 import { apiService } from '../services/api';
 
 export const Login = () => {
@@ -16,6 +17,17 @@ export const Login = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  const getLoginErrorMessage = (err) => {
+    if (!err) return 'Terjadi kesalahan saat login. Silakan coba lagi.';
+    if (err.response?.status === 502 || err.response?.status === 503 || err.response?.status === 504) {
+      return 'Layanan sementara tidak tersedia. Silakan coba lagi beberapa saat.';
+    }
+    if (err.message?.includes('Layanan sementara tidak tersedia') || err.message?.includes('Service temporarily unavailable')) {
+      return 'Layanan sementara tidak tersedia. Silakan coba lagi beberapa saat.';
+    }
+    return err.response?.data?.detail || 'Email atau password salah.';
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -35,7 +47,7 @@ export const Login = () => {
         navigate('/user/dashboard');
       }
     } catch (err) {
-      setError(err.response?.data?.detail || 'Email atau password salah.');
+      setError(getLoginErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -53,6 +65,7 @@ export const Login = () => {
         transition={{ duration: 0.5 }}
         className="w-full max-w-md relative z-10"
       >
+        <AuthServiceBanner />
         <Link to="/" className="inline-flex items-center gap-2 mb-8 font-semibold text-slate-600 hover:text-[#660000] dark:text-slate-400 dark:hover:text-red-400 transition-colors group">
           <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
           Kembali ke Beranda

@@ -36,5 +36,26 @@ export default defineConfig(({mode}) => {
       },
       hmr: process.env.DISABLE_HMR !== 'true',
     },
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (!id.includes('node_modules')) return;
+            if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/')) {
+              return 'vendor-react';
+            }
+            if (id.includes('node_modules/recharts/')) {
+              return 'vendor-recharts';
+            }
+            if (id.includes('node_modules/axios/')) {
+              return 'vendor-axios';
+            }
+            if (id.includes('node_modules/lucide-react/')) {
+              return 'vendor-icons';
+            }
+          },
+        },
+      },
+    },
   };
 });
