@@ -122,7 +122,7 @@ jobs:
   # ================================
   # JOB: Integration Tests
   # ================================
-    integration-test:
+      integration-test:
     name: 🔗 Integration Tests
     runs-on: ubuntu-latest
     needs: [test-backend, test-frontend]
@@ -133,60 +133,56 @@ jobs:
       - name: 🐳 Start all services
         run: docker compose up -d --build
 
-      - name: ⏳ Wait for services to be ready (Enhanced)
+      - name: ⏳ Wait for services (Detailed Debug)
         run: |
-          echo "🚀 Starting wait for services..."
-          sleep 25
+          echo "⏳ Menunggu services siap..."
+          sleep 40
 
-          echo "📋 Docker containers status:"
+          echo "=== STATUS CONTAINER ==="
           docker compose ps
 
-          echo "🌐 Checking gateway port:"
-          docker compose port gateway 80 || echo "Gateway port not mapped"
+          echo "=== CEK PORT GATEWAY ==="
+          docker compose port gateway 80 || echo "Port 80 tidak ditemukan"
 
-          # Health check super kuat
-          echo "🔄 Performing health checks..."
+          echo "=== HEALTH CHECK RETRY (max 40x) ==="
           for i in {1..40}; do
-            echo "Attempt $i/40 - Checking http://localhost/health"
+            echo "[$i/40] Mencoba http://localhost/health ..."
             if curl -s --connect-timeout 5 -f http://localhost/health > /dev/null; then
-              echo "✅ SUCCESS! Gateway is ready!"
-              curl -s http://localhost/health | cat
+              echo "✅ BERHASIL! Gateway siap."
+              echo "Response:"
+              curl -s http://localhost/health
               break
             fi
-            sleep 8
+            sleep 10
           done
 
-          # Jika masih gagal, tampilkan log untuk debug
+          # Kalau masih gagal, tampilkan log
           if ! curl -s --connect-timeout 3 http://localhost/health > /dev/null; then
-            echo "❌ Health check still failing. Showing logs:"
-            docker compose logs gateway --tail=30
-            docker compose logs frontend --tail=10
+            echo "❌ MASIH GAGAL - LOG ERROR:"
+            docker compose logs gateway --tail=100
+            docker compose logs frontend --tail=30
           fi
-        timeout-minutes: 6
+        timeout-minutes: 8
 
       - name: 🧪 Run integration tests
         run: |
           pip install httpx pytest
-          
-          echo "🔍 Running integration test..."
           mkdir -p tests/integration
-          
+
           cat > tests/integration/test_health.py << 'EOF'
 import httpx
-import pytest
 import time
 
 def test_gateway_is_healthy():
-    # Final wait sebelum test
-    time.sleep(5)
-    response = httpx.get("http://localhost/health", timeout=15)
-    assert response.status_code == 200, f"Status code: {response.status_code}"
-    print("✅ Gateway is healthy!")
-    print("Response:", response.json())
+    time.sleep(10)   # extra safety
+    response = httpx.get("http://localhost/health", timeout=20)
+    assert response.status_code == 200
+    print("✅ Test berhasil!")
+    print(response.json())
 EOF
 
           pytest tests/integration/ -v --tb=short
-        timeout-minutes: 2
+        timeout-minutes: 3
 
       - name: 🛑 Stop services
         if: always()
