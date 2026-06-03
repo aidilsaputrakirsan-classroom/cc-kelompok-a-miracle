@@ -1,0 +1,24 @@
+# docker-compose.dev.yml - Development Override (Lead DevOps)
+services:
+  auth-service:
+    build: ./services/auth-service
+    volumes:
+      - ./services/auth-service:/app
+    command: uvicorn main:app --host 0.0.0.0 --port 8001 --reload
+
+  item-service:
+    build: ./services/item-service
+    volumes:
+      - ./services/item-service:/app
+    command: uvicorn main:app --host 0.0.0.0 --port 8002 --reload
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    volumes:
+      - ./frontend:/app
+    environment:
+      VITE_API_URL: http://localhost
+    # Untuk Vite dev server (hot-reload)
+    command: npm run dev -- --host
