@@ -152,20 +152,21 @@ jobs:
           pip install httpx pytest
           
           echo "🔍 Looking for integration tests..."
+          
           if [ -d "tests/integration" ]; then
             pytest tests/integration/ -v --tb=short
           else
-            echo "⚠️ Integration test folder not found. Running basic health check instead."
+            echo "⚠️ No integration tests folder found. Running basic health check..."
             mkdir -p tests/integration
-            cat > tests/integration/test_health.py << 'EOT'
-import httpx
-import pytest
-
-def test_gateway_is_healthy():
-    response = httpx.get("http://localhost/health", timeout=10)
-    assert response.status_code == 200
-    print("✅ Gateway is healthy")
-EOT
+            
+            # Buat file test sederhana
+            echo 'import httpx' > tests/integration/test_health.py
+            echo '' >> tests/integration/test_health.py
+            echo 'def test_gateway_is_healthy():' >> tests/integration/test_health.py
+            echo '    response = httpx.get("http://localhost/health", timeout=10)' >> tests/integration/test_health.py
+            echo '    assert response.status_code == 200' >> tests/integration/test_health.py
+            echo '    print("✅ Gateway is healthy")' >> tests/integration/test_health.py
+            
             pytest tests/integration/ -v --tb=short
           fi
 
