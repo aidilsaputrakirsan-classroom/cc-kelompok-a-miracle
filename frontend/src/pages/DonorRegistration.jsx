@@ -14,6 +14,7 @@ import {
   Mail
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import { AuthServiceBanner } from '../components/AuthServiceBanner';
 import { apiService } from '../services/api';
 import useDarkMode from '../hooks/useDarkMode';
 
@@ -42,7 +43,7 @@ export const DonorRegistration = () => {
 
   const todayISO = new Date().toISOString().split('T')[0];
 
-  const isDark = useDarkMode();
+  const [isDark] = useDarkMode();
   const primaryColor = isDark ? '#991b1b' : '#660000';
 
   const getAgeFromDate = (value) => {
@@ -59,6 +60,10 @@ export const DonorRegistration = () => {
   };
 
   const parseBackendError = (err) => {
+    if (!err?.response) {
+      return { _general: 'Gagal terhubung ke server. Pastikan backend sudah berjalan pada port yang benar.' };
+    }
+
     const detail = err?.response?.data?.detail;
     if (Array.isArray(detail)) {
       const mapped = {};
@@ -162,14 +167,18 @@ export const DonorRegistration = () => {
       });
       setStep(4);
     } catch (err) {
-      const parsed = parseBackendError(err);
-      const { _general, ...fieldErrors } = parsed;
+      if (err.response?.status === 502 || err.response?.status === 503 || err.response?.status === 504 || err.message?.includes('Layanan sementara tidak tersedia') || err.message?.includes('Service temporarily unavailable')) {
+        setServerError('Layanan sementara tidak tersedia. Silakan coba lagi beberapa saat.');
+      } else {
+        const parsed = parseBackendError(err);
+        const { _general, ...fieldErrors } = parsed;
 
-      if (Object.keys(fieldErrors).length > 0) {
-        setErrors((prev) => ({ ...prev, ...fieldErrors }));
+        if (Object.keys(fieldErrors).length > 0) {
+          setErrors((prev) => ({ ...prev, ...fieldErrors }));
+        }
+
+        setServerError(_general || 'Gagal mendaftar. Pastikan semua syarat input sudah benar.');
       }
-
-      setServerError(_general || 'Gagal mendaftar. Pastikan semua syarat input sudah benar.');
     } finally {
       setLoading(false);
     }
@@ -199,6 +208,7 @@ export const DonorRegistration = () => {
           <ChevronLeft className="w-4 h-4" />
           Kembali ke Beranda
         </Link>
+        <AuthServiceBanner />
 
         <div className="bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden dark:bg-slate-950/90 dark:border-slate-800 dark:shadow-black/20">
           <div className="h-2 bg-slate-100 dark:bg-slate-800 flex">

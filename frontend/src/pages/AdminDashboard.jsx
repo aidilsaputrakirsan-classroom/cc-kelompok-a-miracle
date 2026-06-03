@@ -1,9 +1,12 @@
-import { useEffect, useState } from 'react';
-import { Users, Droplets, CheckCircle, Clock, TrendingUp, ArrowUpRight, PieChart as PieChartIcon, ArrowLeft } from 'lucide-react';
+import { useEffect, useState, lazy, Suspense } from 'react';
+import { Users, Droplets, CheckCircle, Clock, ArrowUpRight, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { apiService } from '../services/api';
 import { LoadingSpinner } from '../components/LoadingSpinner';
+import useDarkMode from '../hooks/useDarkMode';
+import { ServiceUnavailable } from '../components/ServiceUnavailable';
+
+const AdminDashboardCharts = lazy(() => import('../components/AdminDashboardCharts').then((module) => ({ default: module.AdminDashboardCharts })));
 
 const StatCard = ({ title, value, icon: Icon, trend, color }) => (
   <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm dark:bg-slate-900 dark:border-slate-800 transition-colors">
@@ -26,21 +29,30 @@ const StatCard = ({ title, value, icon: Icon, trend, color }) => (
 export const AdminDashboard = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
-  const isDark = document.documentElement.classList.contains('dark');
+  const [error, setError] = useState(null);
+  const [isDark] = useDarkMode();
+
+  const fetchStats = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await apiService.getStats();
+      setStats(res.data);
+    } catch (err) {
+      console.error('Gagal mengambil statistik:', err);
+      setError(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const res = await apiService.getStats();
-        setStats(res.data);
-      } catch (err) {
-        console.error('Gagal mengambil statistik:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchStats();
   }, []);
+
+  if (error) {
+    return <ServiceUnavailable onRetry={fetchStats} error={error} fullPage />;
+  }
 
   if (loading || !stats) {
     return <LoadingSpinner fullPage />;
@@ -49,8 +61,6 @@ export const AdminDashboard = () => {
   const bloodDistribution = stats.stok_darah_by_golongan_darah || stats.pendonor_by_golongan_darah || {};
   const bloodData = Object.entries(bloodDistribution).map(([name, value]) => ({ name, value }));
   const genderData = Object.entries(stats.pendonor_by_jenis_kelamin || {}).map(([name, value]) => ({ name, value }));
-
-  const COLORS = ['#660000', '#3b82f6', '#f59e0b', '#10b981', '#6366f1', '#8b5cf6', '#d946ef', '#f97316'];
 
   return (
     <div className="space-y-8">
@@ -96,81 +106,18 @@ export const AdminDashboard = () => {
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pb-10">
-        {/* Blood Type Chart */}
-        <div className="bg-white p-8 rounded-2xl border border-slate-100 shadow-sm dark:bg-slate-900 dark:border-slate-800 transition-colors">
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white">Distribusi Golongan Darah</h2>
-            <PieChartIcon className="w-5 h-5 text-slate-400 dark:text-slate-500" />
+      <Suspense fallback={
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pb-10">
+          <div className="col-span-1 bg-white p-8 rounded-2xl border border-slate-100 shadow-sm dark:bg-slate-900 dark:border-slate-800 transition-colors">
+            <div className="h-[300px] flex items-center justify-center text-slate-500">Memuat grafik...</div>
           </div>
-          <div className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={bloodData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#334155' : '#f1f5f9'} />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: isDark ? '#94a3b8' : '#64748b', fontSize: 12 }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: isDark ? '#94a3b8' : '#64748b', fontSize: 12 }} />
-                <Tooltip 
-                  contentStyle={{ 
-                    borderRadius: '12px', 
-                    border: 'none', 
-                    boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
-                    backgroundColor: isDark ? '#0f172a' : '#ffffff',
-                    color: isDark ? '#f8fafc' : '#0f172a'
-                  }}
-                  itemStyle={{ color: isDark ? '#f8fafc' : '#0f172a' }}
-                  cursor={{ fill: isDark ? '#1e293b' : '#f8fafc' }}
-                />
-                <Bar dataKey="value" fill={isDark ? '#991b1b' : '#660000'} radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+          <div className="col-span-1 bg-white p-8 rounded-2xl border border-slate-100 shadow-sm dark:bg-slate-900 dark:border-slate-800 transition-colors">
+            <div className="h-[300px] flex items-center justify-center text-slate-500">Memuat grafik...</div>
           </div>
         </div>
-
-        {/* Gender Chart */}
-        <div className="bg-white p-8 rounded-2xl border border-slate-100 shadow-sm dark:bg-slate-900 dark:border-slate-800 transition-colors">
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white">Proporsi Jenis Kelamin</h2>
-            <TrendingUp className="w-5 h-5 text-slate-400 dark:text-slate-500" />
-          </div>
-          <div className="h-[300px] flex items-center justify-center">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={genderData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={100}
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  {genderData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip 
-                  contentStyle={{ 
-                    borderRadius: '12px', 
-                    border: 'none', 
-                    boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
-                    backgroundColor: isDark ? '#0f172a' : '#ffffff',
-                    color: isDark ? '#f8fafc' : '#0f172a'
-                  }}
-                  itemStyle={{ color: isDark ? '#f8fafc' : '#0f172a' }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="flex flex-col gap-2 ml-4">
-              {genderData.map((entry, index) => (
-                <div key={entry.name} className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
-                  <span className="text-sm text-slate-600 dark:text-slate-400">{entry.name}: {entry.value}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
+      }>
+        <AdminDashboardCharts bloodData={bloodData} genderData={genderData} isDark={isDark} />
+      </Suspense>
     </div>
   );
 };
