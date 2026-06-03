@@ -171,6 +171,46 @@ jobs:
           echo "Backend : https://tracelt-backend-production.up.railway.app"
           echo "Frontend: https://tracelt-frontend-production.up.railway.app"
 
+# ============================================================
+# Integration Tests
+# ============================================================
+  integration-test:
+    name: 🔗 Integration Tests
+    runs-on: ubuntu-latest
+    needs: [test-backend, test-frontend]   # Pastikan unit test lolos dulu
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🐳 Start all services
+        run: docker compose up -d --build --wait
+
+      - name: ⏳ Wait for services to be ready
+        run: |
+          echo "Waiting for services to be ready..."
+          sleep 20  # Naikkan jika services lambat start
+          
+          # Health check (sesuaikan endpoint health kamu)
+          for i in {1..10}; do
+            if curl -s -f http://localhost/health > /dev/null; then
+              echo "✅ Services are ready!"
+              break
+            fi
+            echo "Waiting... ($i/10)"
+            sleep 5
+          done
+        timeout-minutes: 2
+
+      - name: 🧪 Run integration tests
+        run: |
+          pip install httpx pytest
+          pytest tests/integration/ -v --maxfail=3
+
+      - name: 🛑 Stop services
+        if: always()                    # Jalankan meskipun test gagal
+        run: docker compose down -v --remove-orphans
+
 
   # ============================================================
   # JOBS TAMBAHAN UNTUK MULTI-SERVICE (Modul 12 - Lead CI/CD)
