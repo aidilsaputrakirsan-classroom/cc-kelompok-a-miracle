@@ -3,7 +3,7 @@ TraceIt Donation Service — Handles donor record management.
 Berkomunikasi dengan Auth Service untuk verifikasi token.
 """
 import os
-from fastapi import FastAPI, Depends, HTTPException, Query
+from fastapi import FastAPI, Depends, HTTPException, Query, Header
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
@@ -37,6 +37,17 @@ app.add_middleware(
 # =====================
 
 from auth_client import auth_circuit  # Import circuit breaker instance
+
+
+async def get_stats_user(authorization: str = Header(default=None)) -> dict | None:
+    """
+    Return user for stats when auth is available; allow None on degraded mode.
+    """
+    if auth_circuit.get_status()["state"] == "OPEN":
+        return None
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Missing authorization header")
+    return await verify_token_with_auth_service(authorization)
 
 @app.get("/health")
 def health_check():
@@ -87,13 +98,32 @@ async def get_items(
     return ItemListResponse(total=total, items=items)
 
 
-@app.get("/items/stats", response_model=ItemStatsResponse)
-async def get_item_stats(
-    user: dict = Depends(verify_token_with_auth_service),
+@app.get("/items/public", response_model=ItemListResponse)
+async def get_public_items(
+    search: str = Query(default=None),
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=20, ge=1, le=100),
     db: Session = Depends(get_db),
 ):
-    """Ringkasan statistik data donor milik user yang login."""
-    query = db.query(Item).filter(Item.owner_id == user["user_id"])
+    """Ambil daftar data donor publik tanpa auth."""
+    query = db.query(Item)
+    if search:
+        query = query.filter(Item.name.ilike(f"%{search}%"))
+    total = query.count()
+    items = query.offset(skip).limit(limit).all()
+    return ItemListResponse(total=total, items=items)
+
+
+@app.get("/items/stats", response_model=ItemStatsResponse)
+async def get_item_stats(
+    user: dict | None = Depends(get_stats_user),
+    db: Session = Depends(get_db),
+):
+    """Ringkasan statistik data donor (degraded mode bila auth down)."""
+    if user is None:
+        query = db.query(Item)
+    else:
+        query = db.query(Item).filter(Item.owner_id == user["user_id"])
     total_items = query.count()
 
     if total_items == 0:
