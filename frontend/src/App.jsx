@@ -1,5 +1,3 @@
-App.jsx
-
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useEffect, useState, lazy, Suspense } from 'react';
 const LandingPage = lazy(() => import('./pages/LandingPage').then((module) => ({ default: module.LandingPage })));

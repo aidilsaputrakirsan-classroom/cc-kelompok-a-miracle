@@ -12,6 +12,7 @@ import {
   Zap,
   ChevronRight,
   LogOut,
+  Dot,
 } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -116,6 +117,8 @@ function ServiceCard({ service, data }) {
   const metrics = data?.metrics;
   const healthStatus = formatStatus(current?.status || current?.state || 'unreachable');
   const badgeText = current?.status || current?.state || 'Tidak terjangkau';
+  const errorRate = metrics?.error_rate_percent || 0;
+  const errorColor = errorRate < 5 ? 'bg-emerald-500' : errorRate < 15 ? 'bg-amber-500' : 'bg-rose-500';
 
   return (
     <motion.div
@@ -139,7 +142,9 @@ function ServiceCard({ service, data }) {
             <span className={`h-2.5 w-2.5 rounded-full ${healthStatus === 'healthy' ? 'bg-emerald-600' : healthStatus === 'degraded' ? 'bg-amber-500' : healthStatus === 'unhealthy' ? 'bg-rose-500' : 'bg-slate-400'}`} />
             {data?.loading ? 'Memuat...' : badgeText}
           </span>
-          <span className="text-[12px] uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">{service.name}</span>
+          <span className="text-[11px] uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">
+            {data?.lastChecked ? `✓ ${data.lastChecked}` : 'Belum dicek'}
+          </span>
         </div>
       </div>
 
@@ -152,7 +157,9 @@ function ServiceCard({ service, data }) {
         <div className="rounded-3xl bg-slate-50 p-4 border border-slate-200 dark:bg-slate-950 dark:border-slate-800">
           <p className="text-[11px] uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">Error Rate</p>
           <p className="mt-3 text-3xl font-black text-slate-900 dark:text-white">{metrics?.error_rate_percent != null ? `${metrics.error_rate_percent}%` : '-'}</p>
-          <p className="text-sm text-slate-500 dark:text-slate-400">Persentase error terhadap total request</p>
+          <div className="mt-3 h-1.5 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+            <div className={`h-full rounded-full ${errorColor} transition-all`} style={{ width: `${Math.min(100, errorRate * 4)}%` }} />
+          </div>
         </div>
       </div>
 
@@ -208,12 +215,32 @@ export default function StatusPage() {
   const [logs, setLogs] = useState(initialLogs);
   const [searchQuery, setSearchQuery] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [nextRefreshIn, setNextRefreshIn] = useState(0);
 
   const handleLogout = () => {
     localStorage.removeItem('auth_token');
     localStorage.removeItem('user');
     navigate('/login');
   };
+
+  // Auto-refresh countdown effect
+  useEffect(() => {
+    if (!autoRefresh || refreshInterval === 0) {
+      setNextRefreshIn(0);
+      return;
+    }
+
+    const updateCountdown = () => {
+      setNextRefreshIn((refreshInterval / 1000) | 0);
+    };
+
+    updateCountdown();
+    const timer = setInterval(() => {
+      setNextRefreshIn((prev) => (prev > 0 ? prev - 1 : (refreshInterval / 1000) | 0));
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [autoRefresh, refreshInterval]);
 
   const fetchServiceStatus = useCallback(async () => {
     const nextState = {};
@@ -374,7 +401,15 @@ export default function StatusPage() {
               </button>
               <div className="rounded-2xl border border-slate-200 bg-white/90 p-4 dark:border-slate-800 dark:bg-slate-950">
                 <div className="flex items-center justify-between gap-2 text-sm text-slate-500 dark:text-slate-400">
-                  <span>Auto-refresh</span>
+                  <div className="flex items-center gap-2">
+                    <motion.div
+                      animate={{ scale: autoRefresh ? [1, 1.2, 1] : 1, opacity: autoRefresh ? 1 : 0.5 }}
+                      transition={{ repeat: Infinity, duration: 2 }}
+                    >
+                      <Dot className={`h-4 w-4 ${autoRefresh ? 'text-emerald-500 fill-emerald-500' : 'text-slate-400'}`} />
+                    </motion.div>
+                    <span>Auto-refresh</span>
+                  </div>
                   <label className="inline-flex items-center gap-2 text-slate-800 dark:text-slate-100">
                     <input
                       type="checkbox"
@@ -397,7 +432,12 @@ export default function StatusPage() {
                     <option value={0}>Manual</option>
                   </select>
                 </div>
-                <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">Last update: {lastUpdated}</p>
+                <div className="mt-3 flex flex-col gap-2 text-xs text-slate-500 dark:text-slate-400">
+                  <p>Last update: {lastUpdated}</p>
+                  {autoRefresh && refreshInterval > 0 && (
+                    <p className="font-semibold text-slate-700 dark:text-slate-300">Next refresh: {nextRefreshIn}s</p>
+                  )}
+                </div>
               </div>
               <button
                 type="button"
@@ -411,9 +451,9 @@ export default function StatusPage() {
           </div>
         </div>
 
-        <div className="grid gap-6 xl:grid-cols-[1.35fr_0.65fr]">
+        <div className="grid gap-6 lg:grid-cols-[1.35fr_0.65fr]">
           <div className="space-y-6">
-            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
               <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                 <div className="flex items-center justify-between gap-3">
                   <div>
@@ -434,7 +474,7 @@ export default function StatusPage() {
                 </div>
                 <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">Total error yang terdeteksi selama sesi monitoring.</p>
               </div>
-              <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:col-span-2 xl:col-span-1 dark:border-slate-800 dark:bg-slate-900">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className="text-xs uppercase tracking-[0.35em] text-slate-500 dark:text-slate-400">p95 Latency</p>
@@ -446,42 +486,48 @@ export default function StatusPage() {
               </div>
             </div>
 
-            <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 overflow-x-auto">
               <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
                   <p className="text-xs uppercase tracking-[0.35em] text-slate-500 dark:text-slate-400">Endpoint Performance</p>
                   <h2 className="mt-2 text-xl font-black text-slate-900 dark:text-white">Breakdown request per endpoint</h2>
                 </div>
-                <div className="inline-flex items-center gap-2 rounded-2xl bg-slate-100 px-4 py-2 text-sm text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                <div className="inline-flex items-center gap-2 rounded-2xl bg-slate-100 px-4 py-2 text-sm text-slate-700 dark:bg-slate-800 dark:text-slate-300 whitespace-nowrap">
                   <Activity className="h-4 w-4" /> {endpointRows.length} endpoint
                 </div>
               </div>
 
-              <div className="mt-6 overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800">
+              <div className="mt-6 overflow-x-auto rounded-3xl border border-slate-200 dark:border-slate-800">
                 <table className="min-w-full text-left text-sm text-slate-600 dark:text-slate-300">
-                  <thead className="bg-slate-100 text-slate-500 dark:bg-slate-950 dark:text-slate-400">
+                  <thead className="bg-slate-100 text-slate-500 dark:bg-slate-950 dark:text-slate-400 whitespace-nowrap">
                     <tr>
-                      <th className="px-5 py-4 font-semibold">Service</th>
-                      <th className="px-5 py-4 font-semibold">Endpoint</th>
-                      <th className="px-5 py-4 font-semibold">Calls</th>
-                      <th className="px-5 py-4 font-semibold">Error %</th>
-                      <th className="px-5 py-4 font-semibold">Avg Latency</th>
+                      <th className="px-4 py-4 font-semibold text-xs sm:text-sm">Service</th>
+                      <th className="px-4 py-4 font-semibold text-xs sm:text-sm">Endpoint</th>
+                      <th className="px-4 py-4 font-semibold text-xs sm:text-sm">Calls</th>
+                      <th className="px-4 py-4 font-semibold text-xs sm:text-sm">Error %</th>
+                      <th className="px-4 py-4 font-semibold text-xs sm:text-sm">Latency</th>
                     </tr>
                   </thead>
                   <tbody>
                     {endpointRows.length > 0 ? (
                       endpointRows.map((row) => (
-                        <tr key={`${row.service}-${row.endpoint}`} className="border-t border-slate-200 dark:border-slate-800">
-                          <td className="px-5 py-4 font-semibold text-slate-900 dark:text-white">{row.service}</td>
-                          <td className="px-5 py-4">{row.endpoint}</td>
-                          <td className="px-5 py-4">{formatNumber(row.count)}</td>
-                          <td className="px-5 py-4">{row.errorRate}%</td>
-                          <td className="px-5 py-4">{row.avgLatency != null ? `${row.avgLatency}ms` : '-'}</td>
+                        <tr key={`${row.service}-${row.endpoint}`} className="border-t border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                          <td className="px-4 py-4 font-semibold text-slate-900 dark:text-white text-xs sm:text-sm">{row.service}</td>
+                          <td className="px-4 py-4 text-xs sm:text-sm truncate">{row.endpoint}</td>
+                          <td className="px-4 py-4 text-xs sm:text-sm font-medium">{formatNumber(row.count)}</td>
+                          <td className="px-4 py-4 text-xs sm:text-sm">
+                            <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${row.errorRate < 5 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400' : row.errorRate < 15 ? 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400' : 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-400'}`}>
+                              {row.errorRate}%
+                            </span>
+                          </td>
+                          <td className="px-4 py-4 text-xs sm:text-sm font-medium">{row.avgLatency != null ? `${row.avgLatency}ms` : '-'}</td>
                         </tr>
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={5} className="px-5 py-8 text-center text-slate-500 dark:text-slate-400">Endpoint metrics belum tersedia. Pastikan service /metrics merespons.</td>
+                        <td colSpan={5} className="px-4 py-8 text-center text-sm text-slate-500 dark:text-slate-400">
+                          Endpoint metrics belum tersedia. Pastikan service /metrics merespons.
+                        </td>
                       </tr>
                     )}
                   </tbody>
@@ -491,6 +537,40 @@ export default function StatusPage() {
           </div>
 
           <div className="space-y-6">
+            <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.35em] text-slate-500 dark:text-slate-400">Error Rate Breakdown</p>
+                  <h2 className="mt-2 text-xl font-black text-slate-900 dark:text-white">Per Service</h2>
+                </div>
+              </div>
+
+              <div className="mt-6 space-y-4">
+                {services.map((service) => {
+                  const errorRate = serviceState[service.name]?.metrics?.error_rate_percent || 0;
+                  const errorColor = errorRate < 5 ? 'bg-emerald-500' : errorRate < 15 ? 'bg-amber-500' : 'bg-rose-500';
+                  return (
+                    <div key={service.name} className="space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="font-semibold text-slate-700 dark:text-slate-300">{service.name}</span>
+                        <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold ${errorRate < 5 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400' : errorRate < 15 ? 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400' : 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-400'}`}>
+                          {errorRate}%
+                        </span>
+                      </div>
+                      <div className="h-2.5 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${Math.min(100, errorRate * 4)}%` }}
+                          transition={{ type: 'spring', stiffness: 100, damping: 20 }}
+                          className={`h-full rounded-full ${errorColor} transition-colors`}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
             <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
               <div className="flex items-center justify-between gap-4">
                 <div>
