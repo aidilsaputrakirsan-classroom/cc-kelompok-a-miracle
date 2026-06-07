@@ -9,6 +9,7 @@ import {
   Sun,
   Moon,
   PieChart as PieChartIcon,
+  Activity,
   AlertCircle
 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
@@ -53,6 +54,7 @@ export const AdminLayout = ({ children }) => {
 
   const menuItems = [
     { icon: PieChartIcon, label: 'Statistik', path: '/admin' },
+    { icon: Activity, label: 'Status Sistem', path: '/status' },
     { icon: Users, label: 'Dashboard Pendonor', path: '/admin/donors' },
     { icon: CheckCircle, label: 'Verifikasi', path: '/admin/verify' },
   ];

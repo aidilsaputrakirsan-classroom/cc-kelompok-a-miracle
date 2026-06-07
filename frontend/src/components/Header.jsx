@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Droplets, Menu, X, Sun, Moon, ArrowRight, AlertCircle } from 'lucide-react';
+import { Droplets, Menu, X, Sun, Moon, ArrowRight, AlertCircle, Activity } from 'lucide-react';
 import useDarkMode from '../hooks/useDarkMode';
 import { apiService } from '../services/api';
 
@@ -47,6 +47,7 @@ export const Header = () => {
     { name: 'Beranda', href: '/' },
     { name: 'Tentang', href: '/#about' },
     { name: 'Fitur', href: '/#features' },
+    { name: 'Status Sistem', href: '/status', icon: Activity },
   ];
 
   return (
@@ -93,17 +94,19 @@ export const Header = () => {
 
         {/* Desktop Nav */}
         <div className="hidden lg:flex items-center gap-1">
-          {navLinks.map((link) => (
-            link.href.startsWith('/#') || link.href.startsWith('#') ? (
+          {navLinks.map((link) => {
+            const Icon = link.icon;
+            return link.href.startsWith('/#') || link.href.startsWith('#') ? (
               <a 
                 key={link.name}
                 href={link.href} 
-                className={`px-4 py-2 text-sm font-bold rounded-lg transition-all relative group ${
+                className={`px-4 py-2 text-sm font-bold rounded-lg transition-all relative group flex items-center gap-2 ${
                   isScrolled 
                     ? 'text-slate-600 hover:text-[#660000] dark:text-slate-300 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800' 
                     : 'text-white/80 hover:text-white hover:bg-white/10'
                 }`}
               >
+                {Icon && <Icon className="w-4 h-4" />}
                 {link.name}
                 <span className="absolute bottom-1 left-4 right-4 h-0.5 bg-current transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left" />
               </a>
@@ -111,7 +114,7 @@ export const Header = () => {
               <Link 
                 key={link.name}
                 to={link.href} 
-                className={`px-4 py-2 text-sm font-bold rounded-lg transition-all relative group ${
+                className={`px-4 py-2 text-sm font-bold rounded-lg transition-all relative group flex items-center gap-2 ${
                   window.location.pathname === link.href
                     ? (isScrolled ? 'text-[#660000] dark:text-red-400 bg-red-50 dark:bg-red-500/10' : 'text-white bg-white/20')
                     : (isScrolled 
@@ -119,13 +122,14 @@ export const Header = () => {
                         : 'text-white/80 hover:text-white hover:bg-white/10')
                 }`}
               >
+                {Icon && <Icon className="w-4 h-4" />}
                 {link.name}
                 {window.location.pathname === link.href && (
                   <motion.span layoutId="nav-active" className="absolute bottom-1 left-4 right-4 h-0.5 bg-current" />
                 )}
               </Link>
-            )
-          ))}
+            );
+          })}
 
           <div className="w-px h-4 bg-slate-300 dark:bg-slate-700 mx-3 opacity-30" />
 
@@ -225,14 +229,16 @@ export const Header = () => {
             className="lg:hidden bg-white border-t border-slate-100 overflow-hidden dark:bg-slate-900 dark:border-slate-800"
           >
             <div className="px-6 py-8 flex flex-col gap-6">
-              {navLinks.map((link) => (
-                link.href.startsWith('/#') || link.href.startsWith('#') ? (
+              {navLinks.map((link) => {
+                const Icon = link.icon;
+                return link.href.startsWith('/#') || link.href.startsWith('#') ? (
                   <a 
                     key={link.name}
                     href={link.href} 
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className="text-lg font-semibold text-slate-900 hover:text-[#660000] transition-colors dark:text-white dark:hover:text-red-400"
+                    className="text-lg font-semibold text-slate-900 hover:text-[#660000] transition-colors dark:text-white dark:hover:text-red-400 flex items-center gap-2"
                   >
+                    {Icon && <Icon className="w-5 h-5" />}
                     {link.name}
                   </a>
                 ) : (
@@ -240,12 +246,13 @@ export const Header = () => {
                     key={link.name}
                     to={link.href} 
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className="text-lg font-semibold text-slate-900 hover:text-[#660000] transition-colors dark:text-white dark:hover:text-red-400"
+                    className="text-lg font-semibold text-slate-900 hover:text-[#660000] transition-colors dark:text-white dark:hover:text-red-400 flex items-center gap-2"
                   >
+                    {Icon && <Icon className="w-5 h-5" />}
                     {link.name}
                   </Link>
-                )
-              ))}
+                );
+              })}
               {!isLoggedIn ? (
                 <>
                   <Link 
