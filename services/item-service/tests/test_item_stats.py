@@ -11,7 +11,7 @@ sys.path.append(BASE_DIR)
 
 from auth_client import verify_token_with_auth_service
 from database import Base, get_db
-from main import app
+from main import app, get_stats_user
 from models import Item
 
 USER_ID = 1
@@ -39,7 +39,7 @@ def _override_get_db():
 
 
 app.dependency_overrides[get_db] = _override_get_db
-app.dependency_overrides[verify_token_with_auth_service] = _override_auth
+app.dependency_overrides[get_stats_user] = _override_auth
 
 client = TestClient(app)
 
