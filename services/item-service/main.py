@@ -23,6 +23,7 @@ from schemas import (
 from auth_client import auth_circuit, verify_token_with_auth_service
 from logging_config import setup_logging
 from logging_middleware import RequestLoggingMiddleware
+from metrics import metrics
 
 setup_logging()
 logger = logging.getLogger(__name__)
@@ -426,3 +427,11 @@ async def delete_riwayat_donor_pengguna(
     db.delete(riwayat)
     db.commit()
     return None
+
+@app.get("/metrics")
+def get_metrics():
+    """Return application metrics."""
+    return {
+        "service": "item-service",
+        **metrics.get_metrics(),
+    }
