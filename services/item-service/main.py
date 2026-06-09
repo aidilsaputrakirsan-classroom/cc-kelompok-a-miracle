@@ -3,6 +3,8 @@ TraceIt Donation Service — Handles donor record management.
 Berkomunikasi dengan Auth Service untuk verifikasi token.
 """
 import os
+from logging_config import setup_logging
+from logging_middleware import RequestLoggingMiddleware
 from fastapi import FastAPI, Depends, HTTPException, Query, Header
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
@@ -11,6 +13,9 @@ from database import engine, get_db, Base
 from models import Item
 from schemas import ItemCreate, ItemUpdate, ItemResponse, ItemListResponse, ItemStatsResponse
 from auth_client import verify_token_with_auth_service
+
+setup_logging()
+logger = logging.getLogger(__name__)
 
 # Create tables
 Base.metadata.create_all(bind=engine)
@@ -31,6 +36,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.add_middleware(RequestLoggingMiddleware) 
 
 # =====================
 # ENDPOINTS

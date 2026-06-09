@@ -67,6 +67,8 @@ services:
       retries: 3
       start_period: 15s
     restart: unless-stopped
+    SERVICE_NAME: auth-service
+    LOG_LEVEL: INFO
 
   item-service:
     build: ./services/item-service
@@ -87,6 +89,8 @@ services:
       retries: 3
       start_period: 15s
     restart: unless-stopped
+    SERVICE_NAME: item-service
+    LOG_LEVEL: INFO
 
   # ==================== FRONTEND ====================
   frontend:

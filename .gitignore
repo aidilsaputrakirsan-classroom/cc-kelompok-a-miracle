@@ -22,9 +22,8 @@ dist/
 .vscode/
 .idea/
 
-# Verifikasi
-cat .gitignore | grep .env
-# Harus ada baris: .env
-
 # Changelog (local only)
 docs/changelog.md
+
+# Modul pembelajaran (tidak perlu di-push ke repo)
+modul/
