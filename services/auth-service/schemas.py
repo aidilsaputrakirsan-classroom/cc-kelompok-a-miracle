@@ -1,6 +1,5 @@
 """Pydantic schemas for TraceIt Auth Service."""
-# Mendefinisikan struktur data (skema) untuk request dan response
-yang digunakan dalam proses autentikasi dan manajemen pengguna
+# Mendefinisikan struktur data (skema) untuk request dan response yang digunakan dalam proses autentikasi dan manajemen pengguna
 from pydantic import BaseModel, EmailStr
 
 # Skema untuk data pendaftaran pengguna baru (Registrasi)
