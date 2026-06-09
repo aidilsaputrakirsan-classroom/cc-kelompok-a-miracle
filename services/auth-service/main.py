@@ -18,6 +18,7 @@ from models import User
 from schemas import (UserCreate, UserResponse, LoginRequest,TokenResponse, TokenVerifyResponse)
 from logging_config import setup_logging
 from logging_middleware import RequestLoggingMiddleware
+from metrics import metrics
 
 # Setup structured logging
 setup_logging()
@@ -152,3 +153,11 @@ def verify_token(authorization: str = Header(None)):
         email=payload["email"],
         name=payload["name"],
     )
+
+@app.get("/metrics")
+def get_metrics():
+    """Return application metrics."""
+    return {
+        "service": "auth-service",
+        **metrics.get_metrics(),
+    }
