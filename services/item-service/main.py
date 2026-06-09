@@ -2,6 +2,7 @@
 TraceIt Donor Service — Mengelola data pendonor dan riwayat donor.
 Berkomunikasi dengan Auth Service untuk verifikasi token pengguna.
 """
+import logging
 import os
 from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,11 +15,17 @@ from models import GolonganDarahEnum, Pendonor, RiwayatDonor
 from schemas import (
     PendonorCreate, PendonorListResponse, PendonorResponse,
     PendonorStatsResponse, PendonorUpdate,
+    PenggunaMeResponse,
     PublicBloodStockResponse,
     RiwayatDonorCreate, RiwayatDonorListResponse, RiwayatDonorResponse,
     RiwayatDonorUpdate, RiwayatDonorVerifikasi,
 )
 from auth_client import auth_circuit, verify_token_with_auth_service
+from logging_config import setup_logging
+from logging_middleware import RequestLoggingMiddleware
+
+setup_logging()
+logger = logging.getLogger(__name__)
 
 # Buat semua tabel
 Base.metadata.create_all(bind=engine)
@@ -42,6 +49,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.add_middleware(RequestLoggingMiddleware)
 
 # ==================== HEALTH CHECK ====================
 
@@ -286,6 +294,25 @@ async def verifikasi_riwayat_donor(
     db.commit()
     db.refresh(riwayat)
     return riwayat
+
+
+# ==================== PENGGUNA ENDPOINTS ====================
+
+@app.get("/pengguna/me", response_model=PenggunaMeResponse)
+async def get_current_pengguna_me(
+    user: dict = Depends(verify_token_with_auth_service),
+):
+    """
+    Profil pengguna yang sedang login.
+    Data dikembalikan dari payload token yang diverifikasi oleh Auth Service.
+    Endpoint ini balance dengan GET /pengguna/me di backend/main.py.
+    """
+    return PenggunaMeResponse(
+        user_id=user.get("user_id"),
+        email=user.get("email", ""),
+        nama_pengguna=user.get("nama_pengguna") or user.get("sub", ""),
+        user_type=user.get("user_type", "pengguna"),
+    )
 
 
 # ==================== PENGGUNA: RIWAYAT DONOR MILIK SENDIRI ====================

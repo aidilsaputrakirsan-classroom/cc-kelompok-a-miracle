@@ -15,10 +15,13 @@ import jwt
 
 from database import engine, get_db, Base
 from models import User
-from schemas import (
-    UserCreate, UserResponse, LoginRequest,
-    TokenResponse, TokenVerifyResponse
-)
+from schemas import (UserCreate, UserResponse, LoginRequest,TokenResponse, TokenVerifyResponse)
+from logging_config import setup_logging
+from logging_middleware import RequestLoggingMiddleware
+
+# Setup structured logging
+setup_logging()
+logger = logging.getLogger(__name__)
 
 # Create tables
 Base.metadata.create_all(bind=engine)
@@ -43,6 +46,9 @@ app.add_middleware(
     allow_headers=["*"],
     expose_headers=["*"],
 )
+
+# Logging middleware (setelah CORS)
+app.add_middleware(RequestLoggingMiddleware)
 
 # JWT Config
 SECRET_KEY = os.getenv("SECRET_KEY", "supersecretkeymiracle2026")

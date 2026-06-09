@@ -138,3 +138,18 @@ class PendonorStatsResponse(BaseModel):
     total_pendonor: int
     per_golongan_darah: dict[str, int]
     mode: str = "full"
+
+
+# ==================== PENGGUNA ME ====================
+
+class PenggunaMeResponse(BaseModel):
+    """
+    Profil pengguna yang sedang login.
+    Data bersumber dari payload token yang diverifikasi Auth Service,
+    bukan dari database lokal item-service (yang tidak menyimpan tabel pengguna).
+    Ini adalah representasi minimal, balance dengan PenggunaResponse di backend.
+    """
+    user_id: Optional[int] = None
+    email: str
+    nama_pengguna: str
+    user_type: str = "pengguna"
