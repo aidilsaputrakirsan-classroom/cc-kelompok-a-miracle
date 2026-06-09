@@ -1,38 +1,140 @@
-"""Pydantic schemas for TraceIt Donation Service."""
-from pydantic import BaseModel
+"""Pydantic schemas TraceLT Donor Service — sesuai backend/schemas.py."""
+import re
+from datetime import date, datetime
+from enum import Enum
 from typing import Optional
 
-
-class ItemCreate(BaseModel):
-    name: str
-    description: Optional[str] = ""
-    total_donor: Optional[int] = 0
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 
-class ItemUpdate(BaseModel):
-    name: Optional[str] = None
-    description: Optional[str] = None
-    total_donor: Optional[int] = None
+class GolonganDarahEnum(str, Enum):
+    O_POSITIF = "O+"
+    O_NEGATIF = "O-"
+    A_POSITIF = "A+"
+    A_NEGATIF = "A-"
+    B_POSITIF = "B+"
+    B_NEGATIF = "B-"
+    AB_POSITIF = "AB+"
+    AB_NEGATIF = "AB-"
 
 
-class ItemResponse(BaseModel):
-    id: int
-    name: str
-    description: str
+class JenisKelaminEnum(str, Enum):
+    LAKI_LAKI = "Laki-laki"
+    PEREMPUAN = "Perempuan"
+
+
+# ==================== PENDONOR ====================
+
+class PendonorCreate(BaseModel):
+    nama_lengkap: str = Field(..., min_length=2, max_length=100)
+    email: EmailStr
+    jenis_kelamin: JenisKelaminEnum
+    berat_badan: float = Field(..., gt=0, le=300)
+    tinggi_badan: float = Field(..., gt=0, le=300)
+    golongan_darah: GolonganDarahEnum
+    umur: int = Field(..., ge=17, le=120)
+    tanggal_lahir: date
+    tanggal_terakhir_donor: Optional[date] = None
+    total_donor: int = Field(default=0, ge=0)
+    alamat: str = Field(..., min_length=5)
+    no_telepon: str = Field(..., min_length=8, max_length=30)
+    riwayat_kesehatan: Optional[str] = None
+
+    @field_validator("no_telepon")
+    def validate_no_telepon(cls, v: str) -> str:
+        if not re.match(r"^[0-9+\-\s]+$", v):
+            raise ValueError("Nomor telepon hanya boleh berisi angka, +, -, spasi")
+        return v
+
+
+class PendonorUpdate(BaseModel):
+    nama_lengkap: Optional[str] = Field(None, min_length=2, max_length=100)
+    email: Optional[EmailStr] = None
+    jenis_kelamin: Optional[JenisKelaminEnum] = None
+    berat_badan: Optional[float] = Field(None, gt=0, le=300)
+    tinggi_badan: Optional[float] = Field(None, gt=0, le=300)
+    golongan_darah: Optional[GolonganDarahEnum] = None
+    umur: Optional[int] = Field(None, ge=17, le=120)
+    tanggal_lahir: Optional[date] = None
+    tanggal_terakhir_donor: Optional[date] = None
+    total_donor: Optional[int] = Field(None, ge=0)
+    alamat: Optional[str] = Field(None, min_length=5)
+    no_telepon: Optional[str] = Field(None, min_length=8, max_length=30)
+    riwayat_kesehatan: Optional[str] = None
+
+
+class PendonorResponse(BaseModel):
+    id_pendonor: int
+    nama_lengkap: str
+    email: str
+    jenis_kelamin: JenisKelaminEnum
+    berat_badan: float
+    tinggi_badan: float
+    golongan_darah: GolonganDarahEnum
+    umur: int
+    tanggal_lahir: date
+    tanggal_terakhir_donor: Optional[date] = None
     total_donor: int
-    owner_id: int
+    alamat: str
+    no_telepon: str
+    riwayat_kesehatan: Optional[str] = None
+    created_at: datetime
 
     class Config:
         from_attributes = True
 
 
-class ItemListResponse(BaseModel):
+class PendonorListResponse(BaseModel):
     total: int
-    items: list[ItemResponse]
+    pendonor: list[PendonorResponse]
 
 
-class ItemStatsResponse(BaseModel):
-    total_items: int
-    total_value: float
-    termurah: float | None
-    termahal: float | None
+# ==================== RIWAYAT DONOR ====================
+
+class RiwayatDonorCreate(BaseModel):
+    id_pendonor: int
+    golongan_darah: Optional[GolonganDarahEnum] = None
+
+
+class RiwayatDonorUpdate(BaseModel):
+    id_pendonor: Optional[int] = None
+    golongan_darah: Optional[GolonganDarahEnum] = None
+
+
+class RiwayatDonorVerifikasi(BaseModel):
+    status_verifikasi: bool
+
+
+class RiwayatDonorResponse(BaseModel):
+    id_riwayat: int
+    id_pendonor: int
+    id_pengguna: Optional[int] = None
+    golongan_darah: GolonganDarahEnum
+    status_verifikasi: bool
+
+    class Config:
+        from_attributes = True
+
+
+class RiwayatDonorListResponse(BaseModel):
+    total: int
+    riwayat_donor: list[RiwayatDonorResponse]
+
+
+# ==================== PUBLIC ====================
+
+class BloodStockItem(BaseModel):
+    golongan_darah: str
+    jumlah_stok: int
+
+
+class PublicBloodStockResponse(BaseModel):
+    blood_stock: list[BloodStockItem]
+
+
+# ==================== STATS (degraded mode) ====================
+
+class PendonorStatsResponse(BaseModel):
+    total_pendonor: int
+    per_golongan_darah: dict[str, int]
+    mode: str = "full"

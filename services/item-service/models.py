@@ -1,16 +1,64 @@
-"""Donor record model — di database TraceIt, BUKAN di auth_db."""
-from sqlalchemy import Column, Integer, String, DateTime
+"""Model database TraceLT Donor Service — pendonor dan riwayat_donor."""
+import enum
+
+from sqlalchemy import (
+    Boolean, Column, Date, DateTime, Enum, Float,
+    ForeignKey, Integer, String, Text,
+)
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
+
 from database import Base
 
 
-class Item(Base):
-    __tablename__ = "items"
+class GolonganDarahEnum(str, enum.Enum):
+    O_POSITIF = "O+"
+    O_NEGATIF = "O-"
+    A_POSITIF = "A+"
+    A_NEGATIF = "A-"
+    B_POSITIF = "B+"
+    B_NEGATIF = "B-"
+    AB_POSITIF = "AB+"
+    AB_NEGATIF = "AB-"
 
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, nullable=False, index=True)
-    description = Column(String, default="")
-    total_donor = Column(Integer, default=0)
-    owner_id = Column(Integer, nullable=False)  # Reference ke user di auth_db (bukan FK!)
+
+class JenisKelaminEnum(str, enum.Enum):
+    LAKI_LAKI = "Laki-laki"
+    PEREMPUAN = "Perempuan"
+
+
+class Pendonor(Base):
+    __tablename__ = "pendonor"
+
+    id_pendonor = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    nama_lengkap = Column(String(100), nullable=False, index=True)
+    jenis_kelamin = Column(Enum(JenisKelaminEnum), nullable=False)
+    berat_badan = Column(Float, nullable=False)
+    tinggi_badan = Column(Float, nullable=False)
+    golongan_darah = Column(Enum(GolonganDarahEnum), nullable=False, index=True)
+    umur = Column(Integer, nullable=False)
+    tanggal_lahir = Column(Date, nullable=False)
+    tanggal_terakhir_donor = Column(Date, nullable=True)
+    total_donor = Column(Integer, nullable=False, default=0)
+    alamat = Column(Text, nullable=False)
+    email = Column(String(255), nullable=False)
+    no_telepon = Column(String(30), nullable=False)
+    riwayat_kesehatan = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    riwayat_donor = relationship(
+        "RiwayatDonor", back_populates="pendonor", cascade="all, delete-orphan"
+    )
+
+
+class RiwayatDonor(Base):
+    __tablename__ = "riwayat_donor"
+
+    id_riwayat = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    id_pendonor = Column(Integer, ForeignKey("pendonor.id_pendonor"), nullable=False, index=True)
+    # id_pengguna merujuk ke user di auth_db — bukan FK lintas database
+    id_pengguna = Column(Integer, nullable=True, index=True)
+    golongan_darah = Column(Enum(GolonganDarahEnum), nullable=False)
+    status_verifikasi = Column(Boolean, nullable=False, default=False)
+
+    pendonor = relationship("Pendonor", back_populates="riwayat_donor")
