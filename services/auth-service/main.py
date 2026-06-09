@@ -87,7 +87,7 @@ def decode_token(token: str) -> dict:
 
 
 # ===================== ENDPOINTS =====================
-
+# endpoint ini memang berbeda dengan full endpoint yang ada di folder backend
 @app.get("/health")
 def health_check():
     return {
