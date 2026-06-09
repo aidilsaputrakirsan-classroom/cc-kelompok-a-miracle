@@ -5,6 +5,7 @@ Microservice yang bertanggung jawab untuk:
 - Login pengguna (JWT token generation)
 - Token verification (dipanggil oleh service lain)
 """
+import logging
 import os
 from datetime import datetime, timedelta, timezone
 from fastapi import FastAPI, Depends, HTTPException, Header
@@ -24,9 +25,10 @@ from metrics import metrics
 setup_logging()
 logger = logging.getLogger(__name__)
 
-# Create tables
+# Membuat tabel database secara otomatis berdasarkan model jika belum ada
 Base.metadata.create_all(bind=engine)
 
+# Inisialisasi aplikasi FastAPI dengan metadata dokumentasi
 app = FastAPI(
     title="TraceIt Auth Service",
     description="Authentication microservice for Tracelt",
@@ -43,7 +45,9 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=CORS_ORIGINS,
     allow_credentials=True,
+    # # Mengizinkan semua HTTP Methods (GET, POST, dll)
     allow_methods=["*"],
+    # Mengizinkan semua HTTP Headers
     allow_headers=["*"],
     expose_headers=["*"],
 )
@@ -56,26 +60,26 @@ SECRET_KEY = os.getenv("SECRET_KEY", "supersecretkeymiracle2026")
 ALGORITHM = "HS256"
 TOKEN_EXPIRE_MINUTES = int(os.getenv("TOKEN_EXPIRE_MINUTES", "30"))
 
-
+# Hash password mentah menggunakan algoritma bcrypt.
 def hash_password(password: str) -> str:
     """Hash password menggunakan bcrypt"""
     salt = bcrypt.gensalt()
     hashed = bcrypt.hashpw(password.encode('utf-8'), salt)
     return hashed.decode('utf-8')
 
-
+# Memvalidasi apakah password mentah cocok dengan hash di database.
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify password"""
     return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
 
-
+# Membuat token akses JWT baru dengan masa kedaluwarsa.
 def create_access_token(data: dict) -> str:
     to_encode = data.copy()
     expire = datetime.now(timezone.utc) + timedelta(minutes=TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
-
+# Mendekode dan memvalidasi token JWT
 def decode_token(token: str) -> dict:
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
@@ -96,7 +100,7 @@ def health_check():
         "version": "2.0.0",
     }
 
-
+# Register user baru ke dalam sistem.
 @app.post("/register", response_model=UserResponse, status_code=201)
 def register(user_data: UserCreate, db: Session = Depends(get_db)):
     """Register user baru."""
@@ -119,7 +123,7 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
         print(f"[REGISTER ERROR] {str(e)}")
         raise HTTPException(status_code=500, detail="Register failed")
 
-
+# Login pengguna dan kembalikan access token (JWT) jika sukses.
 @app.post("/login", response_model=TokenResponse)
 def login(login_data: LoginRequest, db: Session = Depends(get_db)):
     """Login dan dapatkan JWT token."""
@@ -138,7 +142,7 @@ def login(login_data: LoginRequest, db: Session = Depends(get_db)):
         print(f"[LOGIN ERROR] {str(e)}")
         raise HTTPException(status_code=500, detail="Login failed")
 
-
+# Verifikasi token JWT yang dikirim melalui HTTP Authorization Header
 @app.get("/verify", response_model=TokenVerifyResponse)
 def verify_token(authorization: str = Header(None)):
     """Verifikasi JWT token"""
@@ -154,6 +158,7 @@ def verify_token(authorization: str = Header(None)):
         name=payload["name"],
     )
 
+# Mengembalikan data metrik aplikasi (misal: jumlah request, latency) untuk kebutuhan monitoring sistem
 @app.get("/metrics")
 def get_metrics():
     """Return application metrics."""
