@@ -53,7 +53,7 @@ app.add_middleware(
 app.add_middleware(RequestLoggingMiddleware)
 
 # ==================== HEALTH CHECK ====================
-
+# endpoints yang ada sudah disesuaikan dengan full endpoint yang ada di folder backend dengan penyesuaian arsitektur baru
 @app.get("/health")
 async def health_check(db: Session = Depends(get_db)):
     cb_status = auth_circuit.get_status()
