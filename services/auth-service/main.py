@@ -118,9 +118,11 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
         db.commit()
         db.refresh(user)
         return user
+    except HTTPException:
+        raise
     except Exception as e:
         db.rollback()
-        print(f"[REGISTER ERROR] {str(e)}")
+        logger.error(f"Register failed: {str(e)}", extra={"error": str(e)})
         raise HTTPException(status_code=500, detail="Register failed")
 
 # Login pengguna dan kembalikan access token (JWT) jika sukses.
@@ -138,8 +140,10 @@ def login(login_data: LoginRequest, db: Session = Depends(get_db)):
             "name": user.name,
         })
         return TokenResponse(access_token=token)
+    except HTTPException:
+        raise
     except Exception as e:
-        print(f"[LOGIN ERROR] {str(e)}")
+        logger.error(f"Login failed: {str(e)}", extra={"error": str(e)})
         raise HTTPException(status_code=500, detail="Login failed")
 
 # Verifikasi token JWT yang dikirim melalui HTTP Authorization Header
