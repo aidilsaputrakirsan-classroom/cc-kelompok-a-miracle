@@ -1,11 +1,10 @@
 """
-Request Logging Middleware — log setiap HTTP request dengan timing dan correlation ID.
-Sesuai Modul 14 Workshop 14.1.
+Request Logging Middleware.
+Log setiap HTTP request dengan timing, status, dan correlation ID.
 """
-import logging
 import time
 import uuid
-
+import logging
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 
@@ -13,19 +12,25 @@ logger = logging.getLogger(__name__)
 
 
 class RequestLoggingMiddleware(BaseHTTPMiddleware):
-    """Log setiap request/response dengan correlation ID dan durasi."""
+    """Middleware yang log setiap request/response."""
 
     async def dispatch(self, request: Request, call_next):
+        # Generate atau ambil correlation ID
         correlation_id = request.headers.get(
             "X-Correlation-ID",
-            str(uuid.uuid4())[:12],
+            str(uuid.uuid4())[:12]
         )
+
+        # Simpan di request state (bisa diakses di endpoint)
         request.state.correlation_id = correlation_id
+
+        # Catat waktu mulai
         start_time = time.time()
 
+        # Proses request
         try:
             response = await call_next(request)
-        except Exception:
+        except Exception as e:
             duration_ms = round((time.time() - start_time) * 1000, 2)
             logger.error(
                 f"Request failed: {request.method} {request.url.path}",
@@ -39,8 +44,10 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
             )
             raise
 
+        # Hitung durasi
         duration_ms = round((time.time() - start_time) * 1000, 2)
 
+        # Log request (skip health checks agar log tidak terlalu noisy)
         if request.url.path != "/health":
             log_level = logging.WARNING if response.status_code >= 400 else logging.INFO
             logger.log(
@@ -55,5 +62,6 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
                 },
             )
 
+        # Teruskan correlation ID di response header
         response.headers["X-Correlation-ID"] = correlation_id
         return response
