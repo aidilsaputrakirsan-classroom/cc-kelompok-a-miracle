@@ -1,6 +1,6 @@
 # Microservices Architecture - TraceIt
 
-Dokumen ini menjelaskan arsitektur microservices TraceIt untuk Modul 12. Fokusnya adalah batas tanggung jawab service, kontrak API, cara menjalankan lokal, dan panduan debug untuk QA.
+Dokumen ini menjelaskan arsitektur microservices TraceIt untuk Modul 12-13. Fokusnya adalah batas tanggung jawab service, kontrak API, reliability layer, cara menjalankan lokal, dan panduan debug untuk QA.
 
 ## Ringkasan
 
@@ -22,7 +22,7 @@ flowchart TD
 
     subgraph NET["Docker Compose Network"]
         GW -->|"/auth/*"| AUTH["tracelt-auth-service\nFastAPI :8001"]
-        GW -->|"/items*"| ITEM["tracelt-item-service\nFastAPI :8002"]
+        GW -->|"/pendonor*, /pengguna*, /riwayat-donor*, /api/public*"| ITEM["tracelt-item-service\nFastAPI :8002"]
         GW -->|"/"| FE["tracelt-frontend\nReact static app :80"]
 
         AUTH -->|"DATABASE_URL"| AUTHDB[("tracelt-auth-db\nauth_db :5432")]
@@ -45,6 +45,65 @@ flowchart TD
 | Auth Database | `tracelt-auth-db` | 5432 | 5433 | PostgreSQL database `auth_db` |
 | Item Database | `tracelt-item-db` | 5432 | 5434 | PostgreSQL database `item_db` |
 
+## Reliability Layer Modul 13
+
+Modul 13 menambahkan reliability pattern pada komunikasi Item Service ke Auth Service. Tujuannya adalah mencegah cascading failure saat Auth Service down, lambat, atau sedang restart. Pola yang digunakan adalah timeout, retry dengan exponential backoff, circuit breaker, dan degraded health status.
+
+```mermaid
+flowchart TD
+    REQ["Request /pengguna/me dengan Bearer token"] --> ITEM["Item Service"]
+    ITEM --> CB{"Circuit breaker state"}
+
+    CB -->|"CLOSED"| CALL["Call Auth Service /verify"]
+    CALL -->|"200 OK"| OK["Auth valid\nProcess item request"]
+    CALL -->|"400/401"| NORETRY["Reject request\nNo retry"]
+    CALL -->|"500/502/503/504 atau timeout"| RETRY["Retry max 3x\nBackoff 0.5s, 1s, 2s"]
+    RETRY -->|"Recovered"| OK
+    RETRY -->|"Still failed"| FAILURE["Record failure"]
+    FAILURE --> THRESHOLD{"Failure count >= 5"}
+    THRESHOLD -->|"No"| FAIL503["Return 503"]
+    THRESHOLD -->|"Yes"| OPEN["Circuit OPEN\nFail fast"]
+
+    CB -->|"OPEN"| FAST503["Return 503 without calling Auth"]
+    FAST503 --> COOLDOWN["Wait cooldown 30s"]
+    COOLDOWN --> HALF["HALF_OPEN\nAllow test request"]
+    HALF -->|"Success"| CLOSED["Back to CLOSED"]
+    HALF -->|"Failed"| OPEN
+```
+
+Konfigurasi reliability saat ini:
+
+| Pattern | Nilai | Lokasi |
+|---------|-------|--------|
+| Retry attempts | 3 | `services/item-service/auth_client.py` |
+| Retry backoff | 0.5s, 1s, 2s | `BASE_DELAY * 2 ** (attempt - 1)` |
+| Timeout per request | 5s | `TIMEOUT_SECONDS` |
+| Retryable status code | 500, 502, 503, 504 | `RETRYABLE_STATUS_CODES` |
+| Non-retryable auth error | 400, 401 | `auth_client.py` |
+| Circuit breaker threshold | 5 failures | `services/item-service/circuit_breaker.py` |
+| Circuit breaker cooldown | 30s | `cooldown_seconds` |
+| Degraded health status | circuit state not `CLOSED` | `services/item-service/main.py` |
+
+Contoh response health check Item Service saat dependency normal:
+
+```json
+{
+  "status": "healthy",
+  "service": "item-service",
+  "version": "2.1.0",
+  "dependencies": {
+    "auth-service": {
+      "name": "auth-service",
+      "state": "CLOSED",
+      "failure_count": 0,
+      "failure_threshold": 5,
+      "total_rejected": 0,
+      "cooldown_seconds": 30
+    }
+  }
+}
+```
+
 ## Routing Gateway
 
 Konfigurasi routing ada di `services/gateway/nginx.conf`.
@@ -55,12 +114,18 @@ Konfigurasi routing ada di `services/gateway/nginx.conf`.
 | `POST /auth/register` | `http://auth-service:8001/register` | Auth Service |
 | `POST /auth/login` | `http://auth-service:8001/login` | Auth Service |
 | `GET /auth/verify` | `http://auth-service:8001/verify` | Auth Service |
-| `GET /items` | `http://item-service:8002/items` | Item Service |
-| `POST /items` | `http://item-service:8002/items` | Item Service |
-| `GET /items/stats` | `http://item-service:8002/items/stats` | Item Service |
-| `GET /items/{id}` | `http://item-service:8002/items/{id}` | Item Service |
-| `PUT /items/{id}` | `http://item-service:8002/items/{id}` | Item Service |
-| `DELETE /items/{id}` | `http://item-service:8002/items/{id}` | Item Service |
+| `GET /donor/health` | `http://item-service:8002/health` | Item Service |
+| `GET /api/public/blood-stock` | `http://item-service:8002/api/public/blood-stock` | Item Service |
+| `GET /pendonor` | `http://item-service:8002/pendonor` | Item Service |
+| `POST /pendonor` | `http://item-service:8002/pendonor` | Item Service |
+| `GET /pendonor/stats` | `http://item-service:8002/pendonor/stats` | Item Service |
+| `GET /pendonor/{id}` | `http://item-service:8002/pendonor/{id}` | Item Service |
+| `PUT /pendonor/{id}` | `http://item-service:8002/pendonor/{id}` | Item Service |
+| `DELETE /pendonor/{id}` | `http://item-service:8002/pendonor/{id}` | Item Service |
+| `GET /pengguna/me` | `http://item-service:8002/pengguna/me` | Item Service |
+| `GET /pengguna/riwayat-donor` | `http://item-service:8002/pengguna/riwayat-donor` | Item Service |
+| `POST /pengguna/riwayat-donor` | `http://item-service:8002/pengguna/riwayat-donor` | Item Service |
+| `GET /riwayat-donor` | `http://item-service:8002/riwayat-donor` | Item Service |
 | `/` | `http://frontend` | Frontend |
 
 ## API Contract
@@ -179,7 +244,7 @@ Semua endpoint Item Service membutuhkan header berikut:
 Authorization: Bearer <access_token>
 ```
 
-#### `GET /items`
+#### `GET /pendonor`
 
 Mengambil daftar data donor/item milik user yang login.
 
@@ -196,7 +261,7 @@ Response `200 OK`:
 ```json
 {
   "total": 1,
-  "items": [
+  "pendonor": [
     {
       "id": 1,
       "name": "Donasi Buku",
@@ -208,7 +273,7 @@ Response `200 OK`:
 }
 ```
 
-#### `POST /items`
+#### `POST /pendonor`
 
 Membuat data donor/item baru.
 
@@ -234,7 +299,7 @@ Response `201 Created`:
 }
 ```
 
-#### `GET /items/stats`
+#### `GET /pendonor/stats`
 
 Mengambil ringkasan statistik data donor/item milik user yang login.
 
@@ -251,7 +316,7 @@ Response `200 OK`:
 
 Catatan: field `total_value`, `termurah`, dan `termahal` dihitung dari field `total_donor` pada data item.
 
-#### `GET /items/{item_id}`
+#### `GET /pendonor/{pendonor_id}`
 
 Mengambil satu data donor/item milik user yang login.
 
@@ -273,7 +338,7 @@ Kemungkinan error:
 |--------|----------|
 | 404 | Data tidak ditemukan atau bukan milik user login |
 
-#### `PUT /items/{item_id}`
+#### `PUT /pendonor/{pendonor_id}`
 
 Mengubah data donor/item milik user yang login.
 
@@ -299,9 +364,9 @@ Response `200 OK`:
 }
 ```
 
-#### `DELETE /items/{item_id}`
+#### `DELETE /pendonor/{pendonor_id}`
 
-Menghapus data donor/item milik user yang login.
+Menghapus data pendonor.
 
 Response `204 No Content`.
 
@@ -342,7 +407,7 @@ sequenceDiagram
     G-->>B: access_token
 ```
 
-### Membuat Item
+### Mengakses Profil Pengguna Terautentikasi
 
 ```mermaid
 sequenceDiagram
@@ -352,14 +417,12 @@ sequenceDiagram
     participant A as Auth Service
     participant DB as item_db
 
-    B->>G: POST /items + Bearer token
-    G->>I: POST /items + Bearer token
+    B->>G: GET /pengguna/me + Bearer token
+    G->>I: GET /pengguna/me + Bearer token
     I->>A: GET /verify + Bearer token
     A-->>I: user_id, email, name
-    I->>DB: Insert item dengan owner_id
-    DB-->>I: Item tersimpan
-    I-->>G: Item response
-    G-->>B: Item response
+    I-->>G: Profil pengguna
+    G-->>B: Profil pengguna
 ```
 
 ## Menjalankan Lokal
@@ -441,34 +504,30 @@ Expected: response `200 OK` berisi `access_token`.
 
 Simpan token dari response untuk step berikutnya.
 
-### 4. Create Item
+### 4. Cek Profil Pengguna Terautentikasi
 
 ```bash
-curl -X POST http://localhost/items \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer TOKEN_DARI_LOGIN" \
-  -d '{"name":"Donasi Buku","description":"Program donasi buku sekolah","total_donor":12}'
-```
-
-Expected: response `201 Created` berisi item baru dan `owner_id` user login.
-
-### 5. Get Items
-
-```bash
-curl http://localhost/items \
+curl http://localhost/pengguna/me \
   -H "Authorization: Bearer TOKEN_DARI_LOGIN"
 ```
 
-Expected: response `200 OK` berisi daftar item milik user login.
+Expected: response `200 OK` berisi `user_id`, `email`, `nama_pengguna`, dan `user_type`.
 
-### 6. Get Item Stats
+### 5. Get Pendonor
 
 ```bash
-curl http://localhost/items/stats \
-  -H "Authorization: Bearer TOKEN_DARI_LOGIN"
+curl http://localhost/pendonor
 ```
 
-Expected: response `200 OK` berisi `total_items`, `total_value`, `termurah`, dan `termahal`.
+Expected: response `200 OK` berisi daftar pendonor.
+
+### 6. Get Pendonor Stats
+
+```bash
+curl http://localhost/pendonor/stats
+```
+
+Expected: response `200 OK` berisi ringkasan statistik pendonor.
 
 ## Panduan Debug per Service
 
@@ -500,7 +559,7 @@ Gunakan ini saat CRUD item gagal, token tidak terbaca, atau Item Service gagal m
 docker compose logs gateway
 ```
 
-Gunakan ini saat URL `http://localhost/auth/...` atau `http://localhost/items...` tidak diarahkan ke service yang benar.
+Gunakan ini saat URL `http://localhost/auth/...`, `http://localhost/pendonor...`, `http://localhost/pengguna...`, atau `http://localhost/riwayat-donor...` tidak diarahkan ke service yang benar.
 
 ### Cek Status Healthcheck
 
@@ -530,8 +589,8 @@ psql postgresql://postgres:postgres@localhost:5434/item_db
 |--------|----------------------|---------------|
 | `curl http://localhost/health` gagal | Gateway belum running atau port 80 bentrok | Jalankan `docker compose ps`, cek apakah ada aplikasi lain memakai port 80 |
 | Register/login gagal `500` | Auth Service gagal akses `auth_db` | Cek `docker compose logs auth-service` dan health `auth-db` |
-| Request `/items` mendapat `401` | Token kosong, salah format, atau expired | Login ulang dan pastikan header `Authorization: Bearer <token>` |
-| Request `/items` mendapat `503` | Auth Service tidak bisa dihubungi dari Item Service | Cek `docker compose logs item-service` dan `docker compose logs auth-service` |
+| Request `/pengguna/me` mendapat `401` | Token kosong, salah format, atau expired | Login ulang dan pastikan header `Authorization: Bearer <token>` |
+| Request `/pengguna/me` mendapat `503` | Auth Service tidak bisa dihubungi dari Item Service | Cek `docker compose logs item-service` dan `docker compose logs auth-service` |
 | Frontend tampil tapi API gagal | `VITE_API_URL` tidak mengarah ke gateway | Pastikan build frontend memakai `VITE_API_URL=http://localhost` |
 | Data hilang setelah restart | Volume database dihapus | Hindari `docker compose down -v` jika ingin data lokal tetap ada |
 
@@ -543,11 +602,11 @@ psql postgresql://postgres:postgres@localhost:5434/item_db
 - [ ] `POST /auth/register` berhasil membuat user baru.
 - [ ] `POST /auth/login` berhasil menghasilkan token.
 - [ ] `GET /auth/verify` berhasil memverifikasi token valid.
-- [ ] `POST /items` berhasil membuat data dengan token valid.
-- [ ] `GET /items` hanya menampilkan data milik user login.
-- [ ] `GET /items/stats` mengembalikan statistik sesuai data user login.
-- [ ] `PUT /items/{id}` hanya bisa mengubah data milik user login.
-- [ ] `DELETE /items/{id}` hanya bisa menghapus data milik user login.
+- [ ] `GET /pengguna/me` berhasil memverifikasi token valid melalui Auth Service.
+- [ ] `GET /pendonor` mengembalikan daftar pendonor.
+- [ ] `GET /pendonor/stats` mengembalikan statistik pendonor.
+- [ ] `POST /pengguna/riwayat-donor` berhasil membuat riwayat donor dengan token valid.
+- [ ] `GET /pengguna/riwayat-donor` hanya menampilkan riwayat milik user login.
 - [ ] Request Item Service tanpa token mengembalikan `401`.
 - [ ] Saat Auth Service bermasalah, Item Service mengembalikan error service unavailable, bukan crash.
 - [ ] Frontend dapat register, login, dan CRUD melalui `http://localhost`.

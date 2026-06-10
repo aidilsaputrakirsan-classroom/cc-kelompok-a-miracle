@@ -88,6 +88,8 @@ services:
       DATABASE_URL: postgresql://postgres:postgres@item-db:5432/item_db
       AUTH_SERVICE_URL: http://auth-service:8001
       CORS_ORIGINS: "http://localhost,http://localhost:5173,http://localhost:80"
+      SERVICE_NAME: item-service
+      LOG_LEVEL: INFO
     depends_on:
       item-db:
         condition: service_healthy
@@ -108,8 +110,6 @@ services:
         reservations:
           cpus: '0.2'
           memory: 256M
-      SERVICE_NAME: item-service
-      LOG_LEVEL: INFO
 
   # ==================== FRONTEND ====================
 
