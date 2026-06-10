@@ -171,3 +171,5 @@ services:
 volumes:
   auth_db_data:
   item_db_data:
+
+  # backup
