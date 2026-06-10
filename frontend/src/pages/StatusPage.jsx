@@ -1,19 +1,18 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Activity,
   RefreshCw,
   Bug,
   Clock3,
-  Sparkles,
   Search,
   Wifi,
   Zap,
   ChevronRight,
-  LogOut,
   Dot,
 } from 'lucide-react';
+import { Header } from '../components/Header';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -23,546 +22,536 @@ const services = [
     icon: '🚪',
     healthUrl: `${API_URL}/health`,
     metricsUrl: null,
-    description: 'Memeriksa status gateway utama dan koneksi API.',
+    description: 'Status gateway utama dan koneksi API.',
   },
   {
     name: 'Auth Service',
     icon: '🔐',
     healthUrl: `${API_URL}/auth/health`,
     metricsUrl: `${API_URL}/auth/metrics`,
-    description: 'Memantau status layanan autentikasi dan otorisasi.',
+    description: 'Layanan autentikasi dan otorisasi.',
   },
   {
-    name: 'Item Service',
+    name: 'Donor Service',
     icon: '📦',
-    healthUrl: `${API_URL}/items/health`,
-    metricsUrl: `${API_URL}/items/metrics`,
-    description: 'Memeriksa status layanan pengelolaan data pendonor.',
+    healthUrl: `${API_URL}/donor/health`,
+    metricsUrl: `${API_URL}/donor/metrics`,
+    description: 'Layanan pengelolaan data pendonor.',
   },
 ];
 
-const statusColor = {
-  healthy: 'from-emerald-500/20 via-transparent to-transparent border-emerald-200',
-  degraded: 'from-amber-500/20 via-transparent to-transparent border-amber-200',
-  unhealthy: 'from-rose-500/20 via-transparent to-transparent border-rose-200',
-  unreachable: 'from-slate-200/80 via-transparent to-transparent border-slate-300',
+const statusBorder = {
+  healthy:     'border-emerald-200 dark:border-emerald-800/40',
+  degraded:    'border-amber-200 dark:border-amber-800/40',
+  unhealthy:   'border-rose-200 dark:border-rose-800/40',
+  unreachable: 'border-slate-200 dark:border-slate-800',
 };
 
-const statusBadge = {
-  healthy: 'bg-emerald-500/15 text-emerald-800',
-  degraded: 'bg-amber-500/15 text-amber-800',
-  unhealthy: 'bg-rose-500/15 text-rose-800',
-  unreachable: 'bg-slate-300 text-slate-700',
+const statusIconBg = {
+  healthy:     'bg-emerald-100 dark:bg-emerald-950/50',
+  degraded:    'bg-amber-100 dark:bg-amber-950/50',
+  unhealthy:   'bg-rose-100 dark:bg-rose-950/50',
+  unreachable: 'bg-slate-100 dark:bg-slate-800',
+};
+
+const statusTopBar = {
+  healthy:     'bg-emerald-500',
+  degraded:    'bg-amber-500',
+  unhealthy:   'bg-rose-500',
+  unreachable: 'bg-slate-300 dark:bg-slate-700',
+};
+
+const statusBadgeClass = {
+  healthy:     'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400',
+  degraded:    'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-400',
+  unhealthy:   'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-400',
+  unreachable: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400',
+};
+
+const statusDotClass = {
+  healthy:     'bg-emerald-500',
+  degraded:    'bg-amber-500',
+  unhealthy:   'bg-rose-500',
+  unreachable: 'bg-slate-400',
 };
 
 const formatStatus = (status) => {
   if (!status) return 'unreachable';
-  const normalized = String(status).toLowerCase();
-  if (['healthy', 'up', 'ok', 'available'].includes(normalized)) return 'healthy';
-  if (['degraded', 'warning', 'degrade', 'partial'].includes(normalized)) return 'degraded';
+  const s = String(status).toLowerCase();
+  if (['healthy', 'up', 'ok', 'available'].includes(s)) return 'healthy';
+  if (['degraded', 'warning', 'degrade', 'partial'].includes(s)) return 'degraded';
   return 'unhealthy';
 };
 
-const formatNumber = (value) => (value == null ? '-' : new Intl.NumberFormat('id-ID').format(value));
+const fmt = (v) => (v == null ? '—' : new Intl.NumberFormat('id-ID').format(v));
 
 const createRandomId = () => Math.random().toString(36).slice(2, 10);
 
 const initialLogs = [
-  {
-    timestamp: '09:42:01',
-    service: 'Auth Service',
-    path: '/auth/login',
-    level: 'ERROR',
-    message: 'Invalid token signature',
-    correlationId: 'a1b2c3d4',
-    status: 401,
-  },
-  {
-    timestamp: '09:47:18',
-    service: 'Item Service',
-    path: '/items',
-    level: 'WARN',
-    message: 'Auth service response delayed',
-    correlationId: 'f7g8h9i0',
-    status: 504,
-  },
-  {
-    timestamp: '09:52:33',
-    service: 'Gateway',
-    path: '/health',
-    level: 'INFO',
-    message: 'Gateway health checked successfully',
-    correlationId: 'x5y6z7w8',
-    status: 200,
-  },
+  { timestamp: '09:42:01', service: 'Auth Service', path: '/auth/login',   level: 'ERROR', message: 'Invalid token signature',              correlationId: 'a1b2c3d4', status: 401 },
+  { timestamp: '09:47:18', service: 'Donor Service', path: '/pendonor',    level: 'WARN',  message: 'Auth service response delayed',          correlationId: 'f7g8h9i0', status: 504 },
+  { timestamp: '09:52:33', service: 'Gateway',       path: '/health',      level: 'INFO',  message: 'Gateway health checked successfully',    correlationId: 'x5y6z7w8', status: 200 },
 ];
+
+// ── Sub-components ────────────────────────────────────────────
 
 function ProgressBar({ label, value, maxValue, color }) {
   const width = value != null ? Math.min(100, Math.round((value / maxValue) * 100)) : 0;
   return (
-    <div className="space-y-2">
+    <div className="space-y-1.5">
       <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
         <span>{label}</span>
-        <span>{value != null ? `${value}ms` : '-'}</span>
+        <span className="font-medium">{value != null ? `${value}ms` : '—'}</span>
       </div>
-      <div className="h-2 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
-        <div className={`h-full rounded-full ${color}`} style={{ width: `${width}%` }} />
+      <div className="h-1.5 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+        <div className={`h-full rounded-full ${color} transition-all duration-500`} style={{ width: `${width}%` }} />
       </div>
     </div>
   );
 }
 
 function ServiceCard({ service, data }) {
-  const current = data?.health || null;
-  const metrics = data?.metrics;
-  const healthStatus = formatStatus(current?.status || current?.state || 'unreachable');
-  const badgeText = current?.status || current?.state || 'Tidak terjangkau';
-  const errorRate = metrics?.error_rate_percent || 0;
-  const errorColor = errorRate < 5 ? 'bg-emerald-500' : errorRate < 15 ? 'bg-amber-500' : 'bg-rose-500';
+  const health   = data?.health ?? null;
+  const metrics  = data?.metrics;
+  const status   = formatStatus(health?.status ?? health?.state ?? null);
+  const label    = health?.status ?? health?.state ?? 'Tidak terjangkau';
+  const errRate  = metrics?.error_rate_percent ?? 0;
+  const errColor = errRate < 5 ? 'bg-emerald-500' : errRate < 15 ? 'bg-amber-500' : 'bg-rose-500';
+
+  const uptime = health?.uptime_seconds;
+  const uptimeStr = uptime != null
+    ? uptime >= 3600
+      ? `${Math.floor(uptime / 3600)}j ${Math.floor((uptime % 3600) / 60)}m`
+      : uptime >= 60
+        ? `${Math.floor(uptime / 60)}m ${uptime % 60}d`
+        : `${uptime}d`
+    : null;
+
+  const hasTraffic = (metrics?.total_requests ?? 0) > 0;
 
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`rounded-3xl border p-6 shadow-lg transition-all hover:-translate-y-1 hover:shadow-2xl border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 ${statusColor[healthStatus]}`}
+      className={`rounded-3xl border bg-white dark:bg-slate-900 shadow-sm hover:-translate-y-0.5 hover:shadow-lg transition-all overflow-hidden ${statusBorder[status]}`}
     >
-      <div className="flex items-start justify-between gap-4 mb-5">
-        <div>
-          <div className="flex items-center gap-3">
-            <div className="text-4xl">{service.icon}</div>
-            <div>
-              <h2 className="text-xl font-black tracking-tight text-slate-900 dark:text-white">{service.name}</h2>
-              <p className="text-sm text-slate-500 dark:text-slate-400">{service.description}</p>
+      {/* Status accent strip */}
+      <div className={`h-1.5 w-full ${statusTopBar[status]}`} />
+
+      <div className="p-6">
+        {/* Header */}
+        <div className="flex items-start gap-3 mb-4">
+          <div className={`w-11 h-11 rounded-2xl ${statusIconBg[status]} flex items-center justify-center text-xl shrink-0`}>
+            {service.icon}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <h3 className="font-black text-slate-900 dark:text-white tracking-tight">{service.name}</h3>
+              <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide shrink-0 ${statusBadgeClass[status]}`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${statusDotClass[status]} ${status === 'healthy' ? 'animate-pulse' : ''}`} />
+                {data?.loading ? 'Memuat…' : label}
+              </span>
+            </div>
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 leading-snug">{service.description}</p>
+          </div>
+        </div>
+
+        {/* Metrics grid */}
+        <div className="grid grid-cols-2 gap-2.5 mb-3">
+          <div className="rounded-2xl bg-slate-50 dark:bg-slate-950/60 border border-slate-100 dark:border-slate-800 p-3">
+            <p className="text-[9px] uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-1">Requests</p>
+            <p className="text-xl font-black text-slate-900 dark:text-white leading-none">{fmt(metrics?.total_requests)}</p>
+            {!hasTraffic && metrics != null && (
+              <p className="text-[10px] text-slate-400 dark:text-slate-600 mt-1">Belum ada traffic</p>
+            )}
+          </div>
+          <div className="rounded-2xl bg-slate-50 dark:bg-slate-950/60 border border-slate-100 dark:border-slate-800 p-3">
+            <p className="text-[9px] uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-1">Error Rate</p>
+            <p className={`text-xl font-black leading-none ${errRate > 0 ? (errRate < 5 ? 'text-emerald-600 dark:text-emerald-400' : errRate < 15 ? 'text-amber-600 dark:text-amber-400' : 'text-rose-600 dark:text-rose-400') : 'text-slate-900 dark:text-white'}`}>
+              {metrics?.error_rate_percent != null ? `${metrics.error_rate_percent}%` : '—'}
+            </p>
+            <div className="mt-2 h-1 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+              <div className={`h-full rounded-full ${errColor} transition-all duration-500`} style={{ width: `${Math.min(100, errRate)}%` }} />
             </div>
           </div>
         </div>
-        <div className="flex flex-col items-end gap-2">
-          <span className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide ${statusBadge[healthStatus]}`}>
-            <span className={`h-2.5 w-2.5 rounded-full ${healthStatus === 'healthy' ? 'bg-emerald-600' : healthStatus === 'degraded' ? 'bg-amber-500' : healthStatus === 'unhealthy' ? 'bg-rose-500' : 'bg-slate-400'}`} />
-            {data?.loading ? 'Memuat...' : badgeText}
-          </span>
-          <span className="text-[11px] uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">
-            {data?.lastChecked ? `✓ ${data.lastChecked}` : 'Belum dicek'}
-          </span>
-        </div>
-      </div>
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div className="rounded-3xl bg-slate-50 p-4 border border-slate-200 dark:bg-slate-950 dark:border-slate-800">
-          <p className="text-[11px] uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">Requests</p>
-          <p className="mt-3 text-3xl font-black text-slate-900 dark:text-white">{formatNumber(metrics?.total_requests)}</p>
-          <p className="text-sm text-slate-500 dark:text-slate-400">Total success + failed</p>
-        </div>
-        <div className="rounded-3xl bg-slate-50 p-4 border border-slate-200 dark:bg-slate-950 dark:border-slate-800">
-          <p className="text-[11px] uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">Error Rate</p>
-          <p className="mt-3 text-3xl font-black text-slate-900 dark:text-white">{metrics?.error_rate_percent != null ? `${metrics.error_rate_percent}%` : '-'}</p>
-          <div className="mt-3 h-1.5 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
-            <div className={`h-full rounded-full ${errorColor} transition-all`} style={{ width: `${Math.min(100, errorRate * 4)}%` }} />
+        {/* Uptime row */}
+        {uptimeStr && (
+          <div className="mb-3 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-100 dark:border-slate-800 px-3 py-2 flex items-center justify-between">
+            <span className="text-[9px] uppercase tracking-widest text-slate-400 dark:text-slate-500">Uptime</span>
+            <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">{uptimeStr}</span>
           </div>
-        </div>
-      </div>
+        )}
 
-      <div className="mt-6 space-y-3">
-        <ProgressBar label="p50 Latency" value={metrics?.latency?.p50_ms} maxValue={1200} color="bg-fuchsia-500" />
-        <ProgressBar label="p95 Latency" value={metrics?.latency?.p95_ms} maxValue={1200} color="bg-amber-500" />
-        <ProgressBar label="p99 Latency" value={metrics?.latency?.p99_ms} maxValue={1200} color="bg-emerald-500" />
-      </div>
+        {/* Latency bars */}
+        {metrics ? (
+          hasTraffic ? (
+            <div className="space-y-2">
+              <ProgressBar label="p50" value={metrics.latency?.p50_ms} maxValue={1200} color="bg-indigo-500" />
+              <ProgressBar label="p95" value={metrics.latency?.p95_ms} maxValue={1200} color="bg-amber-500" />
+              <ProgressBar label="p99" value={metrics.latency?.p99_ms} maxValue={1200} color="bg-rose-500" />
+            </div>
+          ) : (
+            <p className="text-xs text-slate-400 dark:text-slate-500 text-center py-2">
+              Klik <span className="font-bold">Generate</span> untuk memulai traffic.
+            </p>
+          )
+        ) : (
+          <p className="text-xs text-slate-400 dark:text-slate-500 italic">
+            {service.metricsUrl ? 'Metrics tidak tersedia.' : 'Endpoint metrics tidak dikonfigurasi.'}
+          </p>
+        )}
 
-      <div className="mt-6 grid gap-3 sm:grid-cols-2">
-        <div className="rounded-3xl bg-white/95 p-4 border border-slate-200 dark:bg-slate-950 dark:border-slate-800">
-          <p className="text-[11px] uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">Avg Latency</p>
-          <p className="mt-2 text-2xl font-black text-slate-900 dark:text-white">{metrics?.latency?.avg_ms != null ? `${metrics.latency.avg_ms}ms` : '-'}</p>
-        </div>
-        <div className="rounded-3xl bg-white/95 p-4 border border-slate-200 dark:bg-slate-950 dark:border-slate-800">
-          <p className="text-[11px] uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">Uptime</p>
-          <p className="mt-2 text-2xl font-black text-slate-900 dark:text-white">{metrics?.uptime_seconds != null ? `${Math.round(metrics.uptime_seconds / 60)}m` : '-'}</p>
-        </div>
+        {/* Last checked */}
+        <p className="mt-3 text-[10px] text-slate-400 dark:text-slate-500 text-right">
+          {data?.lastChecked ? `Dicek ${data.lastChecked}` : 'Belum dicek'}
+        </p>
       </div>
     </motion.div>
   );
 }
 
 function LogEntry({ entry, highlight }) {
+  const levelColor = {
+    ERROR: 'text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40',
+    WARN:  'text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40',
+    INFO:  'text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40',
+  }[entry.level] ?? 'text-slate-600 bg-slate-100 dark:bg-slate-800';
+
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`rounded-3xl p-4 border ${highlight ? 'border-[#660000] bg-[#660000]/5 dark:bg-red-500/10' : 'border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900'} transition-all`}
+      className={`rounded-2xl p-4 border transition-all ${
+        highlight
+          ? 'border-[#660000]/30 bg-[#660000]/5 dark:border-red-700/30 dark:bg-red-500/5'
+          : 'border-slate-100 bg-white dark:border-slate-800 dark:bg-slate-900'
+      }`}
     >
-      <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-slate-500 dark:text-slate-400">
-        <span>{entry.timestamp}</span>
-        <span className="font-semibold uppercase tracking-[0.24em] text-xs text-slate-400">{entry.level}</span>
+      <div className="flex flex-wrap items-center gap-2 mb-2">
+        <span className="text-xs text-slate-400 dark:text-slate-500 font-mono">{entry.timestamp}</span>
+        <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-widest ${levelColor}`}>
+          {entry.level}
+        </span>
+        <span className="text-xs text-slate-400 dark:text-slate-500">{entry.service}</span>
       </div>
-      <div className="mt-3">
-        <p className="font-semibold text-slate-900 dark:text-white">{entry.message}</p>
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{entry.service} · {entry.path} · {entry.status}</p>
-      </div>
-      <div className="mt-3 rounded-2xl bg-slate-100 px-3 py-2 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-        Correlation ID: <span className="font-medium">{entry.correlationId}</span>
+      <p className="text-sm font-semibold text-slate-900 dark:text-white">{entry.message}</p>
+      <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{entry.path} · HTTP {entry.status}</p>
+      <div className="mt-2 rounded-xl bg-slate-100 dark:bg-slate-800 px-3 py-1.5 text-xs text-slate-500 dark:text-slate-400 font-mono">
+        corr: <span className="font-semibold text-slate-700 dark:text-slate-300">{entry.correlationId}</span>
       </div>
     </motion.div>
   );
 }
 
-export default function StatusPage() {
-  const navigate = useNavigate();
-  const [serviceState, setServiceState] = useState({});
-  const [lastUpdated, setLastUpdated] = useState('--:--');
-  const [autoRefresh, setAutoRefresh] = useState(true);
+// ── Main Page ─────────────────────────────────────────────────
+
+export default function StatusPage({ inAdminLayout = false }) {
+  const [serviceState, setServiceState]     = useState({});
+  const [lastUpdated, setLastUpdated]       = useState('--:--');
+  const [autoRefresh, setAutoRefresh]       = useState(true);
   const [refreshInterval, setRefreshInterval] = useState(10000);
-  const [logs, setLogs] = useState(initialLogs);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [nextRefreshIn, setNextRefreshIn] = useState(0);
+  const [logs, setLogs]                     = useState(initialLogs);
+  const [searchQuery, setSearchQuery]       = useState('');
+  const [isGenerating, setIsGenerating]     = useState(false);
+  const [nextRefreshIn, setNextRefreshIn]   = useState(0);
 
-  const handleLogout = () => {
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('user');
-    navigate('/login');
-  };
-
-  // Auto-refresh countdown effect
+  // Countdown timer
   useEffect(() => {
-    if (!autoRefresh || refreshInterval === 0) {
-      setNextRefreshIn(0);
-      return;
-    }
-
-    const updateCountdown = () => {
-      setNextRefreshIn((refreshInterval / 1000) | 0);
-    };
-
-    updateCountdown();
-    const timer = setInterval(() => {
-      setNextRefreshIn((prev) => (prev > 0 ? prev - 1 : (refreshInterval / 1000) | 0));
-    }, 1000);
-
-    return () => clearInterval(timer);
+    if (!autoRefresh || refreshInterval === 0) { setNextRefreshIn(0); return; }
+    setNextRefreshIn((refreshInterval / 1000) | 0);
+    const t = setInterval(() => setNextRefreshIn((p) => (p > 1 ? p - 1 : (refreshInterval / 1000) | 0)), 1000);
+    return () => clearInterval(t);
   }, [autoRefresh, refreshInterval]);
 
   const fetchServiceStatus = useCallback(async () => {
-    const nextState = {};
-
+    const next = {};
     await Promise.all(
-      services.map(async (service) => {
-        const current = {
-          loading: true,
-          metricsLoading: false,
-          health: null,
-          metrics: null,
-          lastChecked: null,
-          error: null,
-        };
-
+      services.map(async (svc) => {
+        const entry = { loading: false, health: null, metrics: null, lastChecked: null, error: null };
         try {
-          const response = await fetch(service.healthUrl, { cache: 'no-store' });
-          const health = await response.json();
-          current.health = health;
-          current.lastChecked = new Date().toLocaleTimeString();
-        } catch (err) {
-          current.error = 'Tidak dapat menghubungi service.';
-        }
-
-        if (service.metricsUrl) {
-          current.metricsLoading = true;
+          const r = await fetch(svc.healthUrl, { cache: 'no-store' });
+          entry.health = await r.json();
+          entry.lastChecked = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        } catch { entry.error = 'Tidak terjangkau'; }
+        if (svc.metricsUrl) {
           try {
-            const response = await fetch(service.metricsUrl, { cache: 'no-store' });
-            if (response.ok) {
-              current.metrics = await response.json();
-            }
-          } catch (err) {
-            // Metrics tidak wajib tersedia
-          } finally {
-            current.metricsLoading = false;
-          }
+            const r = await fetch(svc.metricsUrl, { cache: 'no-store' });
+            if (r.ok) entry.metrics = await r.json();
+          } catch { /* metrics optional */ }
         }
-
-        nextState[service.name] = current;
+        next[svc.name] = entry;
       })
     );
-
-    setServiceState(nextState);
-    setLastUpdated(new Date().toLocaleTimeString());
+    setServiceState(next);
+    setLastUpdated(new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
   }, []);
 
-  useEffect(() => {
-    fetchServiceStatus();
-  }, [fetchServiceStatus]);
+  useEffect(() => { fetchServiceStatus(); }, [fetchServiceStatus]);
 
   useEffect(() => {
-    if (!autoRefresh) return undefined;
-    const timer = setInterval(fetchServiceStatus, refreshInterval);
-    return () => clearInterval(timer);
+    if (!autoRefresh) return;
+    const t = setInterval(fetchServiceStatus, refreshInterval);
+    return () => clearInterval(t);
   }, [autoRefresh, refreshInterval, fetchServiceStatus]);
 
   const progressMetrics = useMemo(() => {
-    const allRequests = services.reduce((sum, service) => {
-      const metrics = serviceState[service.name]?.metrics;
-      return sum + (metrics?.total_requests || 0);
-    }, 0);
-
-    const allErrors = services.reduce((sum, service) => {
-      const metrics = serviceState[service.name]?.metrics;
-      return sum + (metrics?.total_errors || 0);
-    }, 0);
-
-    const latencies = services.flatMap((service) => {
-      const metric = serviceState[service.name]?.metrics;
-      return metric?.latency ? [metric.latency.p95_ms, metric.latency.p99_ms].filter(Boolean) : [];
+    const reqs   = services.reduce((s, sv) => s + (serviceState[sv.name]?.metrics?.total_requests ?? 0), 0);
+    const errs   = services.reduce((s, sv) => s + (serviceState[sv.name]?.metrics?.total_errors   ?? 0), 0);
+    const lats   = services.flatMap((sv) => {
+      const m = serviceState[sv.name]?.metrics;
+      return m?.latency ? [m.latency.p95_ms, m.latency.p99_ms].filter(Boolean) : [];
     });
-
     return {
-      requests: allRequests,
-      errors: allErrors,
-      errorRate: allRequests > 0 ? Number(((allErrors / allRequests) * 100).toFixed(2)) : 0,
-      p95: Math.max(...latencies, 0),
-      p99: Math.max(...latencies, 0),
+      requests:  reqs,
+      errors:    errs,
+      errorRate: reqs > 0 ? +((errs / reqs) * 100).toFixed(2) : 0,
+      p95:       Math.max(...lats, 0),
     };
   }, [serviceState]);
 
   const endpointRows = useMemo(() => {
     const rows = [];
-    services.forEach((service) => {
-      const metrics = serviceState[service.name]?.metrics;
-      if (!metrics?.endpoints) return;
-      Object.entries(metrics.endpoints).forEach(([endpoint, stats]) => {
+    services.forEach((svc) => {
+      const m = serviceState[svc.name]?.metrics;
+      if (!m?.endpoints) return;
+      Object.entries(m.endpoints).forEach(([ep, st]) => {
         rows.push({
-          service: service.name,
-          endpoint,
-          count: stats.count,
-          errors: stats.errors,
-          avgLatency: stats.avg_latency_ms,
-          errorRate: stats.count > 0 ? Number(((stats.errors / stats.count) * 100).toFixed(1)) : 0,
+          service: svc.name, endpoint: ep,
+          count: st.count, errors: st.errors, avgLatency: st.avg_latency_ms,
+          errorRate: st.count > 0 ? +((st.errors / st.count) * 100).toFixed(1) : 0,
         });
       });
     });
     return rows.sort((a, b) => b.count - a.count);
   }, [serviceState]);
 
-  const filteredLogs = logs.filter((entry) =>
+  const filteredLogs = logs.filter((e) =>
     !searchQuery ||
-    entry.correlationId.includes(searchQuery.trim()) ||
-    entry.path.includes(searchQuery.trim()) ||
-    entry.message.toLowerCase().includes(searchQuery.toLowerCase())
+    e.correlationId.includes(searchQuery.trim()) ||
+    e.path.includes(searchQuery.trim()) ||
+    e.message.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const handleGenerateTraffic = async () => {
     if (isGenerating) return;
     setIsGenerating(true);
-
-    const newEntries = services.map((service) => ({
-      timestamp: new Date().toLocaleTimeString(),
-      service: service.name,
-      path: service.healthUrl.replace(API_URL, ''),
-      level: 'INFO',
-      message: `Simulated request berhasil pada ${service.name}`,
-      correlationId: createRandomId(),
-      status: 200,
-    }));
-
-    setLogs((prev) => [...newEntries, ...prev].slice(0, 20));
-
     try {
-      await Promise.all(
-        services.map(async (service) => {
-          await fetch(service.healthUrl, { cache: 'no-store' }).catch(() => null);
-          if (service.metricsUrl) {
-            await fetch(service.metricsUrl, { cache: 'no-store' }).catch(() => null);
-          }
-        })
-      );
+      // Hit health endpoints to populate metrics counters in all services
+      await Promise.all(services.map((svc) => fetch(svc.healthUrl, { cache: 'no-store' }).catch(() => null)));
+      // Fetch fresh metrics immediately after so numbers update on screen
+      await fetchServiceStatus();
+      const entries = services.map((svc) => ({
+        timestamp: new Date().toLocaleTimeString(),
+        service: svc.name,
+        path: svc.healthUrl.replace(API_URL, ''),
+        level: 'INFO',
+        message: `Health request recorded — ${svc.name}`,
+        correlationId: createRandomId(),
+        status: 200,
+      }));
+      setLogs((prev) => [...entries, ...prev].slice(0, 20));
     } finally {
       setIsGenerating(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 py-16 px-6 text-slate-900 dark:bg-slate-950 dark:text-white">
-      <div className="mx-auto max-w-7xl">
-        <div className="mb-10 rounded-[2rem] border border-slate-200 bg-gradient-to-br from-[#660000]/5 via-transparent to-transparent p-8 shadow-xl dark:border-slate-800 dark:bg-slate-900/90">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-            <div className="max-w-3xl">
-              <p className="text-xs uppercase tracking-[0.35em] text-[#660000] dark:text-red-400/80">Observability Dashboard</p>
-              <h1 className="mt-4 text-4xl font-black tracking-tight text-slate-900 dark:text-white">Status Sistem & Monitoring</h1>
-              <p className="mt-4 max-w-2xl text-slate-600 dark:text-slate-300">
-                Pantau gateway, auth service, dan item service secara real-time dengan status, latency, request volume, dan log trace yang terintegrasi.
-              </p>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              <button
-                type="button"
-                onClick={fetchServiceStatus}
-                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#660000] px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-[#660000]/20 transition hover:bg-[#550000]"
-              >
-                <RefreshCw className="h-4 w-4" />
-                Coba Lagi
-              </button>
-              <div className="rounded-2xl border border-slate-200 bg-white/90 p-4 dark:border-slate-800 dark:bg-slate-950">
-                <div className="flex items-center justify-between gap-2 text-sm text-slate-500 dark:text-slate-400">
-                  <div className="flex items-center gap-2">
-                    <motion.div
-                      animate={{ scale: autoRefresh ? [1, 1.2, 1] : 1, opacity: autoRefresh ? 1 : 0.5 }}
-                      transition={{ repeat: Infinity, duration: 2 }}
-                    >
-                      <Dot className={`h-4 w-4 ${autoRefresh ? 'text-emerald-500 fill-emerald-500' : 'text-slate-400'}`} />
-                    </motion.div>
-                    <span>Auto-refresh</span>
-                  </div>
-                  <label className="inline-flex items-center gap-2 text-slate-800 dark:text-slate-100">
+    <div className={inAdminLayout ? '' : 'min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white'}>
+      {!inAdminLayout && <Header />}
+
+      <div className={`max-w-7xl mx-auto px-4 sm:px-6 pb-16 space-y-8 ${inAdminLayout ? 'pt-0' : 'pt-28'}`}>
+
+        {/* ── Hero + Controls ─────────────────────────────── */}
+        <div className="rounded-[2rem] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm overflow-hidden">
+          <div className="bg-gradient-to-br from-[#660000]/5 via-transparent to-transparent p-6 lg:p-8">
+            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+
+              {/* Title */}
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.35em] text-[#660000] dark:text-red-400/80 mb-2">
+                  Observability Dashboard
+                </p>
+                <h1 className="text-3xl lg:text-4xl font-black tracking-tight text-slate-900 dark:text-white mb-3">
+                  Status Sistem
+                </h1>
+                <p className="text-slate-500 dark:text-slate-400 max-w-xl leading-relaxed text-sm">
+                  Pantau Gateway, Auth Service, dan Donor Service secara real-time — status, latency, request volume, dan log trace terintegrasi.
+                </p>
+              </div>
+
+              {/* Controls */}
+              <div className="flex flex-col sm:flex-row lg:flex-col gap-3 lg:min-w-[220px]">
+                {/* Refresh button */}
+                <button
+                  type="button"
+                  onClick={fetchServiceStatus}
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#660000] px-5 py-3 text-sm font-bold text-white shadow-md shadow-[#660000]/20 transition hover:bg-[#550000] active:scale-95"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  Refresh Sekarang
+                </button>
+
+                {/* Auto-refresh panel */}
+                <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 p-4 space-y-3">
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300 font-medium">
+                      <motion.div
+                        animate={{ scale: autoRefresh ? [1, 1.3, 1] : 1, opacity: autoRefresh ? 1 : 0.4 }}
+                        transition={{ repeat: Infinity, duration: 2 }}
+                      >
+                        <Dot className={`h-5 w-5 ${autoRefresh ? 'text-emerald-500 fill-emerald-500' : 'text-slate-400'}`} />
+                      </motion.div>
+                      Auto-refresh
+                    </div>
                     <input
                       type="checkbox"
                       checked={autoRefresh}
-                      onChange={() => setAutoRefresh((prev) => !prev)}
-                      className="h-4 w-4 rounded border-slate-300 text-[#660000] focus:ring-[#660000] dark:border-slate-700"
+                      onChange={() => setAutoRefresh((p) => !p)}
+                      className="h-4 w-4 rounded border-slate-300 text-[#660000] focus:ring-[#660000] dark:border-slate-600 cursor-pointer"
                     />
-                  </label>
-                </div>
-                <div className="mt-4 flex items-center gap-3 text-sm text-slate-600 dark:text-slate-400">
-                  <span>Interval</span>
-                  <select
-                    value={refreshInterval}
-                    onChange={(event) => setRefreshInterval(Number(event.target.value))}
-                    className="min-w-[110px] rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-                  >
-                    <option value={5000}>5 detik</option>
-                    <option value={10000}>10 detik</option>
-                    <option value={30000}>30 detik</option>
-                    <option value={0}>Manual</option>
-                  </select>
-                </div>
-                <div className="mt-3 flex flex-col gap-2 text-xs text-slate-500 dark:text-slate-400">
-                  <p>Last update: {lastUpdated}</p>
-                  {autoRefresh && refreshInterval > 0 && (
-                    <p className="font-semibold text-slate-700 dark:text-slate-300">Next refresh: {nextRefreshIn}s</p>
-                  )}
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+                    <span className="shrink-0">Interval</span>
+                    <select
+                      value={refreshInterval}
+                      onChange={(e) => setRefreshInterval(Number(e.target.value))}
+                      className="flex-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-sm text-slate-800 dark:text-slate-100 outline-none"
+                    >
+                      <option value={5000}>5 detik</option>
+                      <option value={10000}>10 detik</option>
+                      <option value={30000}>30 detik</option>
+                      <option value={0}>Manual</option>
+                    </select>
+                  </div>
+                  <div className="text-xs text-slate-400 dark:text-slate-500 space-y-0.5">
+                    <p>Diperbarui: <span className="font-medium text-slate-600 dark:text-slate-300">{lastUpdated}</span></p>
+                    {autoRefresh && refreshInterval > 0 && (
+                      <p>Berikutnya: <span className="font-semibold text-[#660000] dark:text-red-400">{nextRefreshIn}d</span></p>
+                    )}
+                  </div>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-5 py-3 text-sm font-semibold text-rose-700 shadow-sm transition hover:bg-rose-100 dark:border-rose-900/30 dark:bg-rose-950/30 dark:text-rose-400 dark:hover:bg-rose-950/50"
-              >
-                <LogOut className="h-4 w-4" />
-                Keluar
-              </button>
             </div>
           </div>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[1.35fr_0.65fr]">
-          <div className="space-y-6">
-            <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-              <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.35em] text-slate-500 dark:text-slate-400">Traffic</p>
-                    <p className="mt-3 text-3xl font-black text-slate-900 dark:text-white">{formatNumber(progressMetrics.requests)}</p>
-                  </div>
-                  <Wifi className="h-6 w-6 text-[#660000] dark:text-red-400" />
-                </div>
-                <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">Jumlah request terkumpul dari semua layanan.</p>
+        {/* ── Summary Metrics ─────────────────────────────── */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {[
+            { label: 'Total Traffic', value: fmt(progressMetrics.requests), sub: 'Request dari semua layanan', icon: <Wifi className="h-5 w-5 text-[#660000] dark:text-red-400" /> },
+            { label: 'Error Volume',  value: fmt(progressMetrics.errors),   sub: 'Error terdeteksi sesi ini',  icon: <Bug className="h-5 w-5 text-rose-500" /> },
+            { label: 'p95 Latency',   value: progressMetrics.p95 ? `${progressMetrics.p95}ms` : '—', sub: 'Tertinggi antar layanan', icon: <Clock3 className="h-5 w-5 text-amber-500" /> },
+          ].map((c) => (
+            <div key={c.label} className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs uppercase tracking-[0.3em] text-slate-400 dark:text-slate-500">{c.label}</p>
+                {c.icon}
               </div>
-              <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.35em] text-slate-500 dark:text-slate-400">Error Volume</p>
-                    <p className="mt-3 text-3xl font-black text-slate-900 dark:text-white">{formatNumber(progressMetrics.errors)}</p>
-                  </div>
-                  <Bug className="h-6 w-6 text-rose-500" />
-                </div>
-                <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">Total error yang terdeteksi selama sesi monitoring.</p>
+              <p className="text-3xl font-black text-slate-900 dark:text-white">{c.value}</p>
+              <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">{c.sub}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* ── Service Cards ────────────────────────────────── */}
+        <div>
+          <h2 className="text-xs font-black uppercase tracking-[0.35em] text-slate-400 dark:text-slate-500 mb-4">
+            Status Layanan
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {services.map((svc) => (
+              <ServiceCard key={svc.name} service={svc} data={serviceState[svc.name]} />
+            ))}
+          </div>
+        </div>
+
+        {/* ── Endpoint Table + Right Column ───────────────── */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6">
+
+          {/* Endpoint Performance */}
+          <div className="rounded-[2rem] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+            <div className="flex items-center justify-between gap-4 mb-6">
+              <div>
+                <p className="text-xs uppercase tracking-[0.35em] text-slate-400 dark:text-slate-500">Endpoint Performance</p>
+                <h2 className="mt-1 text-lg font-black text-slate-900 dark:text-white">Request per Endpoint</h2>
               </div>
-              <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:col-span-2 xl:col-span-1 dark:border-slate-800 dark:bg-slate-900">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.35em] text-slate-500 dark:text-slate-400">p95 Latency</p>
-                    <p className="mt-3 text-3xl font-black text-slate-900 dark:text-white">{progressMetrics.p95 ? `${progressMetrics.p95}ms` : '-'}</p>
-                  </div>
-                  <Clock3 className="h-6 w-6 text-amber-500" />
-                </div>
-                <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">Waktu respons p95 tertinggi dari layanan yang terhubung.</p>
+              <div className="inline-flex items-center gap-2 rounded-xl bg-slate-100 dark:bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300">
+                <Activity className="h-3.5 w-3.5" /> {endpointRows.length} endpoint
               </div>
             </div>
 
-            <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 overflow-x-auto">
-              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.35em] text-slate-500 dark:text-slate-400">Endpoint Performance</p>
-                  <h2 className="mt-2 text-xl font-black text-slate-900 dark:text-white">Breakdown request per endpoint</h2>
-                </div>
-                <div className="inline-flex items-center gap-2 rounded-2xl bg-slate-100 px-4 py-2 text-sm text-slate-700 dark:bg-slate-800 dark:text-slate-300 whitespace-nowrap">
-                  <Activity className="h-4 w-4" /> {endpointRows.length} endpoint
-                </div>
-              </div>
-
-              <div className="mt-6 overflow-x-auto rounded-3xl border border-slate-200 dark:border-slate-800">
-                <table className="min-w-full text-left text-sm text-slate-600 dark:text-slate-300">
-                  <thead className="bg-slate-100 text-slate-500 dark:bg-slate-950 dark:text-slate-400 whitespace-nowrap">
-                    <tr>
-                      <th className="px-4 py-4 font-semibold text-xs sm:text-sm">Service</th>
-                      <th className="px-4 py-4 font-semibold text-xs sm:text-sm">Endpoint</th>
-                      <th className="px-4 py-4 font-semibold text-xs sm:text-sm">Calls</th>
-                      <th className="px-4 py-4 font-semibold text-xs sm:text-sm">Error %</th>
-                      <th className="px-4 py-4 font-semibold text-xs sm:text-sm">Latency</th>
+            <div className="overflow-x-auto rounded-2xl border border-slate-100 dark:border-slate-800">
+              <table className="min-w-full text-sm text-left">
+                <thead className="bg-slate-50 dark:bg-slate-950 text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  <tr>
+                    {['Service', 'Endpoint', 'Calls', 'Error %', 'Latency'].map((h) => (
+                      <th key={h} className="px-4 py-3 font-semibold whitespace-nowrap">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {endpointRows.length > 0 ? endpointRows.map((row) => (
+                    <tr key={`${row.service}-${row.endpoint}`} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                      <td className="px-4 py-3 font-semibold text-slate-900 dark:text-white whitespace-nowrap">{row.service}</td>
+                      <td className="px-4 py-3 text-slate-600 dark:text-slate-300 font-mono text-xs truncate max-w-[160px]">{row.endpoint}</td>
+                      <td className="px-4 py-3 font-medium">{fmt(row.count)}</td>
+                      <td className="px-4 py-3">
+                        <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-bold ${
+                          row.errorRate < 5
+                            ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400'
+                            : row.errorRate < 15
+                              ? 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400'
+                              : 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-400'
+                        }`}>{row.errorRate}%</span>
+                      </td>
+                      <td className="px-4 py-3 font-medium text-slate-600 dark:text-slate-300">
+                        {row.avgLatency != null ? `${row.avgLatency}ms` : '—'}
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {endpointRows.length > 0 ? (
-                      endpointRows.map((row) => (
-                        <tr key={`${row.service}-${row.endpoint}`} className="border-t border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                          <td className="px-4 py-4 font-semibold text-slate-900 dark:text-white text-xs sm:text-sm">{row.service}</td>
-                          <td className="px-4 py-4 text-xs sm:text-sm truncate">{row.endpoint}</td>
-                          <td className="px-4 py-4 text-xs sm:text-sm font-medium">{formatNumber(row.count)}</td>
-                          <td className="px-4 py-4 text-xs sm:text-sm">
-                            <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${row.errorRate < 5 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400' : row.errorRate < 15 ? 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400' : 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-400'}`}>
-                              {row.errorRate}%
-                            </span>
-                          </td>
-                          <td className="px-4 py-4 text-xs sm:text-sm font-medium">{row.avgLatency != null ? `${row.avgLatency}ms` : '-'}</td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan={5} className="px-4 py-8 text-center text-sm text-slate-500 dark:text-slate-400">
-                          Endpoint metrics belum tersedia. Pastikan service /metrics merespons.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                  )) : (
+                    <tr>
+                      <td colSpan={5} className="px-4 py-10 text-center text-sm text-slate-400 dark:text-slate-500">
+                        Metrics belum tersedia — pastikan <code className="text-xs">/metrics</code> merespons.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
 
-          <div className="space-y-6">
-            <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.35em] text-slate-500 dark:text-slate-400">Error Rate Breakdown</p>
-                  <h2 className="mt-2 text-xl font-black text-slate-900 dark:text-white">Per Service</h2>
-                </div>
-              </div>
+          {/* Right column: Error rate + Log viewer */}
+          <div className="space-y-5">
 
-              <div className="mt-6 space-y-4">
-                {services.map((service) => {
-                  const errorRate = serviceState[service.name]?.metrics?.error_rate_percent || 0;
-                  const errorColor = errorRate < 5 ? 'bg-emerald-500' : errorRate < 15 ? 'bg-amber-500' : 'bg-rose-500';
+            {/* Error rate breakdown */}
+            <div className="rounded-[2rem] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+              <p className="text-xs uppercase tracking-[0.35em] text-slate-400 dark:text-slate-500 mb-1">Error Rate</p>
+              <h2 className="text-lg font-black text-slate-900 dark:text-white mb-5">Per Layanan</h2>
+              <div className="space-y-4">
+                {services.map((svc) => {
+                  const er   = serviceState[svc.name]?.metrics?.error_rate_percent ?? 0;
+                  const col  = er < 5 ? 'bg-emerald-500' : er < 15 ? 'bg-amber-500' : 'bg-rose-500';
+                  const badge = er < 5
+                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400'
+                    : er < 15
+                      ? 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400'
+                      : 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-400';
                   return (
-                    <div key={service.name} className="space-y-2">
+                    <div key={svc.name} className="space-y-1.5">
                       <div className="flex items-center justify-between text-sm">
-                        <span className="font-semibold text-slate-700 dark:text-slate-300">{service.name}</span>
-                        <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold ${errorRate < 5 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400' : errorRate < 15 ? 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400' : 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-400'}`}>
-                          {errorRate}%
-                        </span>
+                        <span className="font-semibold text-slate-700 dark:text-slate-300">{svc.name}</span>
+                        <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${badge}`}>{er}%</span>
                       </div>
-                      <div className="h-2.5 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+                      <div className="h-2 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
                         <motion.div
                           initial={{ width: 0 }}
-                          animate={{ width: `${Math.min(100, errorRate * 4)}%` }}
-                          transition={{ type: 'spring', stiffness: 100, damping: 20 }}
-                          className={`h-full rounded-full ${errorColor} transition-colors`}
+                          animate={{ width: `${Math.min(100, er)}%` }}
+                          transition={{ type: 'spring', stiffness: 80, damping: 18 }}
+                          className={`h-full rounded-full ${col}`}
                         />
                       </div>
                     </div>
@@ -571,106 +560,107 @@ export default function StatusPage() {
               </div>
             </div>
 
-            <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-              <div className="flex items-center justify-between gap-4">
+            {/* Log viewer */}
+            <div className="rounded-[2rem] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+              <div className="flex items-center justify-between gap-3 mb-4">
                 <div>
-                  <p className="text-xs uppercase tracking-[0.35em] text-slate-500 dark:text-slate-400">Error Tracking</p>
-                  <h2 className="mt-2 text-xl font-black text-slate-900 dark:text-white">Log Viewer</h2>
+                  <p className="text-xs uppercase tracking-[0.35em] text-slate-400 dark:text-slate-500 mb-1">Error Tracking</p>
+                  <h2 className="text-lg font-black text-slate-900 dark:text-white">Log Viewer</h2>
                 </div>
                 <button
                   type="button"
                   onClick={handleGenerateTraffic}
-                  className="inline-flex items-center gap-2 rounded-2xl bg-[#660000] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#550000] disabled:cursor-not-allowed disabled:opacity-60"
                   disabled={isGenerating}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-[#660000] hover:bg-[#550000] px-3 py-2 text-xs font-bold text-white transition disabled:opacity-60 disabled:cursor-not-allowed shrink-0"
                 >
-                  <Zap className="h-4 w-4" />
-                  {isGenerating ? 'Menguji...' : 'Generate Traffic'}
+                  <Zap className="h-3.5 w-3.5" />
+                  {isGenerating ? 'Menguji…' : 'Generate'}
                 </button>
               </div>
 
-              <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex-1 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-950">
-                  <div className="flex items-center gap-3">
-                    <Search className="h-4 w-4 text-slate-500 dark:text-slate-400" />
-                    <input
-                      type="search"
-                      value={searchQuery}
-                      onChange={(event) => setSearchQuery(event.target.value)}
-                      placeholder="Cari Correlation ID atau path..."
-                      className="w-full bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400 dark:text-slate-100 dark:placeholder:text-slate-500"
-                    />
-                  </div>
-                </div>
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300">
-                  {filteredLogs.length} log ditemukan
-                </div>
+              {/* Search */}
+              <div className="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 px-3 py-2.5 mb-4">
+                <Search className="h-4 w-4 text-slate-400 shrink-0" />
+                <input
+                  type="search"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Cari correlation ID, path…"
+                  className="flex-1 bg-transparent text-sm text-slate-900 dark:text-slate-100 outline-none placeholder:text-slate-400"
+                />
+                <span className="text-xs text-slate-400 font-medium shrink-0">{filteredLogs.length}</span>
               </div>
 
-              <div className="mt-6 space-y-3">
-                {filteredLogs.length > 0 ? (
-                  filteredLogs.map((entry) => (
-                    <LogEntry key={`${entry.correlationId}-${entry.timestamp}-${entry.path}`} entry={entry} highlight={searchQuery && entry.correlationId.includes(searchQuery)} />
-                  ))
-                ) : (
-                  <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-10 text-center text-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-400">
-                    Tidak ada log yang sesuai. Coba kata kunci lain atau generate traffic untuk mensimulasikan data.
+              <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
+                {filteredLogs.length > 0 ? filteredLogs.map((e) => (
+                  <LogEntry
+                    key={`${e.correlationId}-${e.timestamp}`}
+                    entry={e}
+                    highlight={!!(searchQuery && e.correlationId.includes(searchQuery))}
+                  />
+                )) : (
+                  <div className="rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/30 p-8 text-center text-sm text-slate-400 dark:text-slate-500">
+                    Tidak ada log yang sesuai.
                   </div>
                 )}
               </div>
             </div>
 
-            <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-              <div className="flex items-center gap-3 text-slate-500 dark:text-slate-400">
-                <Sparkles className="h-5 w-5 text-[#660000] dark:text-red-400" />
-                <p className="text-sm font-semibold uppercase tracking-[0.35em]">Quick Tips</p>
-              </div>
-              <ul className="mt-5 space-y-3 text-sm text-slate-600 dark:text-slate-300">
-                <li className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-950">Gunakan fitur <strong>Generate Traffic</strong> untuk melihat reaktivitas dashboard dan memicu update metrics.</li>
-                <li className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-950">Masukkan <strong>Correlation ID</strong> untuk menyorot log terkait satu request end-to-end.</li>
-                <li className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-950">Jika endpoint metrics kosong, pastikan service mendukung <code>/metrics</code> dan respons JSON berformat.</li>
-              </ul>
-            </div>
           </div>
         </div>
 
-        <div className="mt-8 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <div className="flex items-center justify-between gap-4">
+        {/* ── Performance Summary ──────────────────────────── */}
+        <div className="rounded-[2rem] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+          <div className="flex items-center justify-between gap-4 mb-6">
             <div>
-              <p className="text-xs uppercase tracking-[0.35em] text-slate-500 dark:text-slate-400">Observability</p>
-              <h2 className="mt-2 text-xl font-black text-slate-900 dark:text-white">Ringkasan Kinerja</h2>
+              <p className="text-xs uppercase tracking-[0.35em] text-slate-400 dark:text-slate-500">Observability</p>
+              <h2 className="mt-1 text-lg font-black text-slate-900 dark:text-white">Ringkasan Kinerja</h2>
             </div>
-            <div className="inline-flex items-center gap-2 rounded-2xl bg-slate-100 px-4 py-2 text-sm text-slate-700 dark:bg-slate-800 dark:text-slate-300">
-              <ChevronRight className="h-4 w-4" /> Auto-refresh {autoRefresh ? 'Aktif' : 'Nonaktif'}
-            </div>
+            <span className="inline-flex items-center gap-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300">
+              <ChevronRight className="h-3.5 w-3.5" />
+              Auto-refresh {autoRefresh ? 'Aktif' : 'Nonaktif'}
+            </span>
           </div>
 
-          <div className="mt-6 grid gap-6 lg:grid-cols-3">
-            <div className="rounded-3xl bg-slate-50 p-5 dark:bg-slate-950">
-              <p className="text-xs uppercase tracking-[0.35em] text-slate-500 dark:text-slate-400">Traffic</p>
-              <p className="mt-4 text-3xl font-black text-slate-900 dark:text-white">{formatNumber(progressMetrics.requests)}</p>
-              <div className="mt-4 h-2 rounded-full bg-slate-200 dark:bg-slate-800">
-                <div className="h-full w-1/2 rounded-full bg-[#660000]" />
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+            {[
+              {
+                label: 'Traffic',
+                value: fmt(progressMetrics.requests),
+                bar: 'bg-[#660000]',
+                w: progressMetrics.requests > 0 ? 100 : 0,
+              },
+              {
+                label: 'Errors',
+                value: fmt(progressMetrics.errors),
+                bar: 'bg-rose-500',
+                w: progressMetrics.requests > 0
+                  ? Math.min(100, Math.round((progressMetrics.errors / progressMetrics.requests) * 100))
+                  : 0,
+              },
+              {
+                label: 'Error Rate',
+                value: `${progressMetrics.errorRate}%`,
+                bar: progressMetrics.errorRate < 5 ? 'bg-emerald-500' : progressMetrics.errorRate < 15 ? 'bg-amber-500' : 'bg-rose-500',
+                w: Math.min(100, progressMetrics.errorRate),
+              },
+            ].map((c) => (
+              <div key={c.label} className="rounded-2xl bg-slate-50 dark:bg-slate-950 p-5">
+                <p className="text-xs uppercase tracking-[0.3em] text-slate-400 dark:text-slate-500">{c.label}</p>
+                <p className="mt-3 text-3xl font-black text-slate-900 dark:text-white">{c.value}</p>
+                <div className="mt-3 h-1.5 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${c.w}%` }}
+                    transition={{ type: 'spring', stiffness: 80, damping: 18 }}
+                    className={`h-full rounded-full ${c.bar}`}
+                  />
+                </div>
               </div>
-            </div>
-            <div className="rounded-3xl bg-slate-50 p-5 dark:bg-slate-950">
-              <p className="text-xs uppercase tracking-[0.35em] text-slate-500 dark:text-slate-400">Errors</p>
-              <p className="mt-4 text-3xl font-black text-slate-900 dark:text-white">{formatNumber(progressMetrics.errors)}</p>
-              <div className="mt-4 h-2 rounded-full bg-slate-200 dark:bg-slate-800">
-                <div className="h-full w-[40%] rounded-full bg-rose-500" />
-              </div>
-            </div>
-            <div className="rounded-3xl bg-slate-50 p-5 dark:bg-slate-950">
-              <p className="text-xs uppercase tracking-[0.35em] text-slate-500 dark:text-slate-400">Error Rate</p>
-              <p className="mt-4 text-3xl font-black text-slate-900 dark:text-white">{progressMetrics.errorRate}%</p>
-              <div className="mt-4 h-2 rounded-full bg-slate-200 dark:bg-slate-800">
-                <div
-                  className="h-full rounded-full bg-amber-500"
-                  style={{ width: `${Math.min(100, Math.max(0, progressMetrics.errorRate))}%` }}
-                />
-              </div>
-            </div>
+            ))}
           </div>
         </div>
+
       </div>
     </div>
   );

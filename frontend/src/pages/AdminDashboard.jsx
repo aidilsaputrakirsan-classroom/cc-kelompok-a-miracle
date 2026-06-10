@@ -1,6 +1,5 @@
 import { useEffect, useState, lazy, Suspense } from 'react';
-import { Users, Droplets, CheckCircle, Clock, ArrowUpRight, ArrowLeft } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Users, Droplets, CheckCircle, Clock, ArrowUpRight } from 'lucide-react';
 import { apiService } from '../services/api';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import useDarkMode from '../hooks/useDarkMode';
@@ -64,45 +63,37 @@ export const AdminDashboard = () => {
 
   return (
     <div className="space-y-8">
-      <div className="bg-[#660000] -m-6 lg:-m-10 p-6 lg:p-10 mb-8 text-white rounded-b-[3rem] shadow-lg shadow-black/10 dark:bg-red-950/80 transition-colors">
-        <div className="flex items-center gap-4 mb-6">
-          <Link 
-            to="/" 
-            className="p-2 hover:bg-white/10 rounded-full transition-colors text-white/80 dark:text-white"
-            title="Kembali ke Beranda"
-          >
-            <ArrowLeft className="w-6 h-6" />
-          </Link>
-        </div>
-        <h1 className="text-3xl lg:text-4xl font-black mb-2">Dashboard Pendonor</h1>
-        <p className="text-white/80 font-medium dark:text-slate-300">Pantau data pendonor dan statistik donor darah secara real-time.</p>
+      {/* Admin page header — indigo gradient, clearly distinct from landing's solid crimson */}
+      <div className="bg-gradient-to-br from-indigo-900 via-indigo-800 to-slate-900 -m-6 lg:-m-10 p-6 lg:p-10 mb-8 text-white rounded-b-[3rem] shadow-lg shadow-indigo-900/20 dark:from-indigo-950 dark:via-indigo-900 dark:to-slate-950 transition-colors">
+        <h1 className="text-3xl lg:text-4xl font-black mb-2">Dashboard Admin</h1>
+        <p className="text-white/70 font-medium">Pantau data pendonor dan statistik donor darah secara real-time.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard 
-          title="Total Pendonor" 
-          value={stats.total_pendonor} 
-          icon={Users} 
-          trend="+12%" 
-          color="bg-blue-500 dark:bg-blue-600" 
+        <StatCard
+          title="Total Pendonor"
+          value={stats.total_pendonor}
+          icon={Users}
+          trend="+12%"
+          color="bg-indigo-600 dark:bg-indigo-700"
         />
-        <StatCard 
-          title="Pendonor Siap" 
-          value={stats.pendonor_siap_donor || 0} 
-          icon={Droplets} 
-          color="bg-red-600 dark:bg-red-700" 
+        <StatCard
+          title="Pendonor Siap"
+          value={stats.pendonor_siap_donor || 0}
+          icon={Droplets}
+          color="bg-[#660000] dark:bg-red-800"
         />
-        <StatCard 
-          title="Verifikasi Pending" 
-          value={stats.verifikasi_pending || 0} 
-          icon={Clock} 
-          color="bg-amber-400 dark:bg-amber-500" 
+        <StatCard
+          title="Verifikasi Pending"
+          value={stats.verifikasi_pending || 0}
+          icon={Clock}
+          color="bg-amber-500 dark:bg-amber-600"
         />
-        <StatCard 
-          title="Donor Berhasil" 
-          value={stats.donor_berhasil || 0} 
-          icon={CheckCircle} 
-          color="bg-emerald-500 dark:bg-emerald-600" 
+        <StatCard
+          title="Donor Berhasil"
+          value={stats.donor_berhasil || 0}
+          icon={CheckCircle}
+          color="bg-emerald-500 dark:bg-emerald-600"
         />
       </div>
 
