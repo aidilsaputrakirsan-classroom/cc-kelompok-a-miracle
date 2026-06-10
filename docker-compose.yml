@@ -1,6 +1,6 @@
 # ============================================================
 # Docker Compose — Tracelt Microservices
-# Komputasi Awan — SI ITK (Modul 14 Ready)
+# Komputasi Awan — SI ITK
 # ============================================================
 # Usage:
 #   docker compose up -d          # Start semua services
@@ -59,15 +59,9 @@ services:
     environment:
       DATABASE_URL: postgresql://postgres:postgres@auth-db:5432/auth_db
       SECRET_KEY: ${SECRET_KEY:-supersecretkeychangeme123}
-      CORS_ORIGINS: "http://localhost,http://localhost:5173,http://127.0.0.1,http://localhost:80,https://tracelt-frontend-production.up.railway.app"
+      CORS_ORIGINS: "http://localhost,http://localhost:5173,http://127.0.0.1,http://localhost:80"
       SERVICE_NAME: auth-service
       LOG_LEVEL: INFO
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-        tag: "auth-service"
     depends_on:
       auth-db:
         condition: service_healthy
@@ -88,62 +82,62 @@ services:
           memory: 256M
 
   item-service:
-      build: ./services/item-service
-      container_name: tracelt-item-service
-      environment:
-        DATABASE_URL: postgresql://postgres:postgres@item-db:5432/item_db
-        AUTH_SERVICE_URL: http://auth-service:8001
-        CORS_ORIGINS: "http://localhost,http://localhost:5173,http://localhost:80,https://tracelt-frontend-production.up.railway.app"
-        SERVICE_NAME: item-service
-        LOG_LEVEL: INFO
-      logging:
-        driver: "json-file"
-        options:
-          max-size: "10m"
-          max-file: "3"
-          tag: "item-service"
-      depends_on:
-        item-db:
-          condition: service_healthy
-        auth-service:
-          condition: service_healthy
-      healthcheck:
-        test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
-        interval: 15s
-        timeout: 10s
-        retries: 8
-        start_period: 30s     # Ditambah
-      restart: unless-stopped
-      deploy:
-        resources:
-          limits:
-            cpus: '0.5'
-            memory: 512M
-          reservations:
-            cpus: '0.2'
-            memory: 256M
+    build: ./services/item-service
+    container_name: tracelt-item-service
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@item-db:5432/item_db
+      AUTH_SERVICE_URL: http://auth-service:8001
+      CORS_ORIGINS: "http://localhost,http://localhost:5173,http://tracelt-frontend-production.up.railway.app,https://tracelt-frontend-production.up.railway.app,http://localhost:80"
+      SERVICE_NAME: item-service
+      LOG_LEVEL: INFO
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-files: "3"
+        tag: "item-service"
+    depends_on:
+      item-db:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      interval: 15s
+      timeout: 30s
+      retries: 8
+      start_period: 30s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.2'
+          memory: 256M
 
   # ==================== FRONTEND ====================
 
   frontend:
-      build:
-        context: ./frontend
-        dockerfile: Dockerfile
-        args:
-          VITE_API_URL: http://localhost
-      container_name: tracelt-frontend
-      healthcheck:
-        test: ["CMD", "curl", "-f", "http://localhost:80/"]
-        interval: 30s
-        timeout: 10s
-        retries: 5
-        start_period: 30s   # Ditambah
-      restart: unless-stopped
-      deploy:
-        resources:
-          limits:
-            cpus: '0.3'
-            memory: 300M
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost
+    container_name: tracelt-frontend
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.3'
+          memory: 300M
 
   # ==================== GATEWAY (Nginx) ====================
 
