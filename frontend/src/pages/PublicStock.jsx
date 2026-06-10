@@ -7,29 +7,35 @@ import { Link } from 'react-router-dom';
 import { apiService } from '../services/api';
 import { Header } from '../components/Header';
 import { LoadingSpinner } from '../components/LoadingSpinner';
+import { ServiceUnavailable } from '../components/ServiceUnavailable';
 
 export const PublicStock = () => {
   const [stockData, setStockData] = useState({});
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
+  const fetchStock = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await apiService.getPublicBloodStock();
+      // Convert array to object for easier access
+      const stockMap = {};
+      response.data.blood_stock.forEach(item => {
+        stockMap[item.golongan_darah] = item.jumlah_stok;
+      });
+      setStockData(stockMap);
+    } catch (err) {
+      console.error('Error fetching blood stock:', err);
+      setError(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchStock = async () => {
-      try {
-        const response = await apiService.getPublicBloodStock();
-        // Convert array to object for easier access
-        const stockMap = {};
-        response.data.blood_stock.forEach(item => {
-          stockMap[item.golongan_darah] = item.jumlah_stok;
-        });
-        setStockData(stockMap);
-      } catch (err) {
-        console.error('Error fetching blood stock:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchStock();
   }, []);
 
@@ -80,6 +86,12 @@ export const PublicStock = () => {
                       <LoadingSpinner />
                     </td>
                   </tr>
+                ) : error ? (
+                  <tr>
+                    <td colSpan="2" className="px-10 py-12">
+                      <ServiceUnavailable onRetry={fetchStock} error={error} />
+                    </td>
+                  </tr>
                 ) : (
                   bloodTypes.map((type) => (
                     <tr key={type} className="hover:bg-slate-50 transition-all dark:hover:bg-slate-800/30 group">
@@ -96,7 +108,7 @@ export const PublicStock = () => {
                       </td>
                       <td className="px-10 py-8 text-right">
                         <div className="flex items-center justify-end gap-3 translate-x-2 group-hover:translate-x-0 transition-transform duration-500">
-                          <span className="text-4xl font-black text-slate-900 dark:text-white tabular-nums">{stockData[type] || 0}</span>
+                           <span className="text-4xl font-black text-slate-900 dark:text-white tabular-nums">{stockData[type] || 0}</span>
                           <Droplets className={`w-8 h-8 transition-all duration-500 ${stockData[type] > 0 ? 'text-[#660000] dark:text-red-500 drop-shadow-lg' : 'text-slate-300 dark:text-slate-700'}`} />
                         </div>
                       </td>

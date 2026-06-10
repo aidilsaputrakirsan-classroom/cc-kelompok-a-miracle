@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from database import engine, get_db, Base
 from models import Item
-from schemas import ItemCreate, ItemUpdate, ItemResponse, ItemListResponse
+from schemas import ItemCreate, ItemUpdate, ItemResponse, ItemListResponse, ItemStatsResponse
 from auth_client import verify_token_with_auth_service
 
 # Create tables
@@ -36,12 +36,20 @@ app.add_middleware(
 # ENDPOINTS
 # =====================
 
+from auth_client import auth_circuit  # Import circuit breaker instance
+
 @app.get("/health")
 def health_check():
+    cb_status = auth_circuit.get_status()
+    overall = "healthy" if cb_status["state"] == "CLOSED" else "degraded"
+
     return {
-        "status": "healthy",
-        "service": "traceit-donation-service",
-        "version": "2.0.0",
+        "status": overall,
+        "service": "item-service",
+        "version": "2.1.0",
+        "dependencies": {
+            "auth-service": cb_status,
+        },
     }
 
 
@@ -77,6 +85,35 @@ async def get_items(
     total = query.count()
     items = query.offset(skip).limit(limit).all()
     return ItemListResponse(total=total, items=items)
+
+
+@app.get("/items/stats", response_model=ItemStatsResponse)
+async def get_item_stats(
+    user: dict = Depends(verify_token_with_auth_service),
+    db: Session = Depends(get_db),
+):
+    """Ringkasan statistik data donor milik user yang login."""
+    query = db.query(Item).filter(Item.owner_id == user["user_id"])
+    total_items = query.count()
+
+    if total_items == 0:
+        return ItemStatsResponse(
+            total_items=0,
+            total_value=0.0,
+            termurah=None,
+            termahal=None,
+        )
+
+    items = query.all()
+    totals = [item.total_donor for item in items]
+    total_value = sum(totals)
+
+    return ItemStatsResponse(
+        total_items=total_items,
+        total_value=total_value,
+        termurah=min(totals),
+        termahal=max(totals),
+    )
 
 
 @app.get("/items/{item_id}", response_model=ItemResponse)
