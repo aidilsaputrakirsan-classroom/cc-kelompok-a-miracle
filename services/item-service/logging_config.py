@@ -38,6 +38,16 @@ class JSONFormatter(logging.Formatter):
             log_entry["duration_ms"] = record.duration_ms
         if hasattr(record, "user_id"):
             log_entry["user_id"] = record.user_id
+        if hasattr(record, "alert"):
+            log_entry["alert"] = record.alert
+        if hasattr(record, "error_rate_percent"):
+            log_entry["error_rate_percent"] = record.error_rate_percent
+        if hasattr(record, "window_requests"):
+            log_entry["window_requests"] = record.window_requests
+        if hasattr(record, "window_errors"):
+            log_entry["window_errors"] = record.window_errors
+        if hasattr(record, "window_seconds"):
+            log_entry["window_seconds"] = record.window_seconds
 
         # Tambah exception info jika ada
         if record.exc_info and record.exc_info[0] is not None:
