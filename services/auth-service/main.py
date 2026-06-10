@@ -16,7 +16,8 @@ import jwt
 
 from database import engine, get_db, Base
 from models import User
-from schemas import (UserCreate, UserResponse, LoginRequest,TokenResponse, TokenVerifyResponse)
+from schemas import (UserCreate, PenggunaCreate, AdminCreate, UserResponse,
+                     LoginRequest, TokenResponse, TokenVerifyResponse)
 from logging_config import setup_logging
 from logging_middleware import RequestLoggingMiddleware
 from metrics import metrics
@@ -35,19 +36,16 @@ app = FastAPI(
     version="2.0.0",
 )
 
-# CORS - Diperbaiki untuk production + development
-CORS_ORIGINS = os.getenv(
-    "CORS_ORIGINS", 
-    "http://localhost,http://localhost:80,http://localhost:3000,http://127.0.0.1,http://127.0.0.1:80"
-).split(",")
+# CORS - allow_origins=["*"] aman karena auth pakai JWT Bearer header (bukan cookie)
+# allow_credentials harus False jika allow_origins=["*"]
+_cors_raw = os.getenv("CORS_ORIGINS", "")
+CORS_ORIGINS = _cors_raw.split(",") if _cors_raw else ["*"]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=CORS_ORIGINS,
-    allow_credentials=True,
-    # # Mengizinkan semua HTTP Methods (GET, POST, dll)
+    allow_credentials=False,
     allow_methods=["*"],
-    # Mengizinkan semua HTTP Headers
     allow_headers=["*"],
     expose_headers=["*"],
 )
@@ -89,6 +87,21 @@ def decode_token(token: str) -> dict:
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid token")
 
+def _do_login(login_data: LoginRequest, db: Session, user_type: str) -> TokenResponse:
+    """Internal helper: authenticate user and return JWT with given user_type."""
+    user = db.query(User).filter(User.email == login_data.email).first()
+    if not user or not verify_password(login_data.password, user.hashed_password):
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    token = create_access_token({
+        "sub": str(user.id),
+        "email": user.email,
+        "name": user.name,
+        "nama_pengguna": user.name,
+        "user_type": user_type,
+    })
+    return TokenResponse(access_token=token)
+
 
 # ===================== ENDPOINTS =====================
 # endpoint ini memang berbeda dengan full endpoint yang ada di folder backend
@@ -118,29 +131,100 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
         db.commit()
         db.refresh(user)
         return user
+    except HTTPException:
+        raise
     except Exception as e:
         db.rollback()
-        print(f"[REGISTER ERROR] {str(e)}")
+        logger.error(f"Register failed: {str(e)}", extra={"error": str(e)})
         raise HTTPException(status_code=500, detail="Register failed")
+
+
+@app.post("/pengguna/register", response_model=UserResponse, status_code=201)
+def register_pengguna(user_data: PenggunaCreate, db: Session = Depends(get_db)):
+    """Register pengguna baru via frontend (field: nama_pengguna)."""
+    try:
+        existing = db.query(User).filter(User.email == user_data.email).first()
+        if existing:
+            raise HTTPException(status_code=400, detail="Email already registered")
+
+        user = User(
+            email=user_data.email,
+            name=user_data.nama_pengguna,
+            hashed_password=hash_password(user_data.password),
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        return user
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Register pengguna failed: {str(e)}", extra={"error": str(e)})
+        raise HTTPException(status_code=500, detail="Register failed")
+
+
+@app.post("/admin/register", response_model=UserResponse, status_code=201)
+def register_admin(user_data: AdminCreate, db: Session = Depends(get_db)):
+    """Register admin baru via frontend (field: nama_admin)."""
+    try:
+        existing = db.query(User).filter(User.email == user_data.email).first()
+        if existing:
+            raise HTTPException(status_code=400, detail="Email already registered")
+
+        user = User(
+            email=user_data.email,
+            name=user_data.nama_admin,
+            hashed_password=hash_password(user_data.password),
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        return user
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Register admin failed: {str(e)}", extra={"error": str(e)})
+        raise HTTPException(status_code=500, detail="Register failed")
+
 
 # Login pengguna dan kembalikan access token (JWT) jika sukses.
 @app.post("/login", response_model=TokenResponse)
 def login(login_data: LoginRequest, db: Session = Depends(get_db)):
     """Login dan dapatkan JWT token."""
     try:
-        user = db.query(User).filter(User.email == login_data.email).first()
-        if not user or not verify_password(login_data.password, user.hashed_password):
-            raise HTTPException(status_code=401, detail="Invalid email or password")
-
-        token = create_access_token({
-            "sub": str(user.id),
-            "email": user.email,
-            "name": user.name,
-        })
-        return TokenResponse(access_token=token)
+        return _do_login(login_data, db, user_type="pengguna")
+    except HTTPException:
+        raise
     except Exception as e:
-        print(f"[LOGIN ERROR] {str(e)}")
+        logger.error(f"Login failed: {str(e)}", extra={"error": str(e)})
         raise HTTPException(status_code=500, detail="Login failed")
+
+
+@app.post("/pengguna/login", response_model=TokenResponse)
+def login_pengguna(login_data: LoginRequest, db: Session = Depends(get_db)):
+    """Login pengguna (dipanggil via /auth/pengguna/login dari frontend)."""
+    try:
+        return _do_login(login_data, db, user_type="pengguna")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Login pengguna failed: {str(e)}", extra={"error": str(e)})
+        raise HTTPException(status_code=500, detail="Login failed")
+
+
+@app.post("/admin/login", response_model=TokenResponse)
+def login_admin(login_data: LoginRequest, db: Session = Depends(get_db)):
+    """Login admin (dipanggil via /auth/admin/login dari frontend)."""
+    try:
+        return _do_login(login_data, db, user_type="admin")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Login admin failed: {str(e)}", extra={"error": str(e)})
+        raise HTTPException(status_code=500, detail="Login failed")
+
 
 # Verifikasi token JWT yang dikirim melalui HTTP Authorization Header
 @app.get("/verify", response_model=TokenVerifyResponse)
@@ -155,7 +239,9 @@ def verify_token(authorization: str = Header(None)):
     return TokenVerifyResponse(
         user_id=int(payload["sub"]),
         email=payload["email"],
-        name=payload["name"],
+        name=payload.get("name", ""),
+        nama_pengguna=payload.get("nama_pengguna") or payload.get("name"),
+        user_type=payload.get("user_type", "pengguna"),
     )
 
 # Mengembalikan data metrik aplikasi (misal: jumlah request, latency) untuk kebutuhan monitoring sistem
