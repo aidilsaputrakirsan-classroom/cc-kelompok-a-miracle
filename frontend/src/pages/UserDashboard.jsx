@@ -58,7 +58,7 @@ export const UserDashboard = () => {
   };
 
   const totalRiwayat = riwayats.length;
-  const verifiedCount = riwayats.filter((item) => item.status_verifikasi).length;
+  const verifiedCount = riwayats.filter((riwayat) => riwayat.status_verifikasi).length;
   const pendingCount = totalRiwayat - verifiedCount;
 
   if (loading && !error) {
@@ -157,21 +157,21 @@ export const UserDashboard = () => {
                 </div>
               ) : (
                 <div className="grid gap-6">
-                  {riwayats.map((item) => (
-                    <div key={item.id_riwayat} className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                  {riwayats.map((riwayat) => (
+                    <div key={riwayat.id_riwayat} className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                         <div>
-                          <p className="text-sm text-slate-500">ID Riwayat #{item.id_riwayat}</p>
-                          <h3 className="text-xl font-semibold text-slate-900 dark:text-white">Pendonor #{item.id_pendonor}</h3>
+                          <p className="text-sm text-slate-500">ID Riwayat #{riwayat.id_riwayat}</p>
+                          <h3 className="text-xl font-semibold text-slate-900 dark:text-white">Pendonor #{riwayat.id_pendonor}</h3>
                         </div>
-                        <span className={`rounded-full px-4 py-2 text-xs font-semibold ${item.status_verifikasi ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
-                          {item.status_verifikasi ? 'Terverifikasi' : 'Pending'}
+                        <span className={`rounded-full px-4 py-2 text-xs font-semibold ${riwayat.status_verifikasi ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                          {riwayat.status_verifikasi ? 'Terverifikasi' : 'Pending'}
                         </span>
                       </div>
                       <div className="mt-5 grid gap-3 sm:grid-cols-2">
                         <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-950">
                           <p className="text-sm text-slate-500">Golongan Darah</p>
-                          <p className="mt-2 text-lg font-semibold text-slate-900 dark:text-white">{item.golongan_darah}</p>
+                          <p className="mt-2 text-lg font-semibold text-slate-900 dark:text-white">{riwayat.golongan_darah}</p>
                         </div>
                         <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-950">
                           <p className="text-sm text-slate-500">Jenis Laporan</p>

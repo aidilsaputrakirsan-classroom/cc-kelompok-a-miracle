@@ -1,5 +1,3 @@
-App.jsx
-
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useEffect, useState, lazy, Suspense } from 'react';
 const LandingPage = lazy(() => import('./pages/LandingPage').then((module) => ({ default: module.LandingPage })));
@@ -11,6 +9,7 @@ const DonorList = lazy(() => import('./pages/DonorList').then((module) => ({ def
 const VerificationQueue = lazy(() => import('./pages/VerificationQueue').then((module) => ({ default: module.VerificationQueue })));
 const DonorRegistration = lazy(() => import('./pages/DonorRegistration').then((module) => ({ default: module.DonorRegistration })));
 const PublicStock = lazy(() => import('./pages/PublicStock').then((module) => ({ default: module.PublicStock })));
+const StatusPage = lazy(() => import('./pages/StatusPage'));
 const AboutPage = lazy(() => import('./components/AboutPage'));
 import { AdminLayout } from './components/AdminLayout';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -153,6 +152,7 @@ export default function App() {
             <Route path="/stock" element={<PublicStock />} />
             <Route path="/about" element={<AboutPage />} />
 
+            <Route path="/status" element={<StatusPage />} />
             <Route
               path="/admin"
               element={
