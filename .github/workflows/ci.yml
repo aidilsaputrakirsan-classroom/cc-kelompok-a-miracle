@@ -160,6 +160,33 @@ jobs:
       - name: 🛑 Stop services
         if: always()
         run: docker compose down -v
+
+
+        # === EXPORT DOCKER LOGS (Tugas Lead CI/CD) ===
+      - name: 📋 Export Docker Logs
+        if: always()
+        run: |
+          mkdir -p logs
+          echo "=== Exporting all service logs ==="
+          
+          docker compose logs --no-color > logs/all-services.log 2>&1 || true
+          
+          docker compose logs auth-service > logs/auth-service.log 2>&1 || true
+          docker compose logs item-service > logs/item-service.log 2>&1 || true
+          docker compose logs frontend > logs/frontend.log 2>&1 || true
+          docker compose logs gateway > logs/gateway.log 2>&1 || true || true
+          docker compose logs tracelt-auth-db > logs/auth-db.log 2>&1 || true
+          docker compose logs tracelt-item-db > logs/item-db.log 2>&1 || true
+
+          echo "✅ Logs exported successfully"
+
+      - name: 📦 Upload Logs as Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-logs-${{ github.sha }}
+          path: logs/
+          retention-days: 14
   
 
   # ================================
