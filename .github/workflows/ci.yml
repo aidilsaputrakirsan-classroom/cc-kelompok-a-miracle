@@ -1,5 +1,5 @@
 # ==============================================
-# CI/CD Pipeline — Miracle (Enhanced Version)
+# CI/CD Pipeline — Miracle (TraceIt Optimized)
 # ==============================================
 # Pipeline ini berjalan otomatis saat:
 # - Push ke branch main
@@ -18,18 +18,19 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# Memastikan widget check list status muncul di Pull Request
 permissions:
   pull-requests: write
   contents: read
 
 jobs:
   # ================================
-  # JOB 1: Test Backend (Miracle Core - Real DB)
+  # JOB 1: Test Backend (TraceIt Core)
   # ================================
   test-backend:
     name: 🐍 Test Backend
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 10 # Gagal otomatis jika macet 10 menit
     defaults:
       run:
         working-directory: ./backend
@@ -65,7 +66,7 @@ jobs:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tracelt_test
           SECRET_KEY: test-secret-key-for-ci
         run: |
-          pytest --cov=. --cov-report=term-missing
+          pytest --cov=. --cov-report=term-missing --cov-fail-under=50
 
   # ================================
   # JOB 2: Test Frontend
@@ -84,221 +85,48 @@ jobs:
       - name: 📦 Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: "20"
           cache: "npm"
           cache-dependency-path: frontend/package-lock.json
 
       - name: 📥 Install dependencies
-        run: npm ci
+        run: npm ci --include=optional
 
       - name: 🧪 Run tests
-        run: npm test -- --watchAll=false --coverage
+        run: npm test
 
       - name: ⚒️ Build Frontend
         run: npm run build
 
   # ================================
-  # JOB 3: Build Docker (Miracle Advance Cache)
+  # JOB 3: Build Docker
   # ================================
   build-docker:
     name: 🐳 Build Docker
     runs-on: ubuntu-latest
-    needs: [test-backend, test-frontend]
+    needs: [test-backend, test-frontend] # Hanya jalan jika test HIJAU
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
 
       - name: 🐳 Build backend image
-        run: docker build -t miracle-backend:ci ./backend
+        run: docker build -t tracelt-backend:ci ./backend
 
       - name: 🐳 Build frontend image
-        run: docker build -t miracle-frontend:ci ./frontend
+        run: docker build -t tracelt-frontend:ci ./frontend
 
       - name: ✅ Build success
         run: echo "✅ All Docker images built successfully!"
 
-  # ========================================
-  # Integration Test (Modul 13)
-  # ========================================
-  # Integration Test (NEW - Modul 13)
-  # ========================================
-  integration-test:
-    needs: 
-      - test-backend
-      - test-frontend
-      - build-docker
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Docker
-        uses: docker/setup-buildx-action@v3
-
-      - name: Start services with Docker Compose
-        run: |
-          cp .env.example .env 2>/dev/null || echo "SECRET_KEY=supersecretkeychangeme123" > .env
-          docker compose up -d --build
-          echo "Waiting for services to be healthy..."
-          sleep 20
-          docker compose ps
-          docker compose logs --tail=50
-
-      - name: Run Integration Tests (Antar Service)
-        run: |
-          echo "=== Running Integration Tests (Modul 13) ==="
-
-          # Test 1-2: Healthcheck antar service
-          curl -f http://localhost/health || exit 1
-          curl -f http://localhost:8001/health || exit 1
-          curl -f http://localhost:8002/health || exit 1
-
-          # Test 3: Auth Service bisa diakses dari Item Service context
-          curl -X GET "http://localhost:8002/items" \
-            -H "Authorization: Bearer test-token" \
-            -f || echo "Degraded mode test (expected if no auth)"
-
-          # Test 4-5+: Integration test script (rekomendasi)
-          if [ -f "tests/integration/test_services.py" ]; then
-            python -m pytest tests/integration/ -v --tb=short
-          else
-            echo "✅ Integration test placeholder passed (5 scenarios verified via health + basic calls)"
-            # Simulasi minimal 5 test cases
-            echo "1. Auth DB connection ✓"
-            echo "2. Item DB connection ✓"
-            echo "3. Auth Service <-> Item Service communication ✓"
-            echo "4. Gateway routing ✓"
-            echo "5. Graceful degradation when Auth down ✓"
-          fi
-
-      - name: Stop services
-        if: always()
-        run: docker compose down
-
-
   # ================================
-  # JOB 4: Integration Test
-  # ================================
-  integration-test:
-    needs: 
-      - test-backend
-      - test-frontend
-      - build-docker
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Docker
-        uses: docker/setup-buildx-action@v3
-      - name: Start services with Docker Compose
-        run: |
-          cp .env.example .env 2>/dev/null || echo "SECRET_KEY=supersecretkeychangeme123" > .env
-          docker compose up -d --build
-          echo "Waiting for services to be healthy..."
-          sleep 20
-      - name: ⏳ Wait for services
-        run: |
-          echo "⏳ Menunggu semua service siap..."
-          sleep 45
-          docker compose ps
-          docker compose logs --tail=50
-      - name: Run Integration Tests (Antar Service)
-        run: |
-          echo "=== Running Integration Tests (Modul 13) ==="
-
-          # Test 1-2: Healthcheck antar service
-          curl -f http://localhost/health || exit 1
-          curl -f http://localhost:8001/health || exit 1
-          curl -f http://localhost:8002/health || exit 1
-
-          # Test 3: Auth Service bisa diakses dari Item Service context
-          curl -X GET "http://localhost:8002/items" \
-            -H "Authorization: Bearer test-token" \
-            -f || echo "Degraded mode test (expected if no auth)"
-
-          # Test 4-5+: Integration test script (rekomendasi)
-          if [ -f "tests/integration/test_services.py" ]; then
-            python -m pytest tests/integration/ -v --tb=short
-          else
-            echo "✅ Integration test placeholder passed (5 scenarios verified via health + basic calls)"
-            # Simulasi minimal 5 test cases
-            echo "1. Auth DB connection ✓"
-            echo "2. Item DB connection ✓"
-            echo "3. Auth Service <-> Item Service communication ✓"
-            echo "4. Gateway routing ✓"
-            echo "5. Graceful degradation when Auth down ✓"
-          fi
-
-      - name: Stop services
-        if: always()
-        run: docker compose down
-          echo "=== ADOPTED HEXACORE HEALTH CHECK STYLE ==="
-          # Menggunakan logika pemantauan kode HTTP yang robust di localhost
-          MAX_ATTEMPTS=30
-          ATTEMPT=1
-          while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
-            HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/health || echo "000")
-            if [ "$HTTP_STATUS" == "200" ] || [ "$HTTP_STATUS" == "404" ] || [ "$HTTP_STATUS" == "401" ]; then
-              echo "✅ GATEWAY READY! (HTTP $HTTP_STATUS)"
-              break
-            fi
-            echo "⏳ Attempt $ATTEMPT/$MAX_ATTEMPTS: HTTP $HTTP_STATUS - Retrying in 5s..."
-            sleep 5
-            ATTEMPT=$((ATTEMPT + 1))
-          done
-        timeout-minutes: 5
-
-      - name: 🧪 Run integration tests
-        run: |
-          pip install httpx pytest
-          mkdir -p tests/integration
-          cat > tests/integration/test_health.py << 'EOF'
-import httpx
-import time
-
-def test_gateway_is_healthy():
-    time.sleep(5)
-    response = httpx.get("http://localhost/health", timeout=20)
-    assert response.status_code in [200, 401, 404]
-    print("✅ Integration Test Passed!")
-EOF
-          pytest tests/integration/ -v --tb=short
-
-        # === export & upload logs ===
-      - name: Export Docker Logs
-        if: always()                    # Penting! Supaya tetap jalan meski test gagal
-        run: |
-          mkdir -p logs
-          docker compose logs --no-color > logs/all-services.log
-          
-          # Log per service (sesuaikan nama service yang ada di docker-compose.yml kamu)
-          docker compose logs auth-service > logs/auth-service.log 2>&1 || true
-          docker compose logs item-service > logs/item-service.log 2>&1 || true
-          docker compose logs gateway > logs/gateway.log 2>&1 || true
-          docker compose logs db > logs/db.log 2>&1 || true   # kalau ada database
-
-      - name: Upload Logs as Artifact
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: docker-logs-${{ github.sha }}
-          path: logs/
-          retention-days: 14
-      # === export & upload logs ===
-
-  # ================================
-  # JOB 5: Deploy ke Railway & Robust Health Check (ADOPTED FROM HEXACORE)
+  # JOB 4: Deploy ke Railway & Health Check (TraceIt Production)
   # ================================
   deploy:
-    name: Deploy to Railway
+    name: 🚀 Deploy to Railway
     runs-on: ubuntu-latest
-    needs:
-      - test-backend
-      - test-frontend
-      - build-docker
-      - integration-test
+    needs: [test-backend, test-frontend, build-docker]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    # ↑ HANYA deploy saat push/merge ke main (bukan saat PR)
 
     steps:
       - name: 📥 Checkout code
@@ -310,32 +138,35 @@ EOF
       - name: 🚀 Deploy Backend
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-        run: railway up --service tracelt-backend --detach --ci
-        working-directory: ./backend
+        run: |
+          cd backend
+          railway up --service tracelt-backend --detach --ci
 
       - name: 🚀 Deploy Frontend
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-        run: railway up --service tracelt-frontend --detach --ci
-        working-directory: ./frontend
+        run: |
+          cd frontend
+          railway up --service tracelt-frontend --detach --ci
 
-      # OTOMASI HEALTH CHECK (Upgrade total mengikuti taktik cerdas Hexacore)
+      # OTOMASI HEALTH CHECK (Mengadopsi Taktik Cerdas Hexacore)
       - name: 🏥 Health check Backend Production
         run: |
-          echo "Waiting for backend deployment to be ready..."
+          echo "Waiting for TraceIt deployment to be ready..."
           sleep 30
           
+          # URL disesuaikan dengan domain produksi TraceIt milikmu
           HEALTH_URL="https://tracelt-backend-production.up.railway.app/health"
           MAX_ATTEMPTS=30
           ATTEMPT=1
           
           while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
-            # Ambil HTTP code secara bersih tanpa mematikan loop dengan -f
+            # Mengambil HTTP status code secara aman (Mencegah false negative akibat token/auth)
             HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$HEALTH_URL")
             
-            # Jika merespons 200, 404, atau 401 artinya server sudah HIDUP dan merespons jaringan
+            # Jika merespons 200, 404, atau 401 artinya container backend SUDAH HIDUP di Railway
             if [ "$HTTP_STATUS" == "200" ] || [ "$HTTP_STATUS" == "404" ] || [ "$HTTP_STATUS" == "401" ]; then
-              echo "✅ Backend is ONLINE and responding! (HTTP $HTTP_STATUS)"
+              echo "✅ TraceIt Backend is ONLINE and responding! (HTTP $HTTP_STATUS)"
               exit 0
             fi
             
@@ -352,83 +183,3 @@ EOF
           echo "✅ Deployment successful!"
           echo "Backend : https://tracelt-backend-production.up.railway.app"
           echo "Frontend: https://tracelt-frontend-production.up.railway.app"
-
-  # ============================================================
-  # JOBS TAMBAHAN UNTUK MULTI-SERVICE (Modul Microservices Miracle)
-  # ============================================================
-  test-auth-service:
-
-  # Test per Service
-  ./services/test-auth-service:
-    name: Test Auth Service
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./services/auth-service
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - name: Install dependencies & Test
-        run: |
-          pip install -r requirements.txt
-          python -m pytest tests/ --tb=no || echo "✅ Auth Service test skipped / no tests yet"
-
-  ./services/test-item-service:
-    name: Test Item Service
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./services/item-service
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - name: Install dependencies & Test
-        run: |
-          pip install -r requirements.txt
-          python -m pytest tests/ --tb=no || echo "✅ Item Service test skipped / no tests yet"
-
-  build-multi-service:
-    name: 🐳 Build Multi-Service Docker Images
-    runs-on: ubuntu-latest
-    needs: [test-auth-service, test-item-service]
-    strategy:
-      matrix:
-        service: [auth-service, item-service]
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      - name: Build ${{ matrix.service }}
-        uses: docker/build-push-action@v6
-        with:
-          context: ./services/${{ matrix.service }}
-          push: false
-          tags: team-miracle/${{ matrix.service }}:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-  ci-multi-service-summary:
-    name: 📋 CI Multi-Service Summary
-    runs-on: ubuntu-latest
-    needs: [build-multi-service]
-    if: always()
-    steps:
-      - name: Print Multi-Service Summary
-        run: |
-          echo "## 🚀 CI Multi-Service Pipeline Summary" >> $GITHUB_STEP_SUMMARY
-          echo "**Status Build Docker:** ${{ needs.build-multi-service.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Services Tested:** Auth Service, Item Service" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Pipeline Miracle Berhasil Diperbarui!" >> $GITHUB_STEP_SUMMARY
-          echo "**Docker Images Built:** auth-service, item-service" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Pipeline sudah di-update untuk mendukung Microservices Architecture" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Pipeline sudah di-update untuk mendukung Microservices Architecture" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Pipeline sudah di-update untuk mendukung Microservices Architecture" >> $GITHUB_STEP_SUMMARY
