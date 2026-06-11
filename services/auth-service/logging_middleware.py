@@ -23,7 +23,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
 
         try:
             response = await call_next(request)
-        except Exception as e:
+        except Exception:
             duration_ms = round((time.time() - start_time) * 1000, 2)
             metrics.record_request(request.method, request.url.path, 500, duration_ms)
             logger.error(
