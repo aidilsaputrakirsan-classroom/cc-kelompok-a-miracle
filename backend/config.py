@@ -25,22 +25,22 @@ class Settings:
         self.ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
         self.DEBUG: bool = self.ENVIRONMENT == "development"
 
-        # Database
+        # Database — fallback ke SQLite jika DATABASE_URL tidak di-set (Railway tanpa PostgreSQL)
         self.DATABASE_URL: str = os.getenv(
             "DATABASE_URL",
-            "postgresql://postgres:postgres@localhost:5432/tracelt",
+            "sqlite:///./tracelt.db",
         )
 
         # Auth
         self.SECRET_KEY: str = os.getenv("SECRET_KEY", "dev-secret-key-change-in-production")
         self.ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
 
-        # CORS
-        cors_value = os.getenv("CORS_ORIGINS") or os.getenv(
-            "ALLOWED_ORIGINS",
-            "http://localhost:5173,http://localhost:3000",
-        )
-        self.CORS_ORIGINS: list[str] = [origin.strip() for origin in cors_value.split(",") if origin.strip()]
+        # CORS — allow_credentials=False sehingga "*" aman dipakai (JWT Bearer, bukan cookie)
+        cors_value = os.getenv("CORS_ORIGINS") or os.getenv("ALLOWED_ORIGINS", "*")
+        if cors_value == "*":
+            self.CORS_ORIGINS: list[str] = ["*"]
+        else:
+            self.CORS_ORIGINS: list[str] = [origin.strip() for origin in cors_value.split(",") if origin.strip()]
 
         # Logging
         self.LOG_LEVEL: str = os.getenv("LOG_LEVEL", "DEBUG" if self.DEBUG else "INFO")

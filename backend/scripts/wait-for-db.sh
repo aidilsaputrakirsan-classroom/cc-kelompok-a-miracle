@@ -16,8 +16,8 @@ DB_NAME="${DB_NAME:-}"
 
 if [ -z "$DB_HOST" ] || [ -z "$DB_PORT" ] || [ -z "$DB_USER" ] || [ -z "$DB_NAME" ]; then
   if [ -z "${DATABASE_URL:-}" ]; then
-    echo "[wait-for-db] ERROR: DATABASE_URL tidak ditemukan dan DB_* belum lengkap." >&2
-    exit 1
+    echo "[wait-for-db] WARNING: DATABASE_URL tidak ditemukan — skip DB wait, uvicorn akan menangani koneksi." >&2
+    exit 0
   fi
 
   PARSED_VALUES="$(python - <<'PY'
@@ -46,8 +46,8 @@ PY
 fi
 
 if [ -z "$DB_HOST" ] || [ -z "$DB_PORT" ] || [ -z "$DB_USER" ] || [ -z "$DB_NAME" ]; then
-  echo "[wait-for-db] ERROR: Gagal membaca host/port/user/db dari env." >&2
-  exit 1
+  echo "[wait-for-db] WARNING: Gagal membaca host/port/user/db dari env — skip DB wait." >&2
+  exit 0
 fi
 
 echo "[wait-for-db] Menunggu PostgreSQL di ${DB_HOST}:${DB_PORT} (db=${DB_NAME}, timeout=${WAIT_TIMEOUT_SECONDS}s)..."

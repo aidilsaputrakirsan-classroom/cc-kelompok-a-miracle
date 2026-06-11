@@ -28,8 +28,12 @@ from schemas import (
     TokenResponse,
 )
 
-# Buat semua tabel
-Base.metadata.create_all(bind=engine)
+# Buat semua tabel — dibungkus try/except agar backend tetap start walau DB belum ready
+import logging as _logging
+try:
+    Base.metadata.create_all(bind=engine)
+except Exception as _e:
+    _logging.getLogger(__name__).warning(f"DB tidak tersedia saat startup: {_e}")
 
 app = FastAPI(
     title="TraceIt API",
@@ -87,16 +91,28 @@ def startup_maintenance() -> None:
     _cleanup_duplicate_admins()
 
 # ==================== CORS ====================
-origins_list = settings.CORS_ORIGINS
-
+# Origin frontend dibaca dari environment secara terpusat agar mudah disesuaikan.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins_list,
+    allow_origins=[
+        "https://tracelt-frontend-production.up.railway.app",
+        "http://localhost:5173"  # Masukkan ini agar aman saat tes lokal lewat Vite
+    ],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=[
+        "Content-Type", 
+        "Authorization", 
+        "Accept", 
+        "Origin", 
+        "X-Requested-With"
+    ],
 )
 
+
+def raise_http_from_crud_error(error: ValueError) -> None:
+    status_code = 409 if isinstance(error, crud.ConflictError) else 400
+    raise HTTPException(status_code=status_code, detail=str(error))
 
 # ==================== HEALTH CHECK ====================
 

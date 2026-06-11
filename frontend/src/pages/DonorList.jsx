@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { 
-  Search, 
-  Filter, 
-  MoreVertical, 
+import {
+  Search,
+  Filter,
+  MoreVertical,
   Phone,
   Calendar,
   MapPin,
@@ -18,7 +18,8 @@ import {
   Trash2,
   CheckCircle2,
   Mail,
-  UserCheck
+  UserCheck,
+  Clock,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { apiService } from '../services/api';
@@ -231,9 +232,9 @@ export const DonorList = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <Link 
-            to="/admin" 
-            className="p-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-all text-slate-500 dark:text-slate-450"
+          <Link
+            to="/admin"
+            className="p-2.5 hover:bg-indigo-800/10 hover:text-indigo-800 dark:hover:bg-indigo-400/10 dark:hover:text-indigo-400 rounded-full transition-all text-slate-500 dark:text-slate-450"
             title="Kembali ke Dashboard Utama"
           >
             <ArrowLeft className="w-5 h-5" />
@@ -251,7 +252,7 @@ export const DonorList = () => {
           onClick={() => setVerificationTab('unverified')}
           className={`flex items-center gap-2 px-6 py-3 font-semibold text-sm border-b-2 rounded-lg transition-all ${
             verificationTab === 'unverified'
-              ? 'text-[#660000] border-[#660000] bg-red-50/50 dark:text-red-400 dark:border-red-400 dark:bg-red-950/20'
+              ? 'text-indigo-800 border-indigo-800 bg-indigo-50/50 dark:text-indigo-400 dark:border-indigo-400 dark:bg-indigo-950/20'
               : 'text-slate-500 border-transparent hover:text-slate-900 dark:text-slate-450 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/40'
           }`}
         >
@@ -281,10 +282,10 @@ export const DonorList = () => {
           <div className="flex flex-col lg:flex-row gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-550 w-4 h-4" />
-              <input 
-                type="text" 
-                placeholder="Cari nama pendonor..." 
-                className="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-transparent dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#660000] dark:focus:ring-red-500/50 transition-all text-sm text-slate-800 dark:text-slate-100 placeholder-slate-400"
+              <input
+                type="text"
+                placeholder="Cari nama pendonor..."
+                className="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-transparent dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-800 dark:focus:ring-indigo-500/50 transition-all text-sm text-slate-800 dark:text-slate-100 placeholder-slate-400"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -292,7 +293,7 @@ export const DonorList = () => {
             
             <div className="flex flex-wrap lg:flex-nowrap gap-3">
               <select 
-                className="px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-transparent dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#660000] text-sm text-slate-700 dark:text-slate-200"
+                className="px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-transparent dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-800 text-sm text-slate-700 dark:text-slate-200"
                 value={filters.golongan_darah}
                 onChange={(e) => setFilters({...filters, golongan_darah: e.target.value})}
               >
@@ -308,7 +309,7 @@ export const DonorList = () => {
               </select>
 
               <select 
-                className="px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-transparent dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#660000] text-sm text-slate-700 dark:text-slate-200"
+                className="px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-transparent dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-800 text-sm text-slate-700 dark:text-slate-200"
                 value={filters.jenis_kelamin}
                 onChange={(e) => setFilters({...filters, jenis_kelamin: e.target.value})}
               >
@@ -335,12 +336,12 @@ export const DonorList = () => {
                 />
               </div>
 
-              <button 
+              <button
                 onClick={() => {
                   setSearchTerm('');
                   setFilters({ golongan_darah: '', jenis_kelamin: '', umur_min: '', umur_max: '' });
                 }}
-                className="p-3 text-slate-400 hover:text-[#660000] dark:hover:text-red-400 hover:bg-slate-150 dark:hover:bg-slate-800 rounded-xl transition-all"
+                className="p-3 text-slate-400 hover:text-indigo-800 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 rounded-xl transition-all"
                 title="Reset Filter"
               >
                 <Filter className="w-5 h-5" />
@@ -366,7 +367,7 @@ export const DonorList = () => {
                 <tr>
                   <td colSpan={5} className="px-6 py-16 text-center text-slate-400 dark:text-slate-500">
                     <div className="flex flex-col items-center justify-center gap-3">
-                      <div className="w-8 h-8 border-3 border-[#660000]/30 border-t-[#660000] dark:border-red-500/30 dark:border-t-red-500 rounded-full animate-spin" />
+                      <div className="w-8 h-8 border-3 border-indigo-800/30 border-t-indigo-800 dark:border-indigo-400/30 dark:border-t-indigo-400 rounded-full animate-spin" />
                       <span>Memuat data pendonor...</span>
                     </div>
                   </td>
@@ -437,7 +438,7 @@ export const DonorList = () => {
                       )}
                       <button 
                         onClick={() => handleOpenDonorDetail(donor)}
-                        className="p-2 text-slate-400 hover:text-[#660000] dark:hover:text-red-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all"
+                        className="p-2 text-slate-400 hover:text-indigo-800 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 rounded-lg transition-all"
                         title="Lihat Detail Pendonor"
                       >
                         <MoreVertical className="w-4 h-4" />
@@ -472,7 +473,7 @@ export const DonorList = () => {
               {/* Modal Header */}
               <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/20">
                 <div className="flex items-center gap-3.5">
-                  <div className="w-12 h-12 rounded-xl bg-[#660000] dark:bg-red-950 text-white dark:text-red-450 flex items-center justify-center shadow-md">
+                  <div className="w-12 h-12 rounded-xl bg-indigo-800 dark:bg-indigo-950 text-white flex items-center justify-center shadow-md">
                     <User className="w-6 h-6" />
                   </div>
                   <div>
@@ -507,7 +508,7 @@ export const DonorList = () => {
                       <input 
                         type="text" 
                         required
-                        className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#660055] text-sm text-slate-800 dark:text-slate-100"
+                        className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-800 text-sm text-slate-800 dark:text-slate-100"
                         value={editFormData.nama_lengkap || ''}
                         onChange={(e) => setEditFormData({...editFormData, nama_lengkap: e.target.value})}
                       />
@@ -518,7 +519,7 @@ export const DonorList = () => {
                       <input 
                         type="email" 
                         required
-                        className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#660055] text-sm text-slate-800 dark:text-slate-100"
+                        className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-800 text-sm text-slate-800 dark:text-slate-100"
                         value={editFormData.email || ''}
                         onChange={(e) => setEditFormData({...editFormData, email: e.target.value})}
                       />
@@ -528,7 +529,7 @@ export const DonorList = () => {
                       <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Gender</label>
                       <select 
                         required
-                        className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#660055] text-sm text-slate-700 dark:text-slate-200"
+                        className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-800 text-sm text-slate-700 dark:text-slate-200"
                         value={editFormData.jenis_kelamin || ''}
                         onChange={(e) => setEditFormData({...editFormData, jenis_kelamin: e.target.value})}
                       >
@@ -541,7 +542,7 @@ export const DonorList = () => {
                       <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Golongan Darah</label>
                       <select 
                         required
-                        className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#660055] text-sm text-slate-700 dark:text-slate-200"
+                        className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-800 text-sm text-slate-700 dark:text-slate-200"
                         value={editFormData.golongan_darah || ''}
                         onChange={(e) => setEditFormData({...editFormData, golongan_darah: e.target.value})}
                       >
@@ -561,7 +562,7 @@ export const DonorList = () => {
                       <input 
                         type="date" 
                         required
-                        className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#660055] text-sm text-slate-800 dark:text-slate-100"
+                        className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-800 text-sm text-slate-800 dark:text-slate-100"
                         value={editFormData.tanggal_lahir || ''}
                         onChange={(e) => setEditFormData({...editFormData, tanggal_lahir: e.target.value})}
                       />
@@ -572,7 +573,7 @@ export const DonorList = () => {
                       <input 
                         type="text" 
                         required
-                        className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#660005] text-sm text-slate-800 dark:text-slate-100"
+                        className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-800 text-sm text-slate-800 dark:text-slate-100"
                         value={editFormData.no_telepon || ''}
                         onChange={(e) => setEditFormData({...editFormData, no_telepon: e.target.value})}
                       />
@@ -583,7 +584,7 @@ export const DonorList = () => {
                       <input 
                         type="number" 
                         required
-                        className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#660005] text-sm text-slate-800 dark:text-slate-100"
+                        className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-800 text-sm text-slate-800 dark:text-slate-100"
                         value={editFormData.berat_badan || ''}
                         onChange={(e) => setEditFormData({...editFormData, berat_badan: parseFloat(e.target.value) || 0})}
                       />
@@ -594,7 +595,7 @@ export const DonorList = () => {
                       <input 
                         type="number" 
                         required
-                        className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#660005] text-sm text-slate-800 dark:text-slate-100"
+                        className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-800 text-sm text-slate-800 dark:text-slate-100"
                         value={editFormData.tinggi_badan || ''}
                         onChange={(e) => setEditFormData({...editFormData, tinggi_badan: parseFloat(e.target.value) || 0})}
                       />
@@ -607,7 +608,7 @@ export const DonorList = () => {
                     <textarea 
                       rows={2}
                       required
-                      className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#660005] text-sm text-slate-800 dark:text-slate-100 resize-none"
+                      className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-800 text-sm text-slate-800 dark:text-slate-100 resize-none"
                       value={editFormData.alamat || ''}
                       onChange={(e) => setEditFormData({...editFormData, alamat: e.target.value})}
                     />
@@ -618,7 +619,7 @@ export const DonorList = () => {
                     <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Riwayat Medis / Kesehatan</label>
                     <textarea 
                       rows={3}
-                      className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#660005] text-sm text-slate-800 dark:text-slate-100 resize-none placeholder-slate-400"
+                      className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-800 text-sm text-slate-800 dark:text-slate-100 resize-none placeholder-slate-400"
                       placeholder="Mempunyai riwayat penyakit, mengonsumsi obat ritun, dsb..."
                       value={editFormData.riwayat_kesehatan || ''}
                       onChange={(e) => setEditFormData({...editFormData, riwayat_kesehatan: e.target.value})}
@@ -797,9 +798,9 @@ export const DonorList = () => {
                         Verifikasi Riwayat
                       </button>
                     )}
-                    <button 
+                    <button
                       onClick={() => setIsEditingDonor(true)}
-                      className="flex-1 py-4 bg-[#660000] text-white rounded-2xl font-bold hover:bg-[#550000] dark:bg-red-900 dark:hover:bg-red-800 transition-all shadow-lg shadow-black/10"
+                      className="flex-1 py-4 bg-indigo-800 text-white rounded-2xl font-bold hover:bg-indigo-900 dark:bg-indigo-700 dark:hover:bg-indigo-600 transition-all shadow-lg shadow-black/10"
                     >
                       Ubah Data
                     </button>
