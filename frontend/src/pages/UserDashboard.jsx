@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { User, ClipboardList, Droplets, Clock, CheckCircle2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { Header } from '../components/Header';
+import { UserDashboardHeader } from '../components/UserDashboardHeader';
 import { apiService } from '../services/api';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { ServiceUnavailable } from '../components/ServiceUnavailable';
@@ -51,12 +51,6 @@ export const UserDashboard = () => {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('user_token');
-    localStorage.removeItem('admin_token');
-    navigate('/login?type=user');
-  };
-
   const totalRiwayat = riwayats.length;
   const verifiedCount = riwayats.filter((riwayat) => riwayat.status_verifikasi).length;
   const pendingCount = totalRiwayat - verifiedCount;
@@ -70,7 +64,7 @@ export const UserDashboard = () => {
       <div className="absolute top-0 right-0 w-full h-[500px] bg-gradient-to-b from-[#660000]/10 to-transparent dark:from-red-950/20 pointer-events-none" />
       <div className="absolute top-48 -left-24 w-96 h-96 bg-blue-500/5 rounded-full blur-[100px] pointer-events-none" />
 
-      <Header />
+      <UserDashboardHeader />
 
       <main className="pb-24 relative z-10">
         <div className="bg-gradient-to-r from-[#660000] to-[#8b0000] text-white py-20 shadow-2xl shadow-black/10 dark:from-red-950 dark:to-red-900 border-b border-white/10">
@@ -133,18 +127,9 @@ export const UserDashboard = () => {
             <ServiceUnavailable onRetry={fetchUserRiwayat} error={error} />
           ) : (
             <div className="space-y-6">
-              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                <div>
-                  <h2 className="text-2xl font-semibold text-slate-900 dark:text-white">Riwayat Donor Saya</h2>
-                  <p className="text-slate-500 dark:text-slate-400">Daftar semua laporan donor yang Anda kirim.</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  className="inline-flex items-center gap-2 rounded-full bg-[#660000] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#4d0000]"
-                >
-                  Keluar
-                </button>
+              <div>
+                <h2 className="text-2xl font-semibold text-slate-900 dark:text-white">Riwayat Donor Saya</h2>
+                <p className="text-slate-500 dark:text-slate-400">Daftar semua laporan donor yang Anda kirim.</p>
               </div>
 
               {riwayats.length === 0 ? (
