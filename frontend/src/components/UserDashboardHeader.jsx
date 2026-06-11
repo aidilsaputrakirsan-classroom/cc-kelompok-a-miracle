@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { Droplets, Sun, Moon, LogOut, ClipboardPlus } from 'lucide-react';
+import { Droplets, Sun, Moon, LogOut, ClipboardPlus, UserCog } from 'lucide-react';
 import useDarkMode from '../hooks/useDarkMode';
 
 export const UserDashboardHeader = () => {
@@ -29,7 +29,7 @@ export const UserDashboardHeader = () => {
         </Link>
 
         {/* Actions */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           {/* Dark mode toggle */}
           <button
             onClick={toggleDarkMode}
@@ -39,13 +39,22 @@ export const UserDashboardHeader = () => {
             {isDark ? <Sun className="w-4 h-4 text-amber-500" /> : <Moon className="w-4 h-4 text-[#660000]" />}
           </button>
 
+          {/* Data Diri */}
+          <Link
+            to="/user/data-diri"
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-200 transition-all"
+          >
+            <UserCog className="w-4 h-4" />
+            <span className="hidden sm:inline">Data Diri</span>
+          </Link>
+
           {/* Input Donor */}
           <Link
-            to="/register"
+            to="/user/input-donor"
             className="inline-flex items-center gap-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-200 transition-all"
           >
             <ClipboardPlus className="w-4 h-4" />
-            Input Donor
+            <span className="hidden sm:inline">Input Donor</span>
           </Link>
 
           {/* Keluar */}
@@ -55,7 +64,7 @@ export const UserDashboardHeader = () => {
             className="inline-flex items-center gap-2 rounded-xl bg-[#660000] hover:bg-[#4d0000] px-4 py-2 text-sm font-semibold text-white transition-all"
           >
             <LogOut className="w-4 h-4" />
-            Keluar
+            <span className="hidden sm:inline">Keluar</span>
           </button>
         </div>
       </nav>
