@@ -122,57 +122,31 @@ jobs:
    # ================================
   # JOB 4: Integration Test
   # ================================
-  integration-test:
-    name: 🔗 Integration Test
+    integration-test:
+    name: 🔗 Integration Tests
     runs-on: ubuntu-latest
-    needs: [test-backend, test-frontend, build-docker]
-    timeout-minutes: 10
+    needs: [test-backend, test-frontend]
 
     steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up Docker
-        uses: docker/setup-buildx-action@v3
+      - name: 🐳 Start all services
+        run: docker compose up -d --build
 
-      - name: Start services with Docker Compose
+      - name: ⏳ Wait for services
         run: |
-          cp .env.example .env 2>/dev/null || echo "SECRET_KEY=supersecretkeychangeme123" > .env
-          docker compose up -d --build
-          echo "Waiting for services to be healthy..."
-          sleep 25
-          docker compose ps
-          docker compose logs --tail=30
+          echo "Waiting for services to be ready..."
+          sleep 15
+          curl --retry 5 --retry-delay 3 http://localhost/health
 
-      - name: Run Integration Tests (Antar Service)
+      - name: 🧪 Run integration tests
         run: |
-          echo "=== Running Integration Tests (Modul 13) ==="
-          # Healthcheck dasar
-          curl -f http://localhost/health || echo "Gateway health check skipped"
-          curl -f http://localhost:8001/health || echo "Auth health check skipped"
-          curl -f http://localhost:8002/health || echo "Item health check skipped"
-          echo "✅ Integration test placeholder passed"
+          pip install httpx pytest
+          pytest tests/integration/ -v
 
-      - name: Stop services
+      - name: 🛑 Stop services
         if: always()
-        run: docker compose down
-
-      - name: Export Docker Logs
-        if: always()
-        run: |
-          mkdir -p logs
-          docker compose logs --no-color > logs/all-services.log || true
-          docker compose logs auth-service > logs/auth-service.log 2>&1 || true
-          docker compose logs item-service > logs/item-service.log 2>&1 || true
-          docker compose logs gateway > logs/gateway.log 2>&1 || true
-
-      - name: Upload Logs as Artifact
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: docker-logs-${{ github.sha }}
-          path: logs/
-          retention-days: 7
+        run: docker compose down -v
 
   # ================================
   # JOB 4: Deploy ke Railway & Health Check (TraceIt Production)
