@@ -91,17 +91,28 @@ def startup_maintenance() -> None:
     _cleanup_duplicate_admins()
 
 # ==================== CORS ====================
-origins_list = settings.CORS_ORIGINS
-
+# Origin frontend dibaca dari environment secara terpusat agar mudah disesuaikan.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins_list,
-    allow_credentials=False,
-    allow_methods=["*"],
-    allow_headers=["*"],
-    expose_headers=["*"],
+    allow_origins=[
+        "https://tracelt-frontend-production.up.railway.app",
+        "http://localhost:5173"  # Masukkan ini agar aman saat tes lokal lewat Vite
+    ],
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=[
+        "Content-Type", 
+        "Authorization", 
+        "Accept", 
+        "Origin", 
+        "X-Requested-With"
+    ],
 )
 
+
+def raise_http_from_crud_error(error: ValueError) -> None:
+    status_code = 409 if isinstance(error, crud.ConflictError) else 400
+    raise HTTPException(status_code=status_code, detail=str(error))
 
 # ==================== HEALTH CHECK ====================
 
