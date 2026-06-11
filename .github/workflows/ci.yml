@@ -1,10 +1,6 @@
 # ==============================================
 # CI/CD Pipeline — Miracle (TraceIt Optimized)
 # ==============================================
-# Pipeline ini berjalan otomatis saat:
-# - Push ke branch main
-# - Pull Request ke branch main
-
 name: CI/CD Pipeline — Miracle
 
 on:
@@ -13,24 +9,22 @@ on:
   pull_request:
     branches: [main]
 
-# OPTIMASI DEVOPS: Cancel run lama jika ada push baru (Save resources!)
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
-# Memastikan widget check list status muncul di Pull Request
 permissions:
   pull-requests: write
   contents: read
 
 jobs:
   # ================================
-  # JOB 1: Test Backend (TraceIt Core)
+  # JOB 1: Test Backend
   # ================================
   test-backend:
     name: 🐍 Test Backend
     runs-on: ubuntu-latest
-    timeout-minutes: 10 # Gagal otomatis jika macet 10 menit
+    timeout-minutes: 10
     defaults:
       run:
         working-directory: ./backend
@@ -44,23 +38,19 @@ jobs:
         ports:
           - 5432:5432
         options: --health-cmd "pg_isready -U postgres" --health-interval 10s --health-timeout 5s --health-retries 5
-
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
-
       - name: 🐍 Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
           cache: pip
           cache-dependency-path: backend/requirements.txt
-
       - name: 📦 Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-
       - name: 🧪 Run tests with coverage
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tracelt_test
@@ -81,20 +71,16 @@ jobs:
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
-
       - name: 📦 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: "npm"
           cache-dependency-path: frontend/package-lock.json
-
       - name: 📥 Install dependencies
         run: npm ci --include=optional
-
       - name: 🧪 Run tests
         run: npm test
-
       - name: ⚒️ Build Frontend
         run: npm run build
 
@@ -104,29 +90,86 @@ jobs:
   build-docker:
     name: 🐳 Build Docker
     runs-on: ubuntu-latest
-    needs: [test-backend, test-frontend] # Hanya jalan jika test HIJAU
+    needs: [test-backend, test-frontend]
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+      - name: 🐳 Build backend image
+        run: docker build -t tracelt-backend:ci ./backend
+      - name: 🐳 Build frontend image
+        run: docker build -t tracelt-frontend:ci ./frontend
+      - name: ✅ Build success
+        run: echo "✅ All Docker images built successfully!"
+
+  # ============================================================
+  # 🎯 JOB 4: INTEGRATION TEST (TUGAS UTAMA MODUL 13)
+  # ============================================================
+  integration-test:
+    name: 🔗 Integration Tests
+    runs-on: ubuntu-latest
+    # Menjamin integration test HANYA jalan jika unit test & build docker sukses/hijau
+    needs: [test-backend, test-frontend, build-docker]
+
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
 
-      - name: 🐳 Build backend image
-        run: docker build -t tracelt-backend:ci ./backend
+      # 1. Jalankan docker compose up -d
+      - name: 🐳 Start all services via Docker Compose
+        run: docker compose up -d --build
 
-      - name: 🐳 Build frontend image
-        run: docker build -t tracelt-frontend:ci ./frontend
+      # 2. Tunggu services ready (Menggunakan Logika Cerdas ala Hexacore)
+      - name: ⏳ Wait until services are ready
+        run: |
+          echo "⏳ Menunggu semua service lokal siap merespon..."
+          sleep 15
+          
+          # Gunakan localhost karena berjalan di dalam runner github lokal
+          HEALTH_URL="http://localhost/health"
+          MAX_ATTEMPTS=20
+          ATTEMPT=1
+          
+          while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
+            HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$HEALTH_URL" || echo "000")
+            
+            # Jika 200, 401, atau 404 artinya rute network antar container sudah terhubung
+            if [ "$HTTP_STATUS" == "200" ] || [ "$HTTP_STATUS" == "404" ] || [ "$HTTP_STATUS" == "401" ]; then
+              echo "✅ Local Services are READY and responding! (HTTP $HTTP_STATUS)"
+              exit 0
+            fi
+            
+            echo "⏳ Attempt $ATTEMPT/$MAX_ATTEMPTS: HTTP $HTTP_STATUS - Retrying in 5s..."
+            sleep 5
+            ATTEMPT=$((ATTEMPT + 1))
+          done
+          
+          echo "❌ Services failed to start properly."
+          docker compose ps
+          docker compose logs --tail=50
+          exit 1
+        timeout-minutes: 5
 
-      - name: ✅ Build success
-        run: echo "✅ All Docker images built successfully!"
+      # 3. Jalankan pytest tests/integration/
+      - name: 🧪 Run integration tests
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest httpx
+          pytest tests/integration/ -v --tb=short
+
+      # 4. Amankan penutupan: Selalu matikan docker compose baik tesnya sukses maupun gagal
+      - name: 🛑 Stop and clean services
+        if: always()
+        run: docker compose down -v --remove-orphans
 
   # ================================
-  # JOB 4: Deploy ke Railway & Health Check (TraceIt Production)
+  # JOB 5: Deploy ke Railway
   # ================================
   deploy:
     name: 🚀 Deploy to Railway
     runs-on: ubuntu-latest
-    needs: [test-backend, test-frontend, build-docker]
+    # UPGRADE UTAMA: Sekarang deploy WAJIB menunggu 'integration-test' sukses dulu!
+    needs: [test-backend, test-frontend, build-docker, integration-test]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    # ↑ HANYA deploy saat push/merge ke main (bukan saat PR)
 
     steps:
       - name: 📥 Checkout code
@@ -149,32 +192,24 @@ jobs:
           cd frontend
           railway up --service tracelt-frontend --detach --ci
 
-      # OTOMASI HEALTH CHECK (Mengadopsi Taktik Cerdas Hexacore)
       - name: 🏥 Health check Backend Production
         run: |
           echo "Waiting for TraceIt deployment to be ready..."
           sleep 30
-          
-          # URL disesuaikan dengan domain produksi TraceIt milikmu
           HEALTH_URL="https://tracelt-backend-production.up.railway.app/health"
           MAX_ATTEMPTS=30
           ATTEMPT=1
           
           while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
-            # Mengambil HTTP status code secara aman (Mencegah false negative akibat token/auth)
             HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$HEALTH_URL")
-            
-            # Jika merespons 200, 404, atau 401 artinya container backend SUDAH HIDUP di Railway
             if [ "$HTTP_STATUS" == "200" ] || [ "$HTTP_STATUS" == "404" ] || [ "$HTTP_STATUS" == "401" ]; then
               echo "✅ TraceIt Backend is ONLINE and responding! (HTTP $HTTP_STATUS)"
               exit 0
             fi
-            
             echo "⏳ Attempt $ATTEMPT/$MAX_ATTEMPTS: HTTP $HTTP_STATUS - Retrying in 10s..."
             sleep 10
             ATTEMPT=$((ATTEMPT + 1))
           done
-          
           echo "❌ Production Health check FAILED after $MAX_ATTEMPTS attempts!"
           exit 1
 
