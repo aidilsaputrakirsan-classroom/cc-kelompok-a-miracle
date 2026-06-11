@@ -308,3 +308,5 @@ EOF
           echo "**Status Build Docker:** ${{ needs.build-multi-service.result }}" >> $GITHUB_STEP_SUMMARY
           echo "**Services Tested:** Auth Service, Item Service" >> $GITHUB_STEP_SUMMARY
           echo "✅ Pipeline Miracle Berhasil Diperbarui!" >> $GITHUB_STEP_SUMMARY
+          echo "**Docker Images Built:** auth-service, item-service" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Pipeline sudah di-update untuk mendukung Microservices Architecture" >> $GITHUB_STEP_SUMMARY
