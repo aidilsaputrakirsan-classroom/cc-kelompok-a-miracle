@@ -15,11 +15,10 @@ RUN npm install
 COPY . .
 
 # Set API URL untuk production build
-ARG VITE_API_URL=http://localhost:3000
-ENV VITE_API_URL=$VITE_API_URL
-
-# Build React app
-RUN npm run build
+# Jika VITE_API_URL tidak di-pass sebagai build arg, Vite membaca dari .env.production
+# Jangan set ENV secara default — Vite 6 memprioritaskan OS env var di atas .env.production
+ARG VITE_API_URL
+RUN if [ -n "$VITE_API_URL" ]; then export VITE_API_URL; fi && npm run build
 
 # ============================================================
 # Stage 2: Production — Serve dengan Nginx

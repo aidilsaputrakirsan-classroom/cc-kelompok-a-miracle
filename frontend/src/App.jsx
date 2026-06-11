@@ -16,7 +16,9 @@ import ErrorBoundary from './components/ErrorBoundary';
 import { apiService } from './services/api';
 
 // ================= ADMIN ROUTE =================
-const AdminRoute = ({ children }) => {
+// Layout route — renders AdminLayout (which uses <Outlet>) so all nested admin
+// routes share one persistent layout without re-running token validation.
+const AdminRoute = () => {
   const [loading, setLoading] = useState(true);
   const [isValid, setIsValid] = useState(false);
 
@@ -47,7 +49,7 @@ const AdminRoute = ({ children }) => {
 
   if (loading) return <div className="flex items-center justify-center h-screen">Memverifikasi akses...</div>;
   if (!isValid) return <Navigate to="/login?type=admin" replace />;
-  return <AdminLayout>{children}</AdminLayout>;
+  return <AdminLayout />;
 };
 
 // ================= USER ROUTE =================
@@ -153,30 +155,14 @@ export default function App() {
             <Route path="/about" element={<AboutPage />} />
 
             <Route path="/status" element={<StatusPage />} />
-            <Route
-              path="/admin"
-              element={
-                <AdminRoute>
-                  <AdminDashboard />
-                </AdminRoute>
-              }
-            />
-            <Route
-              path="/admin/donors"
-              element={
-                <AdminRoute>
-                  <DonorList />
-                </AdminRoute>
-              }
-            />
-            <Route
-              path="/admin/verify"
-              element={
-                <AdminRoute>
-                  <VerificationQueue />
-                </AdminRoute>
-              }
-            />
+
+            {/* All admin routes share one AdminRoute + AdminLayout via nested routes */}
+            <Route path="/admin" element={<AdminRoute />}>
+              <Route index element={<AdminDashboard />} />
+              <Route path="donors" element={<DonorList />} />
+              <Route path="verify" element={<VerificationQueue />} />
+              <Route path="status" element={<StatusPage inAdminLayout />} />
+            </Route>
 
             <Route
               path="/user/dashboard"

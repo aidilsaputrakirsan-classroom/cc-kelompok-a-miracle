@@ -7,8 +7,11 @@ from config import settings
 # Ambil DATABASE_URL dari settings (memakai fallback default jika env var missing)
 DATABASE_URL = settings.DATABASE_URL
 
-# Buat engine (koneksi ke database)
-engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+# SQLite butuh check_same_thread=False; PostgreSQL butuh pool_pre_ping=True
+if DATABASE_URL.startswith("sqlite"):
+    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+else:
+    engine = create_engine(DATABASE_URL, pool_pre_ping=True)
 
 # Buat session factory
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

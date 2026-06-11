@@ -28,8 +28,12 @@ from schemas import (
     TokenResponse,
 )
 
-# Buat semua tabel
-Base.metadata.create_all(bind=engine)
+# Buat semua tabel — dibungkus try/except agar backend tetap start walau DB belum ready
+import logging as _logging
+try:
+    Base.metadata.create_all(bind=engine)
+except Exception as _e:
+    _logging.getLogger(__name__).warning(f"DB tidak tersedia saat startup: {_e}")
 
 app = FastAPI(
     title="TraceIt API",
@@ -92,9 +96,10 @@ origins_list = settings.CORS_ORIGINS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins_list,
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 
