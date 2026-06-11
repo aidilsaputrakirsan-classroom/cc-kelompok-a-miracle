@@ -118,19 +118,19 @@ jobs:
       - name: ✅ Build success
         run: echo "✅ All Docker images built successfully!"
 
- # ================================
-  # JOB 4: Integration Test 
+
+   # ================================
+  # JOB 4: Integration Test
   # ================================
   integration-test:
-    needs: 
-      - test-backend
-      - test-frontend
-      - build-docker
+    name: 🔗 Integration Test
     runs-on: ubuntu-latest
+    needs: [test-backend, test-frontend, build-docker]
     timeout-minutes: 10
 
     steps:
-      - uses: actions/checkout@v4
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
 
       - name: Set up Docker
         uses: docker/setup-buildx-action@v3
@@ -147,12 +147,10 @@ jobs:
       - name: Run Integration Tests (Antar Service)
         run: |
           echo "=== Running Integration Tests (Modul 13) ==="
-
           # Healthcheck dasar
           curl -f http://localhost/health || echo "Gateway health check skipped"
           curl -f http://localhost:8001/health || echo "Auth health check skipped"
           curl -f http://localhost:8002/health || echo "Item health check skipped"
-
           echo "✅ Integration test placeholder passed"
 
       - name: Stop services
@@ -176,35 +174,13 @@ jobs:
           path: logs/
           retention-days: 7
 
-        # === export & upload logs ===
-      - name: Export Docker Logs
-        if: always()                    # Penting! Supaya tetap jalan meski test gagal
-        run: |
-          mkdir -p logs
-          docker compose logs --no-color > logs/all-services.log
-          
-          # Log per service (sesuaikan nama service yang ada di docker-compose.yml kamu)
-          docker compose logs auth-service > logs/auth-service.log 2>&1 || true
-          docker compose logs item-service > logs/item-service.log 2>&1 || true
-          docker compose logs gateway > logs/gateway.log 2>&1 || true
-          docker compose logs db > logs/db.log 2>&1 || true   # kalau ada database
-
-      - name: Upload Logs as Artifact
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: docker-logs-${{ github.sha }}
-          path: logs/
-          retention-days: 14
-      # === export & upload logs ===
-
   # ================================
   # JOB 4: Deploy ke Railway & Health Check (TraceIt Production)
   # ================================
   deploy:
     name: 🚀 Deploy to Railway
     runs-on: ubuntu-latest
-    needs: [test-backend, test-frontend, build-docker]
+    needs: [test-backend, test-frontend, build-docker, integration-test]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     # ↑ HANYA deploy saat push/merge ke main (bukan saat PR)
 
@@ -262,85 +238,4 @@ jobs:
         run: |
           echo "✅ Deployment successful!"
           echo "Backend : https://tracelt-backend-production.up.railway.app"
-          echo "Frontend: https://tracelt-frontend-production.up.railway.app"
-
-  # ============================================================
-  # JOBS TAMBAHAN UNTUK MULTI-SERVICE (Modul Microservices Miracle)
-  # ============================================================
-  test-auth-service:
-
-  # Test per Service
-  ./services/test-auth-service:
-    name: Test Auth Service
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./services/auth-service
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - name: Install dependencies & Test
-        run: |
-          pip install -r requirements.txt
-          python -m pytest tests/ --tb=no || echo "✅ Auth Service test skipped / no tests yet"
-
-  ./services/test-item-service:
-    name: Test Item Service
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./services/item-service
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - name: Install dependencies & Test
-        run: |
-          pip install -r requirements.txt
-          python -m pytest tests/ --tb=no || echo "✅ Item Service test skipped / no tests yet"
-
-  build-multi-service:
-    name: 🐳 Build Multi-Service Docker Images
-    runs-on: ubuntu-latest
-    needs: [test-auth-service, test-item-service]
-    strategy:
-      matrix:
-        service: [auth-service, item-service]
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      - name: Build ${{ matrix.service }}
-        uses: docker/build-push-action@v6
-        with:
-          context: ./services/${{ matrix.service }}
-          push: false
-          tags: team-miracle/${{ matrix.service }}:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-  ci-multi-service-summary:
-    name: 📋 CI Multi-Service Summary
-    runs-on: ubuntu-latest
-    needs: [build-multi-service]
-    if: always()
-    steps:
-      - name: Print Multi-Service Summary
-        run: |
-          echo "## 🚀 CI Multi-Service Pipeline Summary" >> $GITHUB_STEP_SUMMARY
-          echo "**Status Build Docker:** ${{ needs.build-multi-service.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Services Tested:** Auth Service, Item Service" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Pipeline Miracle Berhasil Diperbarui!" >> $GITHUB_STEP_SUMMARY
-          echo "**Docker Images Built:** auth-service, item-service" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Pipeline sudah di-update untuk mendukung Microservices Architecture" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Pipeline sudah di-update untuk mendukung Microservices Architecture" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Pipeline sudah di-update untuk mendukung Microservices Architecture" >> $GITHUB_STEP_SUMMARY
           echo "Frontend: https://tracelt-frontend-production.up.railway.app"
