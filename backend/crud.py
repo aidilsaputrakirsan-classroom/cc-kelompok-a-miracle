@@ -56,15 +56,16 @@ def create_pengguna(db: Session, pengguna_data: PenggunaCreate) -> Pengguna | No
     # Hubungkan data pendonor publik yang sudah lebih dulu diinput dengan akun pengguna ber-email sama.
     pendonor_list = db.query(Pendonor).filter(Pendonor.email == normalized_email).all()
     for pendonor in pendonor_list:
+        # Cek apakah sudah ada RiwayatDonor untuk pendonor ini (baik yang unlinked maupun sudah linked ke pengguna lain)
         existing_riwayat = (
             db.query(RiwayatDonor)
-            .filter(
-                RiwayatDonor.id_pendonor == pendonor.id_pendonor,
-                RiwayatDonor.id_pengguna == db_pengguna.id_pengguna,
-            )
+            .filter(RiwayatDonor.id_pendonor == pendonor.id_pendonor)
             .first()
         )
         if existing_riwayat:
+            # Jika ada tapi belum di-link ke pengguna, update id_pengguna-nya
+            if existing_riwayat.id_pengguna is None:
+                existing_riwayat.id_pengguna = db_pengguna.id_pengguna
             continue
 
         db.add(
@@ -118,17 +119,17 @@ def create_pendonor(db: Session, pendonor_data: PendonorCreate) -> Pendonor:
     db.add(db_pendonor)
     db.flush()
 
-    # Jika email pendonor sudah punya akun pengguna, otomatis tampilkan pada dashboard pengguna itu.
+    # Selalu buat RiwayatDonor agar admin bisa verifikasi.
+    # Jika ada akun Pengguna dengan email sama, langsung di-link; jika tidak, id_pengguna=None (nullable).
     pengguna = db.query(Pengguna).filter(Pengguna.email == db_pendonor.email).first()
-    if pengguna:
-        db.add(
-            RiwayatDonor(
-                id_pendonor=db_pendonor.id_pendonor,
-                id_pengguna=pengguna.id_pengguna,
-                golongan_darah=db_pendonor.golongan_darah,
-                status_verifikasi=False,
-            )
+    db.add(
+        RiwayatDonor(
+            id_pendonor=db_pendonor.id_pendonor,
+            id_pengguna=pengguna.id_pengguna if pengguna else None,
+            golongan_darah=db_pendonor.golongan_darah,
+            status_verifikasi=False,
         )
+    )
 
     db.commit()
     db.refresh(db_pendonor)
