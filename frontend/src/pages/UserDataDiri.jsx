@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { User, Mail, Phone, MapPin, Heart, Scale, Ruler, Droplets, Calendar, CheckCircle2 } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Scale, Ruler, Droplets, Calendar, CheckCircle2 } from 'lucide-react';
 import { UserDashboardHeader } from '../components/UserDashboardHeader';
 import { apiService } from '../services/api';
 import { LoadingSpinner } from '../components/LoadingSpinner';
@@ -93,7 +93,6 @@ export const UserDataDiri = () => {
     if (!form.tinggi_badan || Number(form.tinggi_badan) <= 0) e.tinggi_badan = 'Tidak valid';
     if (!form.alamat.trim()) e.alamat = 'Wajib diisi';
     if (!form.no_telepon.trim()) e.no_telepon = 'Wajib diisi';
-    if (!form.riwayat_kesehatan.trim()) e.riwayat_kesehatan = 'Isi "Tidak ada" jika tidak ada';
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -249,15 +248,6 @@ export const UserDataDiri = () => {
                     rows={2} className={inp(errors.alamat)} placeholder="Jl. Merdeka No. 1, Balikpapan" />
                 </Field>
               </div>
-            </Section>
-
-            {/* Seksi 5 — Kesehatan */}
-            <Section title="Riwayat Kesehatan" icon={<Heart className="w-4 h-4" />}>
-              <Field error={errors.riwayat_kesehatan} hint='Isi "Tidak ada" jika tidak ada riwayat penyakit'>
-                <textarea value={form.riwayat_kesehatan} onChange={(e) => set('riwayat_kesehatan', e.target.value)}
-                  rows={3} className={inp(errors.riwayat_kesehatan)}
-                  placeholder="Contoh: Tidak ada / Diabetes / Hipertensi / Asma" />
-              </Field>
             </Section>
 
             {/* Actions */}

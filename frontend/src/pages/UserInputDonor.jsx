@@ -1,30 +1,18 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Droplets, CalendarDays, CheckCircle2, ArrowRight, UserCog } from 'lucide-react';
+import { Heart, CalendarDays, CheckCircle2, ArrowRight, UserCog } from 'lucide-react';
 import { UserDashboardHeader } from '../components/UserDashboardHeader';
 import { apiService } from '../services/api';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 
-const GOLONGAN_DARAH = ['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'];
-
-const GOLONGAN_COLOR = {
-  'O+': 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800',
-  'O-': 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800',
-  'A+': 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800',
-  'A-': 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800',
-  'B+': 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800',
-  'B-': 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800',
-  'AB+': 'bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800',
-  'AB-': 'bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800',
-};
 
 export const UserInputDonor = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [pendonor, setPendonor] = useState(null);
-  const [form, setForm] = useState({ golongan_darah: 'O+', tanggal_terakhir_donor: '' });
+  const [form, setForm] = useState({ tanggal_terakhir_donor: '', riwayat_kesehatan: '' });
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState('');
   const [done, setDone] = useState(false);
@@ -37,7 +25,7 @@ export const UserInputDonor = () => {
         if (riwayats.length > 0) {
           const donorRes = await apiService.getPendonorById(riwayats[0].id_pendonor);
           setPendonor(donorRes.data);
-          setForm({ golongan_darah: donorRes.data.golongan_darah, tanggal_terakhir_donor: '' });
+          setForm({ tanggal_terakhir_donor: '', riwayat_kesehatan: donorRes.data.riwayat_kesehatan || '' });
         }
       } catch (err) {
         if (err.response?.status === 401) navigate('/login?type=user');
@@ -52,6 +40,7 @@ export const UserInputDonor = () => {
     const e = {};
     if (!form.tanggal_terakhir_donor) e.tanggal = 'Tanggal donor wajib diisi';
     else if (new Date(form.tanggal_terakhir_donor) > new Date()) e.tanggal = 'Tanggal tidak boleh di masa depan';
+    if (!form.riwayat_kesehatan.trim()) e.riwayat_kesehatan = 'Isi "Tidak ada" jika tidak ada riwayat';
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -63,13 +52,13 @@ export const UserInputDonor = () => {
     setSaving(true);
     try {
       await apiService.updatePendonor(pendonor.id_pendonor, {
-        golongan_darah: form.golongan_darah,
         tanggal_terakhir_donor: form.tanggal_terakhir_donor,
+        riwayat_kesehatan: form.riwayat_kesehatan,
         total_donor: (pendonor.total_donor || 0) + 1,
       });
       await apiService.createRiwayatDonorPengguna({
         id_pendonor: pendonor.id_pendonor,
-        golongan_darah: form.golongan_darah,
+        golongan_darah: pendonor.golongan_darah,
       });
       setDone(true);
     } catch (err) {
@@ -100,7 +89,7 @@ export const UserInputDonor = () => {
               Data donor Anda berhasil disimpan dan menunggu verifikasi admin.
             </p>
             <div className="flex gap-3">
-              <button onClick={() => { setDone(false); setForm({ golongan_darah: pendonor?.golongan_darah || 'O+', tanggal_terakhir_donor: '' }); }}
+              <button onClick={() => { setDone(false); setForm({ tanggal_terakhir_donor: '', riwayat_kesehatan: pendonor?.riwayat_kesehatan || '' }); }}
                 className="flex-1 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 py-3 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 transition">
                 Input Lagi
               </button>
@@ -188,25 +177,28 @@ export const UserInputDonor = () => {
                     {errors.tanggal && <p className="mt-1.5 text-xs text-red-500 font-medium">{errors.tanggal}</p>}
                   </div>
 
-                  {/* Golongan darah */}
+                  {/* Riwayat kesehatan */}
                   <div className="p-5">
                     <label className="flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300 mb-3">
-                      <Droplets className="w-4 h-4 text-[#660000] dark:text-red-400" />
-                      Golongan Darah
+                      <Heart className="w-4 h-4 text-[#660000] dark:text-red-400" />
+                      Kondisi Kesehatan Saat Ini
                     </label>
-                    <div className="grid grid-cols-4 gap-2">
-                      {GOLONGAN_DARAH.map((g) => (
-                        <button key={g} type="button" onClick={() => setForm((f) => ({ ...f, golongan_darah: g }))}
-                          className={`rounded-xl border py-2.5 text-sm font-bold transition ${
-                            form.golongan_darah === g
-                              ? `${GOLONGAN_COLOR[g]} ring-2 ring-offset-1 ring-current`
-                              : 'bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-slate-300'
-                          }`}>
-                          {g}
-                        </button>
-                      ))}
-                    </div>
-                    <p className="mt-2 text-xs text-slate-400">Dikonfirmasi saat verifikasi admin</p>
+                    <textarea
+                      value={form.riwayat_kesehatan}
+                      onChange={(e) => {
+                        setForm((f) => ({ ...f, riwayat_kesehatan: e.target.value }));
+                        setErrors((er) => { const n = { ...er }; delete n.riwayat_kesehatan; return n; });
+                      }}
+                      rows={3}
+                      placeholder='Contoh: Tidak ada / Sedang flu / Tekanan darah normal'
+                      className={`w-full rounded-xl border px-4 py-2.5 text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 transition focus:outline-none focus:ring-2 resize-none ${
+                        errors.riwayat_kesehatan
+                          ? 'border-red-400 focus:ring-red-300'
+                          : 'border-slate-200 dark:border-slate-700 focus:ring-[#660000]/30 focus:border-[#660000]'
+                      }`}
+                    />
+                    {errors.riwayat_kesehatan && <p className="mt-1.5 text-xs text-red-500 font-medium">{errors.riwayat_kesehatan}</p>}
+                    <p className="mt-1.5 text-xs text-slate-400">Diperbarui setiap kali input donor baru</p>
                   </div>
 
                   {/* Submit */}

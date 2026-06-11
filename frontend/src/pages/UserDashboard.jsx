@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ClipboardList, Droplets, Clock, CheckCircle2, User, Link as LinkIcon } from 'lucide-react';
+import { ClipboardList, Droplets, Clock, CheckCircle2, User } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { UserDashboardHeader } from '../components/UserDashboardHeader';
 import { apiService } from '../services/api';
@@ -16,16 +16,26 @@ export const UserDashboard = () => {
   const [user, setUser] = useState(null);
   const [riwayats, setRiwayats] = useState([]);
   const [pendonorMap, setPendonorMap] = useState({});
+  const [bloodStock, setBloodStock] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     const loadData = async () => {
-      await Promise.all([fetchUserData(), fetchUserRiwayat()]);
+      await Promise.all([fetchUserData(), fetchUserRiwayat(), fetchBloodStock()]);
     };
     loadData();
   }, []);
+
+  const fetchBloodStock = async () => {
+    try {
+      const res = await apiService.getPublicBloodStock();
+      setBloodStock(res.data.blood_stock || []);
+    } catch {
+      // stok darah opsional, gagal tidak apa-apa
+    }
+  };
 
   const fetchUserData = async () => {
     try {
@@ -192,9 +202,53 @@ export const UserDashboard = () => {
               )}
             </div>
           )}
+
+          {/* Stok Darah */}
+          {bloodStock.length > 0 && (
+            <div className="mt-10 space-y-4">
+              <div>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white">Stok Darah Tersedia</h2>
+                <p className="text-sm text-slate-500 dark:text-slate-400">Berdasarkan data donor yang sudah terverifikasi</p>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {bloodStock.map((item) => (
+                  <BloodStockCard key={item.golongan_darah} golongan={item.golongan_darah} jumlah={item.jumlah_stok} />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </main>
     </div>
+  );
+};
+
+const STOCK_COLOR = {
+  'O+': { bg: 'bg-red-50 dark:bg-red-900/20', text: 'text-red-700 dark:text-red-300', dot: 'bg-red-500' },
+  'O-': { bg: 'bg-red-50 dark:bg-red-900/20', text: 'text-red-700 dark:text-red-300', dot: 'bg-red-500' },
+  'A+': { bg: 'bg-blue-50 dark:bg-blue-900/20', text: 'text-blue-700 dark:text-blue-300', dot: 'bg-blue-500' },
+  'A-': { bg: 'bg-blue-50 dark:bg-blue-900/20', text: 'text-blue-700 dark:text-blue-300', dot: 'bg-blue-500' },
+  'B+': { bg: 'bg-green-50 dark:bg-green-900/20', text: 'text-green-700 dark:text-green-300', dot: 'bg-green-500' },
+  'B-': { bg: 'bg-green-50 dark:bg-green-900/20', text: 'text-green-700 dark:text-green-300', dot: 'bg-green-500' },
+  'AB+': { bg: 'bg-purple-50 dark:bg-purple-900/20', text: 'text-purple-700 dark:text-purple-300', dot: 'bg-purple-500' },
+  'AB-': { bg: 'bg-purple-50 dark:bg-purple-900/20', text: 'text-purple-700 dark:text-purple-300', dot: 'bg-purple-500' },
+};
+
+const BloodStockCard = ({ golongan, jumlah }) => {
+  const color = STOCK_COLOR[golongan] || { bg: 'bg-slate-50 dark:bg-slate-800', text: 'text-slate-700 dark:text-slate-300', dot: 'bg-slate-400' };
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={`rounded-2xl border border-slate-100 dark:border-slate-800 p-4 ${color.bg} flex flex-col items-center gap-2`}
+    >
+      <div className={`w-2 h-2 rounded-full ${color.dot}`} />
+      <span className={`text-2xl font-black ${color.text}`}>{golongan}</span>
+      <div className="text-center">
+        <p className="text-3xl font-black text-slate-900 dark:text-white">{jumlah}</p>
+        <p className="text-xs text-slate-400 mt-0.5">donor</p>
+      </div>
+    </motion.div>
   );
 };
 
