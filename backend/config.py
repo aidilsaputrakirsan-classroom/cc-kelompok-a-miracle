@@ -25,10 +25,10 @@ class Settings:
         self.ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
         self.DEBUG: bool = self.ENVIRONMENT == "development"
 
-        # Database
+        # Database — fallback ke SQLite jika DATABASE_URL tidak di-set (Railway tanpa PostgreSQL)
         self.DATABASE_URL: str = os.getenv(
             "DATABASE_URL",
-            "postgresql://postgres:postgres@localhost:5432/tracelt",
+            "sqlite:///./tracelt.db",
         )
 
         # Auth
