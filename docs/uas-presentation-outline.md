@@ -32,7 +32,7 @@
 - Jumlah containers, services, endpoints:
   - 6 Containers: `tracelt-frontend`, `tracelt-gateway`, `tracelt-auth-service`, `tracelt-item-service`, `tracelt-auth-db`, `tracelt-item-db`
   - 6 Services Utama: React Frontend, Nginx Gateway, 2 FastAPI Microservices (Auth Service + Donor Service), 2 PostgreSQL Database (auth-db + item-db)
-  - ~29 Endpoints (Authentication, Donors Management, Riwayat Donor, Public Blood Stock, System Status/Telemetry)
+  - ~29 Endpoints (Perbandingan: pada folder `backend/` monolith lama terdapat 32 endpoint terdaftar/28 unik, sedangkan pada arsitektur microservices baru terdapat total 29 endpoint unik terbagi atas 9 di `auth-service` dan 20 di `item-service`).
 - CI/CD pipeline flow: GitHub Actions (`make lint`, `make test`) → Build Docker Image / Deploy ke Railway
 - Monitoring & observability: Endpoint `/auth/health`, `/donor/health`, dan *structured logging* Docker (format JSON).
 
