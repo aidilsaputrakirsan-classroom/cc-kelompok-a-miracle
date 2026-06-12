@@ -1,6 +1,6 @@
 # 🩸 Tracelt<font color="gray"><sup><sup>by Miracle</sup><sup></font>
-[![CI/CD Pipeline](https://github.com/aidilsaputrakirsan-classroom/cc-kelompok-a-miracle/actions/workflows/ci.yml/badge.svg)](https://github.com/aidilsaputrakirsan-classroom/cc-kelompok-a-miracle/actions/workflows/ci.yml)
 
+[![CI/CD Pipeline](https://github.com/aidilsaputrakirsan-classroom/cc-kelompok-a-miracle/actions/workflows/ci.yml/badge.svg)](https://github.com/aidilsaputrakirsan-classroom/cc-kelompok-a-miracle/actions/workflows/ci.yml)
 
 ## Pengajuan Pendonor Darah
 
@@ -120,31 +120,31 @@ Backend menggunakan **FastAPI** dengan arsitektur berlapis (layered architecture
 
 #### API Endpoints
 
-| Method   | Endpoint                                    | Auth  | Deskripsi                                |
-| -------- | ------------------------------------------- | ----- | ---------------------------------------- |
-| `GET`    | `/health`                                   | -     | Health check                             |
-| `GET`    | `/info`                                     | -     | System info & feature list               |
-| `GET`    | `/api/public/blood-stock`                   | -     | Stok darah publik per golongan           |
-| `POST`   | `/auth/admin/register`                      | -     | Registrasi admin (maks 1)                |
-| `POST`   | `/auth/admin/login`                         | -     | Login admin, return JWT                  |
-| `POST`   | `/auth/pengguna/register`                   | -     | Registrasi pengguna                      |
-| `POST`   | `/auth/pengguna/login`                      | -     | Login pengguna, return JWT               |
-| `POST`   | `/pendonor`                                 | -     | Buat data pendonor baru                  |
-| `GET`    | `/pendonor`                                 | -     | List pendonor + filter & pagination      |
-| `GET`    | `/pendonor/{pendonor_id}`                   | -     | Detail pendonor                          |
-| `PUT`    | `/pendonor/{pendonor_id}`                   | -     | Update data pendonor                     |
-| `DELETE` | `/pendonor/{pendonor_id}`                   | Admin | Hapus pendonor (admin only)              |
-| `POST`   | `/riwayat-donor`                            | -     | Buat riwayat donor                       |
-| `GET`    | `/riwayat-donor`                            | -     | List riwayat donor                       |
-| `GET`    | `/riwayat-donor/{riwayat_id}`               | -     | Detail riwayat donor                     |
-| `GET`    | `/riwayat-donor/pendonor/{pendonor_id}`     | -     | List riwayat donor per pendonor          |
-| `POST`   | `/riwayat-donor/{riwayat_id}/verifikasi`    | Admin | Verifikasi/tolak riwayat donor           |
-| `GET`    | `/pengguna/me`                              | User  | Profil pengguna saat ini                 |
-| `POST`   | `/pengguna/riwayat-donor`                   | User  | Buat riwayat donor (linked ke user)      |
-| `GET`    | `/pengguna/riwayat-donor`                   | User  | List riwayat donor milik user            |
-| `GET`    | `/pengguna/riwayat-donor/{riwayat_id}`      | User  | Detail riwayat donor milik user          |
-| `PUT`    | `/pengguna/riwayat-donor/{riwayat_id}`      | User  | Update riwayat (jika belum diverifikasi) |
-| `DELETE` | `/pengguna/riwayat-donor/{riwayat_id}`      | User  | Hapus riwayat (jika belum diverifikasi)  |
+| Method   | Endpoint                                 | Auth  | Deskripsi                                |
+| -------- | ---------------------------------------- | ----- | ---------------------------------------- |
+| `GET`    | `/health`                                | -     | Health check                             |
+| `GET`    | `/info`                                  | -     | System info & feature list               |
+| `GET`    | `/api/public/blood-stock`                | -     | Stok darah publik per golongan           |
+| `POST`   | `/auth/admin/register`                   | -     | Registrasi admin (maks 1)                |
+| `POST`   | `/auth/admin/login`                      | -     | Login admin, return JWT                  |
+| `POST`   | `/auth/pengguna/register`                | -     | Registrasi pengguna                      |
+| `POST`   | `/auth/pengguna/login`                   | -     | Login pengguna, return JWT               |
+| `POST`   | `/pendonor`                              | -     | Buat data pendonor baru                  |
+| `GET`    | `/pendonor`                              | -     | List pendonor + filter & pagination      |
+| `GET`    | `/pendonor/{pendonor_id}`                | -     | Detail pendonor                          |
+| `PUT`    | `/pendonor/{pendonor_id}`                | -     | Update data pendonor                     |
+| `DELETE` | `/pendonor/{pendonor_id}`                | Admin | Hapus pendonor (admin only)              |
+| `POST`   | `/riwayat-donor`                         | -     | Buat riwayat donor                       |
+| `GET`    | `/riwayat-donor`                         | -     | List riwayat donor                       |
+| `GET`    | `/riwayat-donor/{riwayat_id}`            | -     | Detail riwayat donor                     |
+| `GET`    | `/riwayat-donor/pendonor/{pendonor_id}`  | -     | List riwayat donor per pendonor          |
+| `POST`   | `/riwayat-donor/{riwayat_id}/verifikasi` | Admin | Verifikasi/tolak riwayat donor           |
+| `GET`    | `/pengguna/me`                           | User  | Profil pengguna saat ini                 |
+| `POST`   | `/pengguna/riwayat-donor`                | User  | Buat riwayat donor (linked ke user)      |
+| `GET`    | `/pengguna/riwayat-donor`                | User  | List riwayat donor milik user            |
+| `GET`    | `/pengguna/riwayat-donor/{riwayat_id}`   | User  | Detail riwayat donor milik user          |
+| `PUT`    | `/pengguna/riwayat-donor/{riwayat_id}`   | User  | Update riwayat (jika belum diverifikasi) |
+| `DELETE` | `/pengguna/riwayat-donor/{riwayat_id}`   | User  | Hapus riwayat (jika belum diverifikasi)  |
 
 > **Catatan:** Endpoint auth juga tersedia dengan prefix `/api/` (contoh: `/api/auth/admin/login`) untuk kompatibilitas dengan frontend melalui Nginx reverse proxy.
 
@@ -438,21 +438,28 @@ npm run dev
 Project ini menyediakan beberapa command untuk membantu workflow development:
 
 ### 🔍 Lint
+
 Menjalankan pengecekan code style
+
 ```bash
 make lint
 ```
 
 ### 🧪 Test
+
 Menjalankan test (sementara masih placeholder)
+
 ```bash
 make test
 ```
 
 ### 🚀 PR Check
+
 Digunakan sebelum membuat Pull Request:
+
 - Build container
 - Menjalankan test
+
 ```bash
 make pr-check
 ```
@@ -468,7 +475,7 @@ make pr-check
 | 5-7    | Docker & Compose       | ✅     |
 | 8      | UTS Demo               | ✅     |
 | 9-11   | CI/CD Pipeline         | ✅     |
-| 12-14  | Microservices          | ⬜     |
+| 12-14  | Microservices          | ✅     |
 | 15-16  | Final & UAS            | ⬜     |
 
 ## 📁 Struktur Proyek
@@ -501,8 +508,6 @@ cc-kelompok-a-miracle/
 │   ├── docker-architecture.md       # Dokumentasi arsitektur Docker
 │   ├── laporan-CICD-image-optimation.md  # Laporan optimasi image
 │   ├── member-*.md                  # Dokumentasi anggota tim
-│   ├── milestone2-release.md        # Ringkasan release Milestone 2
-│   ├── release-notes-m2.md          # Release notes Milestone 2
 │   ├── ui-test-results.md           # Hasil pengujian UI
 │   ├── UTS-demo-langkah.md          # Langkah-langkah demo UTS
 │   └── UTS-demo-script.md           # Script narasi demo UTS
@@ -576,8 +581,6 @@ cc-kelompok-a-miracle/
    Penjelasan: Proses verifikasi (disetujui/tidak) dilakukan oleh Admin. Meskipun di oval gambar 2 atribut id_admin tidak digambar eksplisit di Riwayat_Donor, relasi "Memverifikasi" menyiratkan bahwa ID Admin perlu disimpan di Riwayat Donor untuk mencatat siapa yang memverifikasi.
 
 </div>
-
-
 
 ## setup.sh
 
@@ -687,124 +690,6 @@ Pengujian dilakukan dengan langkah berikut:
 | Health check `http://localhost:8000/health` | Berhasil                   |
 | Docker network                              | Ketiga container terhubung |
 | Docker volume `pgdata`                      | Terdeteksi                 |
-
-### Production End-to-End Testing
-
-Pengujian end-to-end pada production URL dilakukan oleh Lead QA & Docs untuk memastikan service backend, koneksi database, endpoint publik, dan autentikasi pengguna berjalan setelah deployment. Dokumentasi lengkap tersedia di [`docs/production-test.md`](docs/production-test.md).
-
-| Endpoint | Method | Status | Hasil QA |
-| --- | --- | --- | --- |
-| `/health` | `GET` | `200` | Backend sehat dan database terhubung |
-| `/api/public/blood-stock` | `GET` | `200` | Stok darah publik berhasil ditampilkan |
-| `/api/auth/admin/register` | `POST` | `201` | Registrasi admin berhasil dibuat |
-| `/api/auth/admin/login` | `POST` | Belum dieksekusi | Perlu diuji sebagai follow-up |
-| `/api/auth/pengguna/register` | `POST` | `400` | Validasi email duplikat berjalan |
-| `/api/auth/pengguna/login` | `POST` | `200` | Login pengguna berhasil dan token bearer diterima |
-
-#### Detail Hasil API Production
-
-**GET `/health`**
-
-```json
-{
-  "status": "healthy",
-  "service": "backend",
-  "version": "1.0.0",
-  "database": "connected"
-}
-```
-
-**GET `/api/public/blood-stock`**
-
-```json
-[
-  { "golongan_darah": "O", "jumlah_stok": 0 },
-  { "golongan_darah": "A+", "jumlah_stok": 0 },
-  { "golongan_darah": "A-", "jumlah_stok": 0 },
-  { "golongan_darah": "B+", "jumlah_stok": 0 },
-  { "golongan_darah": "B-", "jumlah_stok": 0 },
-  { "golongan_darah": "AB+", "jumlah_stok": 0 },
-  { "golongan_darah": "AB-", "jumlah_stok": 0 }
-]
-```
-
-**POST `/api/auth/admin/register`**
-
-Request:
-
-```json
-{
-  "nama_admin": "Admin ITK",
-  "email": "admin@itk.ac.id",
-  "password": "AdminPass123!"
-}
-```
-
-Response `201`:
-
-```json
-{
-  "id_admin": 0,
-  "nama_admin": "string",
-  "email": "string"
-}
-```
-
-**POST `/api/auth/admin/login`**
-
-Request:
-
-```json
-{
-  "email": "admin@itk.ac.id",
-  "password": "AdminPass123!"
-}
-```
-
-Status: belum dieksekusi.
-
-**POST `/api/auth/pengguna/register`**
-
-Request:
-
-```json
-{
-  "nama_pengguna": "Budi Santoso",
-  "email": "pengguna@example.com",
-  "password": "UserPass123!"
-}
-```
-
-Response `400`:
-
-```json
-{
-  "detail": "Email pengguna sudah terdaftar"
-}
-```
-
-**POST `/api/auth/pengguna/login`**
-
-Request:
-
-```json
-{
-  "email": "pengguna@example.com",
-  "password": "UserPass123!"
-}
-```
-
-Response `200`:
-
-```json
-{
-  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "token_type": "bearer",
-  "user_type": "pengguna"
-}
-```
-
-Kesimpulan QA: production backend dapat diakses, database terhubung, endpoint publik berjalan, validasi registrasi pengguna duplikat aktif, dan login pengguna berhasil. Skenario yang masih perlu ditindaklanjuti adalah eksekusi login admin production.
 
 ### Image Size
 
@@ -924,10 +809,6 @@ docker run -d --name frontend -p 3000:80 <DOCKERHUB_USERNAME>/frontend:v1
 ```
 
 > Dokumentasi lengkap optimasi image tersedia di [`docs/laporan-cicd-image-optimization.md`](docs/laporan-cicd-image-optimization.md)
-
-## Dokumentasi Milestone 2
-
-Release notes Milestone 2 tersedia di [`docs/release-notes-m2.md`](docs/release-notes-m2.md) dan [`docs/milestone2-release.md`](docs/milestone2-release.md), mencakup fitur yang sudah tersedia, URL production, hasil testing production, tech stack, known issues, dan tag release `v2.0`.
 
 ## Dokumentasi Week 1
 
