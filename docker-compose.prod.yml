@@ -1,13 +1,75 @@
-services:
-  db:
-    restart: always
-    ports: []
+# ============================================================
+# Docker Compose Production — Tracelt (Modul 14 - Lead DevOps)
+# Production Overrides
+# ============================================================
 
-  backend:
-    restart: always
+services:
+
+  auth-service:
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - DEBUG=false
+      - CORS_ORIGINS=https://tracelt-frontend-production.up.railway.app
+    ports: !reset []   # Tidak expose port langsung
+    deploy:
+      resources:
+        limits:
+          cpus: '0.75'
+          memory: 768M
+        reservations:
+          cpus: '0.3'
+          memory: 384M
+
+  item-service:
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - DEBUG=false
+      - CORS_ORIGINS=https://tracelt-frontend-production.up.railway.app
+    ports: !reset []   # Tidak expose port langsung
+    deploy:
+      resources:
+        limits:
+          cpus: '0.75'
+          memory: 768M
+        reservations:
+          cpus: '0.3'
+          memory: 384M
 
   frontend:
-    restart: always
-    build:
-      args:
-        VITE_API_URL: https://yourdomain.com
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.4'
+          memory: 384M
+
+  gateway:
+    restart: unless-stopped
+    ports:
+      - "80:80"          # Hanya gateway yang di-expose
+    deploy:
+      resources:
+        limits:
+          cpus: '0.3'
+          memory: 256M
+
+  # Databases (production style)
+  auth-db:
+    restart: unless-stopped
+    ports: !reset []     # Database tidak boleh diakses dari luar
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+
+  item-db:
+    restart: unless-stopped
+    ports: !reset []     # Database tidak boleh diakses dari luar
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M

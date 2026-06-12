@@ -2,75 +2,72 @@
 # Makefile — Tracelt Microservices
 # ==============================================
 
-.PHONY: up down build logs ps restart clean help
+.PHONY: dev prod up down build logs ps status clean restart health help
 
-# Default
-up:
+# ==================== DEVELOPMENT ====================
+dev:
 	docker compose up --build -d
 
-# Start tanpa build (lebih cepat)
+# ==================== PRODUCTION ====================
+prod:
+	docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+
+# ==================== BASIC COMMANDS ====================
+up:
+	docker compose up -d
+
 up-fast:
 	docker compose up -d
 
-# Stop semua container
 down:
 	docker compose down
 
-# Stop + hapus volume (hati-hati, data hilang!)
-clean:
-	docker compose down -v --rmi local
-
-# Build ulang semua image
 build:
 	docker compose build --no-cache
 
-# Lihat status semua container
-ps:
-	docker compose ps
+rebuild:
+	docker compose up --build -d
 
-# Lihat logs semua service
-logs:
-	docker compose logs -f
-
-# Logs per service
-auth-logs:
-	docker compose logs -f auth-service
-
-item-logs:
-	docker compose logs -f item-service
-
-frontend-logs:
-	docker compose logs -f frontend
-
-gateway-logs:
-	docker compose logs -f gateway
-
-# Restart semua service
 restart:
 	docker compose restart
 
-# Restart satu service
-restart-auth:
-	docker compose restart auth-service
+# ==================== LOGS & STATUS ====================
+logs:
+	docker compose logs -f
 
-restart-item:
-	docker compose restart item-service
+logs-prod:
+	docker compose -f docker-compose.yml -f docker-compose.prod.yml logs -f
 
-# Health check manual
+ps:
+	docker compose ps
+
+ps-prod:
+	docker compose -f docker-compose.yml -f docker-compose.prod.yml ps
+
+status:
+	docker compose ps
+
+# ==================== CLEAN ====================
+clean:
+	docker compose down -v --remove-orphans
+	docker system prune -f
+
+# ==================== HELPER ====================
 health:
 	@echo "=== Health Check All Services ==="
 	curl -s http://localhost/health | jq || echo "Gateway: Failed"
 	curl -s http://localhost/auth/health | jq || echo "Auth Service: Failed"
 
-# Help
+# ==================== HELP ====================
 help:
-	@echo "=== Tracelt Microservices Commands ==="
-	@echo "make up           : Start all services with build"
-	@echo "make up-fast      : Start without rebuild"
+	@echo "=== Tracelt Makefile Commands ==="
+	@echo "make dev          : Development mode"
+	@echo "make prod         : Production mode (with prod overrides)"
+	@echo "make up           : Start services"
 	@echo "make down         : Stop services"
 	@echo "make ps           : Show container status"
-	@echo "make logs         : Show all logs"
-	@echo "make build        : Rebuild all images"
-	@echo "make clean        : Clean everything (careful!)"
+	@echo "make logs         : Show live logs"
+	@echo "make build        : Rebuild images"
+	@echo "make clean        : Clean everything"
 	@echo "make health       : Manual health check"
 	@echo "make help         : Show this help"
