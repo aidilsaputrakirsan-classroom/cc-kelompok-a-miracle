@@ -21,7 +21,7 @@ import {
   UserCheck,
   Clock,
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { apiService } from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import useDarkMode from '../hooks/useDarkMode';
@@ -29,6 +29,7 @@ import Swal from 'sweetalert2';
 import { ServiceUnavailable } from '../components/ServiceUnavailable';
 
 export const DonorList = () => {
+  const [searchParams] = useSearchParams();
   const [donors, setDonors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -38,11 +39,11 @@ export const DonorList = () => {
   const [editFormData, setEditFormData] = useState({});
   const [unverifiedRiwayat, setUnverifiedRiwayat] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
-  const [verificationTab, setVerificationTab] = useState('unverified');
+  const [verificationTab, setVerificationTab] = useState(searchParams.get('tab') || 'unverified');
   const [donorVerificationStatus, setDonorVerificationStatus] = useState({});
   const [isDark] = useDarkMode();
   const [filters, setFilters] = useState({
-    golongan_darah: '',
+    golongan_darah: searchParams.get('golongan_darah') || '',
     jenis_kelamin: '',
     umur_min: '',
     umur_max: ''
@@ -64,7 +65,7 @@ export const DonorList = () => {
         Object.entries(params).filter(([, value]) => value !== undefined)
       );
       
-      const res = await apiService.getPendonorList(cleanParams);
+      const res = await apiService.getPendonorList({ ...cleanParams, limit: 1000 });
       const donorList = res.data.pendonor || [];
       setDonors(donorList);
       
@@ -80,7 +81,7 @@ export const DonorList = () => {
 
   const loadDonorVerificationStatus = async (donorId) => {
     try {
-      const res = await apiService.getRiwayatDonorByPendonor(donorId);
+      const res = await apiService.getRiwayatDonorByPendonor(donorId, { limit: 100 });
       const riwayats = res.data.riwayat_donor || [];
       const unverified = riwayats.find(r => !r.status_verifikasi);
       const hasVerified = riwayats.some(r => r.status_verifikasi);
@@ -222,56 +223,68 @@ export const DonorList = () => {
   const filteredDonors = donors.filter(donor => {
     const status = donorVerificationStatus[donor.id_pendonor];
     if (verificationTab === 'unverified') {
-      return status?.unverified; // Ada riwayat yang belum diverifikasi
+      return status?.unverified;
     } else {
-      return status?.hasVerified && !status?.unverified; // Sudah punya riwayat terverifikasi, dan tidak ada yang pending
+      // Tampilkan semua donor yang punya minimal satu riwayat terverifikasi,
+      // termasuk yang juga punya riwayat pending baru — mereka terhitung di stok darah
+      return status?.hasVerified;
     }
   });
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
+      {/* Page Header */}
+      <div className="bg-gradient-to-br from-indigo-900 via-indigo-800 to-slate-900 -m-6 lg:-m-10 p-6 lg:p-10 pb-10 text-white rounded-b-[3rem] shadow-lg shadow-indigo-900/20 dark:from-indigo-950 dark:via-indigo-900 dark:to-slate-950 transition-colors">
+        <div className="flex items-center gap-3 mb-4">
           <Link
             to="/admin"
-            className="p-2.5 hover:bg-indigo-800/10 hover:text-indigo-800 dark:hover:bg-indigo-400/10 dark:hover:text-indigo-400 rounded-full transition-all text-slate-500 dark:text-slate-450"
-            title="Kembali ke Dashboard Utama"
+            className="p-2 hover:bg-white/20 rounded-full transition-colors text-white/60 hover:text-white"
+            title="Kembali ke Dashboard"
           >
             <ArrowLeft className="w-5 h-5" />
           </Link>
-          <div>
-            <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Dashboard Pendonor</h1>
-            <p className="text-slate-500 dark:text-slate-400 text-sm">Pengelolaan, perbaruan, dan verifikasi data pendonor sukarela.</p>
-          </div>
+          <span className="text-white/50 text-sm font-medium">Dashboard Admin</span>
         </div>
+        <h1 className="text-3xl lg:text-4xl font-black mb-1">Dashboard Pendonor</h1>
+        <p className="text-white/70 font-medium text-sm">Pengelolaan, perbaruan, dan verifikasi data pendonor sukarela.</p>
       </div>
 
-      {/* Verification Tabs */}
-      <div className="flex gap-2 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-2xl px-4 py-2 shadow-sm">
+      {/* Verification Tabs — pill style, Sudah Diverifikasi first */}
+      <div className="flex items-center gap-1.5 bg-white dark:bg-slate-900 rounded-2xl p-1.5 shadow-sm border border-slate-100 dark:border-slate-800 w-fit">
         <button
-          onClick={() => setVerificationTab('unverified')}
-          className={`flex items-center gap-2 px-6 py-3 font-semibold text-sm border-b-2 rounded-lg transition-all ${
-            verificationTab === 'unverified'
-              ? 'text-indigo-800 border-indigo-800 bg-indigo-50/50 dark:text-indigo-400 dark:border-indigo-400 dark:bg-indigo-950/20'
-              : 'text-slate-500 border-transparent hover:text-slate-900 dark:text-slate-450 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/40'
+          onClick={() => setVerificationTab('verified')}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all ${
+            verificationTab === 'verified'
+              ? 'bg-emerald-600 text-white shadow-sm'
+              : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
           }`}
         >
-          <span>🔄 Menunggu Verifikasi</span>
-          <span className="px-2 py-0.5 text-xs rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400 font-bold">
-            {donors.filter(d => donorVerificationStatus[d.id_pendonor]?.unverified).length}
+          <CheckCircle2 className="w-4 h-4" />
+          <span>Sudah Diverifikasi</span>
+          <span className={`px-1.5 py-0.5 text-xs rounded-full font-bold ${
+            verificationTab === 'verified'
+              ? 'bg-white/25 text-white'
+              : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400'
+          }`}>
+            {donors.filter(d => donorVerificationStatus[d.id_pendonor]?.hasVerified).length}
           </span>
         </button>
         <button
-          onClick={() => setVerificationTab('verified')}
-          className={`flex items-center gap-2 px-6 py-3 font-semibold text-sm border-b-2 rounded-lg transition-all ${
-            verificationTab === 'verified'
-              ? 'text-emerald-700 border-emerald-600 bg-emerald-50/30 dark:text-emerald-400 dark:border-emerald-400 dark:bg-emerald-950/20'
-              : 'text-slate-500 border-transparent hover:text-slate-900 dark:text-slate-450 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/40'
+          onClick={() => setVerificationTab('unverified')}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all ${
+            verificationTab === 'unverified'
+              ? 'bg-amber-500 text-white shadow-sm'
+              : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
           }`}
         >
-          <span>✅ Sudah Diverifikasi</span>
-          <span className="px-2 py-0.5 text-xs rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400 font-bold">
-            {donors.filter(d => donorVerificationStatus[d.id_pendonor]?.hasVerified && !donorVerificationStatus[d.id_pendonor]?.unverified).length}
+          <Clock className="w-4 h-4" />
+          <span>Menunggu Verifikasi</span>
+          <span className={`px-1.5 py-0.5 text-xs rounded-full font-bold ${
+            verificationTab === 'unverified'
+              ? 'bg-white/25 text-white'
+              : 'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400'
+          }`}>
+            {donors.filter(d => donorVerificationStatus[d.id_pendonor]?.unverified).length}
           </span>
         </button>
       </div>
@@ -367,7 +380,7 @@ export const DonorList = () => {
                 <tr>
                   <td colSpan={5} className="px-6 py-16 text-center text-slate-400 dark:text-slate-500">
                     <div className="flex flex-col items-center justify-center gap-3">
-                      <div className="w-8 h-8 border-3 border-indigo-800/30 border-t-indigo-800 dark:border-indigo-400/30 dark:border-t-indigo-400 rounded-full animate-spin" />
+                      <div className="w-8 h-8 border-[3px] border-indigo-800/30 border-t-indigo-800 dark:border-indigo-400/30 dark:border-t-indigo-400 rounded-full animate-spin" />
                       <span>Memuat data pendonor...</span>
                     </div>
                   </td>
@@ -386,7 +399,11 @@ export const DonorList = () => {
                       : 'Belum ada pendonor yang diverifikasi.'}
                   </td>
                 </tr>
-              ) : filteredDonors.map((donor) => (
+              ) : filteredDonors.map((donor) => {
+                const dStatus = donorVerificationStatus[donor.id_pendonor];
+                const totalInput = dStatus?.allRiwayats?.length || 0;
+                const verifiedInput = dStatus?.allRiwayats?.filter(r => r.status_verifikasi)?.length || 0;
+                return (
                 <tr key={donor.id_pendonor} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors group">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3.5">
@@ -396,6 +413,13 @@ export const DonorList = () => {
                       <div>
                         <div className="font-semibold text-slate-900 dark:text-slate-100">{donor.nama_lengkap}</div>
                         <div className="text-xs text-slate-500 dark:text-slate-450">{donor.umur} th • {donor.jenis_kelamin}</div>
+                        {totalInput > 0 && (
+                          <div className="flex items-center gap-1 mt-0.5">
+                            <span className="text-[11px] text-slate-400 dark:text-slate-500">{totalInput}× input</span>
+                            <span className="text-slate-300 dark:text-slate-700">·</span>
+                            <span className="text-[11px] text-emerald-600 dark:text-emerald-500 font-medium">{verifiedInput} terverifikasi</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </td>
@@ -446,7 +470,8 @@ export const DonorList = () => {
                     </div>
                   </td>
                 </tr>
-              ))}
+              );
+              })}
             </tbody>
           </table>
         </div>
@@ -753,6 +778,41 @@ export const DonorList = () => {
                       </div>
                     </div>
                   )}
+
+                  {/* Riwayat Input Donor */}
+                  {(() => {
+                    const allR = donorVerificationStatus[selectedDonor?.id_pendonor]?.allRiwayats || [];
+                    if (allR.length === 0) return null;
+                    return (
+                      <div className="space-y-3">
+                        <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 uppercase tracking-widest flex items-center gap-2">
+                          <Activity className="w-4 h-4 text-slate-400 dark:text-slate-500" />
+                          Riwayat Input Donor
+                          <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[10px] font-black normal-case tracking-normal">
+                            {allR.length}× total
+                          </span>
+                        </h3>
+                        <div className="space-y-1.5">
+                          {allR.map((r) => (
+                            <div key={r.id_riwayat} className="flex items-center justify-between px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                              <div className="flex items-center gap-3 text-sm">
+                                <span className="text-[11px] text-slate-400 font-mono">#{r.id_riwayat}</span>
+                                <span className="font-medium text-slate-700 dark:text-slate-300">{r.tanggal_donor || '—'}</span>
+                                <span className="text-xs text-slate-400">{r.golongan_darah}</span>
+                              </div>
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                                r.status_verifikasi
+                                  ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400'
+                                  : 'bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400'
+                              }`}>
+                                {r.status_verifikasi ? 'Terverifikasi' : 'Menunggu'}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   {/* Health History */}
                   <div className="space-y-3">

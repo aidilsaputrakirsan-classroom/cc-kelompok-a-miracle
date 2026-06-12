@@ -11,6 +11,8 @@ const DonorRegistration = lazy(() => import('./pages/DonorRegistration').then((m
 const PublicStock = lazy(() => import('./pages/PublicStock').then((module) => ({ default: module.PublicStock })));
 const StatusPage = lazy(() => import('./pages/StatusPage'));
 const AboutPage = lazy(() => import('./components/AboutPage'));
+const UserDataDiri = lazy(() => import('./pages/UserDataDiri').then((module) => ({ default: module.UserDataDiri })));
+const UserInputDonor = lazy(() => import('./pages/UserInputDonor').then((module) => ({ default: module.UserInputDonor })));
 import { AdminLayout } from './components/AdminLayout';
 import ErrorBoundary from './components/ErrorBoundary';
 import { apiService } from './services/api';
@@ -166,11 +168,15 @@ export default function App() {
 
             <Route
               path="/user/dashboard"
-              element={
-                <UserRoute>
-                  <UserDashboard />
-                </UserRoute>
-              }
+              element={<UserRoute><UserDashboard /></UserRoute>}
+            />
+            <Route
+              path="/user/data-diri"
+              element={<UserRoute><UserDataDiri /></UserRoute>}
+            />
+            <Route
+              path="/user/input-donor"
+              element={<UserRoute><UserInputDonor /></UserRoute>}
             />
 
             <Route path="*" element={<Navigate to="/" replace />} />

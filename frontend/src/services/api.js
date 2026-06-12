@@ -121,39 +121,47 @@ export const apiService = {
   // Stats (Admin Dashboard)
   getStats: async () => {
     try {
-      const [pendonorRes, riwayatAllRes, riwayatVerifiedRes, riwayatPendingRes] = await Promise.all([
+      const [pendonorRes, riwayatVerifiedRes, riwayatPendingRes, bloodStockRes] = await Promise.all([
         api.get('/pendonor', { params: { limit: 1000 } }),
-        api.get('/riwayat-donor', { params: { limit: 1000 } }),
         api.get('/riwayat-donor', { params: { status_verifikasi: true, limit: 1000 } }),
-        api.get('/riwayat-donor', { params: { status_verifikasi: false, limit: 1000 } }),
+        api.get('/riwayat-donor', { params: { status_verifikasi: false, limit: 1 } }),
+        api.get('/api/public/blood-stock'),
       ]);
-      
-      const pendonors = pendonorRes.data.pendonor || [];
-      const riwayats = riwayatAllRes.data.riwayat_donor || [];
-      const riwayatVerified = riwayatVerifiedRes.data.riwayat_donor || [];
-      const riwayatPending = riwayatPendingRes.data.riwayat_donor || [];
 
+      const pendonors = pendonorRes.data.pendonor || [];
+      const riwayatVerified = riwayatVerifiedRes.data.riwayat_donor || [];
+
+      // Use API-level totals (accurate regardless of pagination limit)
+      const totalPendonor = pendonorRes.data.total ?? pendonors.length;
+      const totalDonorBerhasil = riwayatVerifiedRes.data.total ?? riwayatVerified.length;
+      const totalPending = riwayatPendingRes.data.total ?? 0;
+
+      // Unique pendonors with at least one verified riwayat (for Pendonor Siap & gender chart)
       const verifiedPendonorIds = new Set(riwayatVerified.map((item) => item.id_pendonor));
-      const verifiedPendonors = pendonors.filter((p) => verifiedPendonorIds.has(p.id_pendonor));
-      
-      const pendonor_by_golongan_darah = {};
+
+      // Gender distribution — verified donors only
       const pendonor_by_jenis_kelamin = {};
-      
-      verifiedPendonors.forEach((p) => {
-        pendonor_by_golongan_darah[p.golongan_darah] = (pendonor_by_golongan_darah[p.golongan_darah] || 0) + 1;
-        pendonor_by_jenis_kelamin[p.jenis_kelamin] = (pendonor_by_jenis_kelamin[p.jenis_kelamin] || 0) + 1;
+      pendonors
+        .filter((p) => verifiedPendonorIds.has(p.id_pendonor))
+        .forEach((p) => {
+          pendonor_by_jenis_kelamin[p.jenis_kelamin] = (pendonor_by_jenis_kelamin[p.jenis_kelamin] || 0) + 1;
+        });
+
+      // Blood stock — from backend (verified donors, grouped by blood type)
+      const stok_darah_by_golongan_darah = {};
+      (bloodStockRes.data.blood_stock || []).forEach(({ golongan_darah, jumlah_stok }) => {
+        stok_darah_by_golongan_darah[golongan_darah] = jumlah_stok;
       });
-      
+
       return {
         data: {
-          total_pendonor: pendonors.length,
-          pendonor_siap_donor: riwayatVerified.length,
-          verifikasi_pending: riwayatPending.length,
-          donor_berhasil: riwayatVerified.length,
-          pendonor_by_golongan_darah,
-          stok_darah_by_golongan_darah: pendonor_by_golongan_darah,
+          total_pendonor: totalPendonor,
+          pendonor_siap_donor: verifiedPendonorIds.size,
+          verifikasi_pending: totalPending,
+          donor_berhasil: totalDonorBerhasil,
+          pendonor_by_golongan_darah: stok_darah_by_golongan_darah,
+          stok_darah_by_golongan_darah,
           pendonor_by_jenis_kelamin,
-          total_riwayat: riwayats.length,
         }
       };
     } catch (err) {
