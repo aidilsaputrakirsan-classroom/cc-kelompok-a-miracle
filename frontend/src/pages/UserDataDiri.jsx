@@ -105,7 +105,8 @@ export const UserDataDiri = () => {
     try {
       const payload = { ...form, berat_badan: Number(form.berat_badan), tinggi_badan: Number(form.tinggi_badan), umur: Number(form.umur) };
       if (pendonorId) {
-        await apiService.updatePendonor(pendonorId, payload);
+        const { golongan_darah: _locked, ...updatePayload } = payload;
+        await apiService.updatePendonor(pendonorId, updatePayload);
       } else {
         await apiService.registerPendonor({ ...payload, total_donor: 0, tanggal_terakhir_donor: null });
       }
@@ -187,10 +188,20 @@ export const UserDataDiri = () => {
                     </div>
                   </Field>
                   <Field label="Golongan Darah" error={errors.golongan_darah} icon={<Droplets className="w-4 h-4 text-slate-400" />}>
-                    <select value={form.golongan_darah} onChange={(e) => set('golongan_darah', e.target.value)}
-                      className={inp(errors.golongan_darah)}>
-                      {GOLONGAN_DARAH.map((g) => <option key={g}>{g}</option>)}
-                    </select>
+                    {pendonorId ? (
+                      <>
+                        <div className={`${inp()} bg-slate-50 dark:bg-slate-900/60 cursor-not-allowed flex items-center justify-between`}>
+                          <span className="font-bold text-slate-900 dark:text-white">{form.golongan_darah}</span>
+                          <span className="text-[10px] text-slate-400 uppercase tracking-widest font-semibold">Terkunci</span>
+                        </div>
+                        <p className="mt-1 text-xs text-slate-400">Tidak dapat diubah setelah didaftarkan</p>
+                      </>
+                    ) : (
+                      <select value={form.golongan_darah} onChange={(e) => set('golongan_darah', e.target.value)}
+                        className={inp(errors.golongan_darah)}>
+                        {GOLONGAN_DARAH.map((g) => <option key={g}>{g}</option>)}
+                      </select>
+                    )}
                   </Field>
                 </div>
               </div>

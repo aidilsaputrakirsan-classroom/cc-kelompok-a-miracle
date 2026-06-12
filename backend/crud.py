@@ -174,6 +174,7 @@ def update_pendonor(db: Session, pendonor_id: int, pendonor_data: PendonorUpdate
         return None
 
     update_data = pendonor_data.model_dump(exclude_unset=True)
+    update_data.pop("golongan_darah", None)
     if "email" in update_data and update_data["email"] is not None:
         update_data["email"] = _normalize_email(update_data["email"])
     if "no_telepon" in update_data and update_data["no_telepon"] is not None:
@@ -367,15 +368,13 @@ def get_pendonor_stats(db: Session) -> dict:
 
 
 def get_public_blood_stock(db: Session) -> dict:
-    # Hanya hitung donor yang punya riwayat donor terverifikasi (status_verifikasi = True)
     darah_stats = (
         db.query(
-            Pendonor.golongan_darah,
-            func.count(func.distinct(Pendonor.id_pendonor))
+            RiwayatDonor.golongan_darah,
+            func.count(RiwayatDonor.id_riwayat)
         )
-        .join(RiwayatDonor, Pendonor.id_pendonor == RiwayatDonor.id_pendonor)
-        .filter(RiwayatDonor.status_verifikasi)
-        .group_by(Pendonor.golongan_darah)
+        .filter(RiwayatDonor.status_verifikasi == True)
+        .group_by(RiwayatDonor.golongan_darah)
         .all()
     )
 
