@@ -246,8 +246,7 @@ export const AdminLayout = () => {
 
       {/* ── Main Content ─────────────────────────────────── */}
       <main
-        style={{ marginLeft: `max(0px, ${sidebarW})` }}
-        className="flex-1 p-6 lg:p-10 pt-20 lg:pt-10 min-h-screen flex flex-col transition-[margin-left] duration-300 ease-in-out"
+        className={`flex-1 p-4 sm:p-6 lg:p-10 pt-20 lg:pt-10 min-h-screen flex flex-col transition-[margin-left] duration-300 ease-in-out ${isCollapsed ? 'lg:ml-16' : 'lg:ml-64'}`}
       >
         <AnimatePresence>
           {authIsDown && (
