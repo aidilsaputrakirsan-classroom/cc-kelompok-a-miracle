@@ -38,7 +38,7 @@ try:
 except Exception as _e:
     _logging.getLogger(__name__).warning(f"DB tidak tersedia saat startup: {_e}")
 
-limiter = Limiter(key_func=get_remote_address)
+limiter = Limiter(key_func=get_remote_address, enabled=settings.ENVIRONMENT != "test")
 
 app = FastAPI(
     title="TraceIt API",
