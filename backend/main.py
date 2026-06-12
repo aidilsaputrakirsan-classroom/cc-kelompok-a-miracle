@@ -1,3 +1,5 @@
+import time
+
 from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -6,6 +8,8 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 from sqlalchemy import inspect, text
 from sqlalchemy.orm import Session
+
+from metrics import metrics
 
 import crud
 from auth import create_access_token, get_current_admin, get_current_pengguna
@@ -47,141 +51,6 @@ app = FastAPI(
 )
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
-
-
-# ==================== METRICS & TELEMETRY ====================
-import time
-import threading
-import re
-from collections import defaultdict, deque
-
-class MonolithMetricsCollector:
-    def __init__(self):
-        self._lock = threading.Lock()
-        self.start_time = time.time()
-        self.request_count = 0
-        self.error_count = 0
-        self.status_counts = defaultdict(int)
-        self.latencies = []
-        self.max_latency_samples = 1000
-        self.endpoint_stats = defaultdict(lambda: {
-            "count": 0,
-            "errors": 0,
-            "total_latency_ms": 0,
-        })
-        self._recent_requests = deque()
-
-        # Prepopulate with standard endpoints (GET, POST, PUT) to show up instantly on load
-        self.endpoint_stats["POST /auth/pengguna/login"] = {"count": 12, "errors": 0, "total_latency_ms": 540.0}
-        self.endpoint_stats["POST /auth/pengguna/register"] = {"count": 5, "errors": 1, "total_latency_ms": 320.0}
-        self.endpoint_stats["GET /pendonor"] = {"count": 28, "errors": 0, "total_latency_ms": 1120.0}
-        self.endpoint_stats["POST /riwayat-donor"] = {"count": 15, "errors": 0, "total_latency_ms": 750.0}
-        self.endpoint_stats["PUT /pendonor/{id}"] = {"count": 3, "errors": 0, "total_latency_ms": 195.0}
-
-    def record_request(self, method: str, path: str, status_code: int, duration_ms: float):
-        is_error = status_code >= 400
-        with self._lock:
-            now = time.time()
-            self.request_count += 1
-            self.status_counts[status_code] += 1
-            if is_error:
-                self.error_count += 1
-            self.latencies.append(duration_ms)
-            if len(self.latencies) > self.max_latency_samples:
-                self.latencies.pop(0)
-            
-            key = f"{method} {path}"
-            self.endpoint_stats[key]["count"] += 1
-            self.endpoint_stats[key]["total_latency_ms"] += duration_ms
-            if is_error:
-                self.endpoint_stats[key]["errors"] += 1
-                
-            self._recent_requests.append((now, is_error))
-            cutoff = now - 60
-            while self._recent_requests and self._recent_requests[0][0] < cutoff:
-                self._recent_requests.popleft()
-
-    def get_metrics_for_service(self, service_name: str) -> dict:
-        with self._lock:
-            now = time.time()
-            uptime = round(now - self.start_time, 1)
-            
-            filtered_endpoints = {}
-            total_reqs = 0
-            total_errs = 0
-            latencies = []
-            
-            for key, stats in self.endpoint_stats.items():
-                is_auth_endpoint = "/auth" in key
-                is_donor_endpoint = any(x in key for x in ["/pendonor", "/riwayat-donor", "/pengguna"])
-                
-                match = False
-                if service_name == "auth" and is_auth_endpoint:
-                    match = True
-                elif service_name == "donor" and is_donor_endpoint:
-                    match = True
-                    
-                if match:
-                    avg_lat = round(stats["total_latency_ms"] / stats["count"], 2) if stats["count"] > 0 else 0
-                    filtered_endpoints[key] = {
-                        "count": stats["count"],
-                        "errors": stats["errors"],
-                        "avg_latency_ms": avg_lat,
-                    }
-                    total_reqs += stats["count"]
-                    total_errs += stats["errors"]
-                    latencies.extend([avg_lat] * stats["count"])
-
-            error_rate = round(total_errs / total_reqs * 100, 2) if total_reqs > 0 else 0
-            
-            latency_stats = {}
-            if latencies:
-                sorted_lat = sorted(latencies)
-                n = len(sorted_lat)
-                latency_stats = {
-                    "p50_ms": round(sorted_lat[int(n * 0.5)], 2),
-                    "p95_ms": round(sorted_lat[int(n * 0.95)], 2),
-                    "p99_ms": round(sorted_lat[min(int(n * 0.99), n - 1)], 2),
-                    "avg_ms": round(sum(sorted_lat) / n, 2),
-                }
-            else:
-                latency_stats = {
-                    "p50_ms": 0.0,
-                    "p95_ms": 0.0,
-                    "p99_ms": 0.0,
-                    "avg_ms": 0.0,
-                }
-                
-            return {
-                "uptime_seconds": uptime,
-                "total_requests": total_reqs,
-                "total_errors": total_errs,
-                "error_rate_percent": error_rate,
-                "latency": latency_stats,
-                "endpoints": filtered_endpoints,
-            }
-
-monolith_metrics = MonolithMetricsCollector()
-
-@app.middleware("http")
-async def add_monolith_metrics_middleware(request: Request, call_next):
-    is_telemetry = any(x in request.url.path for x in ["/health", "/metrics", "/docs", "/openapi.json"])
-    start_time = time.time()
-    try:
-        response = await call_next(request)
-        status_code = response.status_code
-    except Exception as exc:
-        status_code = 500
-        raise exc
-    finally:
-        duration_ms = round((time.time() - start_time) * 1000, 2)
-        if not is_telemetry:
-            path = request.url.path
-            normalized_path = re.sub(r'/\d+', '/{id}', path)
-            monolith_metrics.record_request(request.method, normalized_path, status_code, duration_ms)
-    return response
-
-
 
 
 def _ensure_backend_schema_compatibility() -> None:
@@ -252,11 +121,25 @@ app.add_middleware(
 )
 
 
+@app.middleware("http")
+async def request_logging_middleware(request: Request, call_next):
+    start = time.perf_counter()
+    response = await call_next(request)
+    duration_ms = (time.perf_counter() - start) * 1000
+    metrics.record_request(
+        method=request.method,
+        path=request.url.path,
+        status_code=response.status_code,
+        duration_ms=duration_ms,
+    )
+    return response
+
+
 def raise_http_from_crud_error(error: ValueError) -> None:
     status_code = 409 if isinstance(error, crud.ConflictError) else 400
     raise HTTPException(status_code=status_code, detail=str(error))
 
-# ==================== HEALTH CHECK & TELEMETRY ====================
+# ==================== HEALTH & METRICS ====================
 
 @app.get("/health")
 def health_check(db: Session = Depends(get_db)):
@@ -265,90 +148,93 @@ def health_check(db: Session = Depends(get_db)):
         "status": "healthy",
         "service": "backend",
         "version": "1.0.0",
-        "dependencies": {
-            "database": {
-                "status": "connected"
-            }
-        }
+        "uptime_seconds": round(time.time() - metrics.start_time, 1),
     }
 
     try:
         db.execute(text("SELECT 1"))
+        health["database"] = "connected"
     except Exception as exc:
         health["status"] = "unhealthy"
-        health["dependencies"]["database"]["status"] = f"error: {str(exc)}"
+        health["database"] = f"error: {str(exc)}"
 
     status_code = 200 if health["status"] == "healthy" else 503
     return JSONResponse(content=health, status_code=status_code)
+
+
+_AUTH_SEGS  = ("/auth/", "/api/auth/", "/pengguna/", "/api/pengguna/")
+_DONOR_SEGS = ("/donor/", "/pendonor", "/riwayat-donor", "/api/pendonor", "/api/riwayat")
+
+
+def _service_metrics(service_name: str, prefixes: tuple | None) -> dict:
+    """
+    Filter endpoint stats by prefix dan hitung ulang total per partisi.
+    prefixes=None → gateway (semua endpoint yang BUKAN auth/donor).
+    Ini mencegah double-counting di status page.
+    """
+    data = metrics.get_metrics()
+    all_service_segs = _AUTH_SEGS + _DONOR_SEGS
+
+    if prefixes is None:
+        filtered = {k: v for k, v in data["endpoints"].items()
+                    if not any(seg in k for seg in all_service_segs)}
+    else:
+        filtered = {k: v for k, v in data["endpoints"].items()
+                    if any(seg in k for seg in prefixes)}
+
+    total_reqs = sum(v["count"] for v in filtered.values())
+    total_errs = sum(v["errors"] for v in filtered.values())
+    err_rate   = round(total_errs / total_reqs * 100, 2) if total_reqs > 0 else 0
+
+    return {
+        "service":             service_name,
+        "uptime_seconds":      data["uptime_seconds"],
+        "total_requests":      total_reqs,
+        "total_errors":        total_errs,
+        "error_rate_percent":  err_rate,
+        "latency":             data["latency"],
+        "endpoints":           filtered,
+    }
+
+
+@app.get("/metrics")
+def get_metrics():
+    """Gateway metrics — endpoint non-auth/non-donor saja (agar tidak double-count di status page)."""
+    return JSONResponse(content=_service_metrics("backend", prefixes=None))
 
 
 @app.get("/auth/health")
-def auth_health(db: Session = Depends(get_db)):
-    """Health check untuk Auth Service."""
-    health = {
-        "status": "healthy",
-        "service": "auth-service",
-        "version": "1.0.0",
-        "dependencies": {
-            "database": {
-                "status": "connected"
-            }
-        }
-    }
-
-    try:
-        db.execute(text("SELECT 1"))
-    except Exception as exc:
-        health["status"] = "unhealthy"
-        health["dependencies"]["database"]["status"] = f"error: {str(exc)}"
-
-    status_code = 200 if health["status"] == "healthy" else 503
-    return JSONResponse(content=health, status_code=status_code)
+def auth_health():
+    """Health check subsistem autentikasi."""
+    return JSONResponse(content={
+        "status":         "healthy",
+        "service":        "auth-service",
+        "version":        "1.0.0",
+        "uptime_seconds": round(time.time() - metrics.start_time, 1),
+    })
 
 
 @app.get("/auth/metrics")
 def auth_metrics():
-    """Metrics endpoint untuk Auth Service."""
-    return JSONResponse(content=monolith_metrics.get_metrics_for_service("auth"))
+    """Metrics endpoint autentikasi — total dihitung dari endpoint auth saja."""
+    return JSONResponse(content=_service_metrics("auth-service", _AUTH_SEGS))
 
 
 @app.get("/donor/health")
-def donor_health(db: Session = Depends(get_db)):
-    """Health check untuk Donor Service."""
-    health = {
-        "status": "healthy",
-        "service": "donor-service",
-        "version": "1.0.0",
-        "dependencies": {
-            "database": {
-                "status": "connected"
-            },
-            "auth-service": {
-                "status": "available",
-                "circuit_breaker": {
-                    "state": "CLOSED",
-                    "failures": 0,
-                    "failure_threshold": 5
-                }
-            }
-        }
-    }
-
-    try:
-        db.execute(text("SELECT 1"))
-    except Exception as exc:
-        health["status"] = "unhealthy"
-        health["dependencies"]["database"]["status"] = f"error: {str(exc)}"
-
-    status_code = 200 if health["status"] == "healthy" else 503
-    return JSONResponse(content=health, status_code=status_code)
+def donor_health():
+    """Health check subsistem pendonor."""
+    return JSONResponse(content={
+        "status":         "healthy",
+        "service":        "donor-service",
+        "version":        "1.0.0",
+        "uptime_seconds": round(time.time() - metrics.start_time, 1),
+    })
 
 
 @app.get("/donor/metrics")
 def donor_metrics():
-    """Metrics endpoint untuk Donor Service."""
-    return JSONResponse(content=monolith_metrics.get_metrics_for_service("donor"))
-
+    """Metrics endpoint pendonor — total dihitung dari endpoint donor saja."""
+    return JSONResponse(content=_service_metrics("donor-service", _DONOR_SEGS))
 
 
 @app.get("/api/public/blood-stock", response_model=PublicBloodStockResponse)
