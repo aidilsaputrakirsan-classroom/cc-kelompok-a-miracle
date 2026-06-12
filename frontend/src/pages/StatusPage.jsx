@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { Header } from '../components/Header';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 const services = [
   {

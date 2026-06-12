@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-// Default fallback points to backend dev port 80 when VITE_API_URL tidak diset
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost';
+// Default fallback points to backend dev port 8000 when VITE_API_URL tidak diset
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
