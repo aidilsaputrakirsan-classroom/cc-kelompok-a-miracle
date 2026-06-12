@@ -73,11 +73,12 @@ Bagian ini dibacakan secara estafet (*round-robin*) sesuai dengan domain kendala
   - *Kesimpulan Pelajaran:* "Pelajaran terbesar dari tim Miracle adalah menyelaraskan koordinasi antar-disiplin backend, frontend, kontainerisasi, dan deployment. Pentingnya standardisasi skema, dokumentasi API Contract, dan uji fungsionalitas menyeluruh agar seluruh komponen terhubung tanpa jeda."
 
 ## Slide 7: Team Contributions (🎤 Speaker: Semua Anggota / Round-robin | Durasi: 1.5 menit)
-- Debora Intania Subekti — Lead Backend — Pemecahan FastAPI ke *microservices*, skema *database*, logika bisnis *endpoint* API — [85 commits, 11 PRs]
-- Avhilla Catton Andalucia — Lead Container — Setup kontainerisasi (Docker/Compose), Nginx Gateway, CI/CD Pipeline ke Railway — [55 commits, 12 PRs]
-- Chelsy Olivia — Lead CI/CD & Deploy — Setup workflow GitHub Actions, automated testing pipeline, deploy ke Railway — [57 commits, 10 PRs]
-- Yosan Pratiwi — Lead Frontend — Integrasi React UI dengan Nginx Gateway, implementasi halaman status, perbaikan UI/UX — [54 commits, 8 PRs]
-- Betran — Lead QA & Docs — Uji coba API (Swagger/Thunder Client), *API Contract*, rilis dokumentasi, dan ERD — [37 commits, 9 PRs]
+- Debora Intania Subekti — Lead Backend — Pemecahan FastAPI ke *microservices*, skema *database*, logika bisnis *endpoint* API — [71 commits, 16 PRs]
+- Avhilla Catton Andalucia — Lead Container — Setup kontainerisasi (Docker/Compose), Nginx Gateway, CI/CD Pipeline ke Railway — [49 commits, 20 PRs]
+- Chelsy Olivia — Lead CI/CD & Deploy — Setup workflow GitHub Actions, automated testing pipeline, deploy ke Railway — [52 commits, 22 PRs]
+- Yosan Pratiwi — Lead Frontend — Integrasi React UI dengan Nginx Gateway, implementasi halaman status, perbaikan UI/UX — [47 commits, 10 PRs]
+- Betran — Lead QA & Docs — Uji coba API (Swagger/Thunder Client), *API Contract*, rilis dokumentasi, dan ERD — [31 commits, 15 PRs]
+![alt text](image-18.png)
 
 ---
 
