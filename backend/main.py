@@ -263,7 +263,7 @@ def health_check(db: Session = Depends(get_db)):
     """Health check endpoint - cek status semua komponen."""
     health = {
         "status": "healthy",
-        "service": "gateway",
+        "service": "backend",
         "version": "1.0.0",
         "dependencies": {
             "database": {
