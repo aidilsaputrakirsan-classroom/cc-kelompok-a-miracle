@@ -1,6 +1,9 @@
-from fastapi import Depends, FastAPI, HTTPException, Query
+from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 from sqlalchemy import inspect, text
 from sqlalchemy.orm import Session
 
@@ -35,11 +38,15 @@ try:
 except Exception as _e:
     _logging.getLogger(__name__).warning(f"DB tidak tersedia saat startup: {_e}")
 
+limiter = Limiter(key_func=get_remote_address)
+
 app = FastAPI(
     title="TraceIt API",
     description="REST API backend sesuai ERD: admin, pengguna, pendonor, riwayat_donor",
     version="1.0.0",
 )
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 
 def _ensure_backend_schema_compatibility() -> None:
@@ -145,7 +152,8 @@ def get_public_blood_stock(db: Session = Depends(get_db)):
 
 @app.post("/auth/admin/register", response_model=AdminResponse, status_code=201)
 @app.post("/api/auth/admin/register", response_model=AdminResponse, status_code=201)
-def register_admin(admin_data: AdminCreate, db: Session = Depends(get_db)):
+@limiter.limit("3/minute")
+def register_admin(request: Request, admin_data: AdminCreate, db: Session = Depends(get_db)):
     admin = crud.create_admin(db=db, admin_data=admin_data)
     if not admin:
         raise HTTPException(status_code=400, detail="Admin sudah terdaftar. Sistem hanya mengizinkan satu admin")
@@ -154,7 +162,8 @@ def register_admin(admin_data: AdminCreate, db: Session = Depends(get_db)):
 
 @app.post("/auth/admin/login", response_model=TokenResponse)
 @app.post("/api/auth/admin/login", response_model=TokenResponse)
-def login_admin(login_data: LoginRequest, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+def login_admin(request: Request, login_data: LoginRequest, db: Session = Depends(get_db)):
     admin = crud.authenticate_admin(db=db, email=login_data.email, password=login_data.password)
     if not admin:
         raise HTTPException(status_code=401, detail="Email atau password admin salah")
@@ -169,7 +178,8 @@ def login_admin(login_data: LoginRequest, db: Session = Depends(get_db)):
 
 @app.post("/auth/pengguna/register", response_model=PenggunaResponse, status_code=201)
 @app.post("/api/auth/pengguna/register", response_model=PenggunaResponse, status_code=201)
-def register_pengguna(pengguna_data: PenggunaCreate, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+def register_pengguna(request: Request, pengguna_data: PenggunaCreate, db: Session = Depends(get_db)):
     pengguna = crud.create_pengguna(db=db, pengguna_data=pengguna_data)
     if not pengguna:
         raise HTTPException(status_code=400, detail="Email pengguna sudah terdaftar")
@@ -178,7 +188,8 @@ def register_pengguna(pengguna_data: PenggunaCreate, db: Session = Depends(get_d
 
 @app.post("/auth/pengguna/login", response_model=TokenResponse)
 @app.post("/api/auth/pengguna/login", response_model=TokenResponse)
-def login_pengguna(login_data: LoginRequest, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+def login_pengguna(request: Request, login_data: LoginRequest, db: Session = Depends(get_db)):
     pengguna = crud.authenticate_pengguna(db=db, email=login_data.email, password=login_data.password)
     if not pengguna:
         raise HTTPException(status_code=401, detail="Email atau password pengguna salah")
