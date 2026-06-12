@@ -1,828 +1,642 @@
-# 🩸 Tracelt<font color="gray"><sup><sup>by Miracle</sup><sup></font>
+# 🩸 TraceIt — Platform Pendataan Donor Darah
 
 [![CI/CD Pipeline](https://github.com/aidilsaputrakirsan-classroom/cc-kelompok-a-miracle/actions/workflows/ci.yml/badge.svg)](https://github.com/aidilsaputrakirsan-classroom/cc-kelompok-a-miracle/actions/workflows/ci.yml)
 
-## Pengajuan Pendonor Darah
+> **TraceIt** adalah aplikasi berbasis web untuk membantu pendataan pendonor darah sukarela, pencatatan riwayat donor, verifikasi data donor, dan pemantauan stok darah publik. Sistem ini dikembangkan dengan arsitektur **microservices** menggunakan React, Nginx API Gateway, FastAPI, PostgreSQL, Docker Compose, dan GitHub Actions.
 
-<div align="justify">
-TraceIt merupakan aplikasi berbasis web yang dirancang untuk membantu civitas akademika Institut Teknologi Kalimantan dalam mengajukan permohonan data pendonor darah sukarela. Melalui platform ini, pengguna dapat mengunggah data pribadi, berupa nama lengkap, jenis kelamin, berat badan, tinggi badan, golongan darah, usia, tanggal lahir, tanggal terakhir donor, riwayat donor (total donor), alamat dan riwayat kesehatan. Sistem akan menampilkan daftar laporan pendonor sukarela yang dapat difilter berdasarkan nama, jenis kelamin, umur dan golongan darah untuk mempermudah proses verifikasi kesiapan pendonor dalam menjadi pendonor darah.
+---
 
-Aplikasi ini ditujukan bagi 2 pengguna. Pertama, adalah civitas akademika Institut Teknologi Kalimantan yang berperan sebagai pendonor sukarela. Kedua, adalah admin yang berperan dalam memantau dan memverifikasi data pendonor yang telah diajukan.
+## 🌐 Live Demo
 
-Sistem TraceIt ini berperan dalam mengatasi permasalahan adanya kekurangan informasi terkait penyedia sukarelawan donor darah yang dapat diakses penerima di lingkungan civitas akademika Institut Teknologi Kalimantan. TraceIt hadir sebagai solusi terpusat berbasis cloud yang memungkinkan pengelolaan data secara sistematis, aman, dan dapat diakses kapan saja serta dari berbagai perangkat. Dengan demikian, proses pendataan pendonor sukarelawan menjadi lebih cepat, transparan, dan efisien.
+| Service | URL |
+| --- | --- |
+| Frontend | [https://tracelt-frontend-production.up.railway.app/](https://tracelt-frontend-production.up.railway.app/) |
+| Backend | [https://tracelt-backend-production.up.railway.app/](https://tracelt-backend-production.up.railway.app/) |
+| Backend Docs API | [https://tracelt-backend-production.up.railway.app/docs](https://tracelt-backend-production.up.railway.app/docs) |
 
-</div>
+## 🔄 CI/CD
 
-## 👥 Team
+[![CI/CD Pipeline](https://github.com/aidilsaputrakirsan-classroom/cc-kelompok-a-miracle/actions/workflows/ci.yml/badge.svg)](https://github.com/aidilsaputrakirsan-classroom/cc-kelompok-a-miracle/actions/workflows/ci.yml)
 
-| NAMA                     | NIM      | TUGAS               |
-| :----------------------- | :------- | :------------------ |
-| Debora Intania Subekti   | 10231029 | Lead Backend        |
-| Avhilla Catton Andalucia | 10231021 | Lead Container      |
-| Chelsy Olivia            | 10231025 | Lead CI/CD & Deploy |
-| Yosan Pratiwi            | 10231091 | Lead Frontend       |
-| Betran                   | 10231023 | Lead QA & Docs      |
+Pipeline otomatis berjalan pada `push` dan `pull_request` ke branch utama.
+
+1. ✅ Validasi backend dan dependency Python
+2. ✅ Validasi frontend React/Vite
+3. ✅ Build Docker image
+4. ✅ Integration test dengan Docker Compose
+5. 🚀 Deploy ke cloud platform saat perubahan sudah masuk branch utama
+
+### Workflow CI/CD
+
+- Pull Request → menjalankan build dan test otomatis
+- Merge ke `main` → menjalankan CI dan proses deploy sesuai konfigurasi workflow
+- Badge di README menampilkan status pipeline terbaru
+
+---
+
+## 🌟 Highlight Utama
+
+- 🔐 Login pengguna dan admin menggunakan JWT
+- 🧑‍⚕️ Pendaftaran data pendonor darah
+- 🩸 Pencatatan dan verifikasi riwayat donor
+- 📊 Stok darah publik berdasarkan riwayat donor terverifikasi
+- 🚪 API Gateway Nginx sebagai satu pintu akses service
+- 🐳 Fully Dockerized dengan Docker Compose
+- 📈 Structured logging, metrics endpoint, health check, dan correlation ID
+- 🔁 Retry, timeout, dan circuit breaker untuk komunikasi antar-service
+
+---
+
+## 📋 Daftar Isi
+
+1. [Tentang TraceIt](#-tentang-traceit)
+2. [Fitur Sistem](#-fitur-sistem)
+3. [Fitur Per Role](#-fitur-per-role)
+4. [Arsitektur Sistem](#️-arsitektur-sistem)
+5. [Tech Stack](#️-tech-stack)
+6. [Dokumentasi API](#-dokumentasi-api)
+7. [Security & Monitoring](#-security--monitoring)
+8. [Testing](#-testing)
+9. [Panduan Menjalankan](#-panduan-menjalankan)
+10. [Struktur Proyek](#-struktur-proyek)
+11. [Tim Pengembang](#-tim-pengembang)
+12. [Roadmap](#-roadmap)
+
+---
+
+## 🧩 Tentang TraceIt
+
+TraceIt hadir sebagai solusi digital untuk pengelolaan data pendonor darah di lingkungan Institut Teknologi Kalimantan. Aplikasi ini membantu pendonor mendaftarkan data diri, membantu admin memverifikasi riwayat donor, dan membantu pengguna umum melihat informasi stok darah yang tersedia.
+
+Masalah yang diselesaikan:
+
+- Data pendonor sering tersebar dan sulit dicari saat dibutuhkan
+- Riwayat donor perlu dicatat agar stok darah lebih mudah dipantau
+- Admin membutuhkan dashboard untuk memverifikasi data donor
+- Tim pengembang membutuhkan sistem yang mudah dijalankan, diuji, dan dipantau
+
+---
+
+## ✨ Fitur Sistem
+
+### 🎯 Core Features
+
+- Registrasi dan login pengguna
+- Registrasi dan login admin
+- Pendaftaran data pendonor
+- Daftar pendonor dengan filter dan pagination
+- Pencatatan riwayat donor
+- Verifikasi atau penolakan riwayat donor
+- Stok darah publik
+- Dashboard pengguna dan admin
+- Status page untuk memantau service
+
+---
+
+## 👥 Fitur Per Role
+
+### 👤 Pengguna / Pendonor
+
+- Register dan login sebagai pengguna
+- Mengisi data pendonor
+- Membuat riwayat donor milik sendiri
+- Melihat riwayat donor yang sudah dibuat
+- Melihat stok darah publik
+
+---
+
+### 🛡️ Admin
+
+- Register dan login sebagai admin
+- Melihat daftar pendonor
+- Melihat antrean riwayat donor
+- Memverifikasi atau menolak riwayat donor
+- Memantau status service melalui halaman status
+
+---
+
+### 👀 Pengunjung Publik
+
+- Melihat landing page
+- Melihat stok darah publik
+- Melihat informasi umum aplikasi
+
+---
+
+## 🏗️ Arsitektur Sistem
+
+TraceIt menggunakan arsitektur **microservices**. Frontend dan seluruh API diakses melalui **Nginx API Gateway** pada port `80`.
+
+```mermaid
+flowchart TD
+    USER["User Browser"] --> GW["API Gateway\nNginx :80"]
+    GW -->|"/"| FE["Frontend\nReact + Vite"]
+    GW -->|"/auth/*"| AUTH["Auth Service\nFastAPI :8001"]
+    GW -->|"/pendonor, /pengguna, /riwayat-donor, /api/*"| ITEM["Item/Donor Service\nFastAPI :8002"]
+    AUTH --> AUTHDB[("auth_db\nPostgreSQL 15")]
+    ITEM --> ITEMDB[("item_db\nPostgreSQL 15")]
+    ITEM -.->|"GET /verify"| AUTH
+```
+
+### 🔹 Komponen Utama
+
+| Komponen | Container | Fungsi |
+| --- | --- | --- |
+| **Frontend** | `tracelt-frontend` | Menyediakan UI React untuk pengguna dan admin |
+| **API Gateway** | `tracelt-gateway` | Routing request frontend dan API ke service tujuan |
+| **Auth Service** | `tracelt-auth-service` | Register, login, verifikasi JWT, health check, metrics |
+| **Item/Donor Service** | `tracelt-item-service` | Pendonor, riwayat donor, stok darah, profile user, metrics |
+| **Auth DB** | `tracelt-auth-db` | Database khusus data autentikasi |
+| **Item DB** | `tracelt-item-db` | Database khusus data pendonor dan riwayat donor |
+
+### 🔹 Karakteristik Sistem
+
+- 🔐 **JWT Authentication** untuk pengguna dan admin
+- 🚪 **Single Entry Point** melalui Nginx API Gateway
+- 🧱 **Database per Service** untuk memisahkan domain data
+- 🔁 **Reliability Pattern** dengan retry, timeout, dan circuit breaker
+- 📊 **Observability** melalui structured logging, metrics, health check, dan correlation ID
+- 🐳 **Containerized Deployment** dengan Docker Compose
+
+---
 
 ## 🛠️ Tech Stack
 
-| Teknologi        | Fungsi           |
-| ---------------- | ---------------- |
-| _FastAPI_        | Backend REST API |
-| _React_          | Frontend SPA     |
-| _PostgreSQL_     | Database         |
-| _Docker_         | Containerization |
-| _GitHub Actions_ | CI/CD            |
-| _Railway/Render_ | Cloud Deployment |
+TraceIt dibangun menggunakan teknologi modern berbasis web dan cloud-native development.
 
-## 🏛️ Architecture
+### 🎨 Frontend
 
-### System Overview
+| Teknologi | Fungsi | Penjelasan |
+| --- | --- | --- |
+| **React** | UI Framework | Membangun antarmuka pengguna berbasis komponen |
+| **Vite** | Build Tool | Menjalankan development server dan build frontend dengan cepat |
+| **React Router** | Routing | Mengatur halaman landing, login, admin, user, dan status |
+| **Axios** | HTTP Client | Menghubungkan frontend dengan API Gateway |
+| **Tailwind CSS** | Styling | Membantu styling UI responsif dan konsisten |
 
-```
-                        ┌─────────────────────────────────────────────────┐
-                        │            Docker Network (bridge)              │
-                        │         cc-kelompok-a-miracle_default           │
-                        │                                                 │
-  ┌──────────┐          │  ┌──────────────┐    ┌──────────────────────┐   │
-  │  User /  │  :3000   │  │  tracelt-    │    │   tracelt-backend    │   │
-  │ Browser  │◄────────►│  │  frontend    │    │                      │   │
-  │          │          │  │              │    │   FastAPI + Uvicorn   │   │
-  │          │  :8000   │  │  Nginx +     │    │   (Port 8000)        │   │
-  │          │◄────────►│  │  React SPA   │    │                      │   │
-  └──────────┘          │  │  (Port 80)   │    └──────────┬───────────┘   │
-                        │  └──────────────┘               │               │
-                        │                                 │ SQL           │
-                        │                    ┌────────────▼────────────┐  │
-                        │                    │     tracelt-db          │  │
-                        │                    │     PostgreSQL 15       │  │
-                        │                    │     (Port 5432)         │  │
-                        │                    │     Volume: pgdata      │  │
-                        │                    └─────────────────────────┘  │
-                        └─────────────────────────────────────────────────┘
-```
+### ⚙️ Backend
 
-> **Catatan:** Frontend container (Nginx) hanya menyajikan file statis React. Request API dilakukan langsung oleh browser user ke `localhost:8000`, bukan dari frontend container ke backend.
+| Teknologi | Fungsi | Penjelasan |
+| --- | --- | --- |
+| **FastAPI** | API Framework | Menyediakan REST API untuk Auth Service dan Item/Donor Service |
+| **SQLAlchemy** | ORM | Mengelola model dan query database PostgreSQL |
+| **Pydantic** | Validation | Memvalidasi request dan response schema |
+| **Uvicorn** | ASGI Server | Menjalankan aplikasi FastAPI |
+| **bcrypt + JWT** | Auth | Hash password dan token-based authentication |
 
-| Komponen                      | Penjelasan                                                                    |
-| ----------------------------- | ----------------------------------------------------------------------------- |
-| **User/Browser**              | Pengguna mengakses aplikasi lewat browser                                     |
-| **tracelt-frontend** (Nginx)  | Menyajikan halaman React ke browser, port 3000                                |
-| **tracelt-backend** (FastAPI) | Memproses logic bisnis & API, port 8000                                       |
-| **tracelt-db** (PostgreSQL)   | Menyimpan semua data aplikasi, port 5432                                      |
-| **Docker Network**            | Jaringan internal agar ketiga container bisa saling berkomunikasi             |
-| **Volume pgdata**             | Menyimpan data database secara permanen (tidak hilang saat container restart) |
+### 🗄️ Database & Infrastructure
+
+| Teknologi | Fungsi | Penjelasan |
+| --- | --- | --- |
+| **PostgreSQL 15** | Database | Menyimpan data auth, pendonor, dan riwayat donor |
+| **Nginx** | API Gateway | Reverse proxy dan routing antar-service |
+| **Docker** | Containerization | Membungkus service agar konsisten dijalankan |
+| **Docker Compose** | Orchestration | Menjalankan semua container dalam satu command |
+| **GitHub Actions** | CI/CD | Menjalankan pipeline otomatis |
+| **Railway** | Deployment | Platform cloud untuk deployment production |
 
 ---
 
-### Backend Architecture
+## 📚 Dokumentasi API
 
-Backend menggunakan **FastAPI** dengan arsitektur berlapis (layered architecture):
+Semua endpoint lokal diakses melalui API Gateway:
 
-```
-┌─────────────────────────────────────────────┐
-│                  main.py                     │
-│          (Routes & Endpoints)                │
-│   /auth/*  /pendonor/*  /riwayat-donor/*     │
-│   /pengguna/*  /health  /info                │
-├─────────────────────────────────────────────┤
-│                  auth.py                     │
-│          (Authentication Layer)              │
-│   JWT Token (HS256) + bcrypt password hash   │
-│   get_current_admin / get_current_pengguna   │
-├─────────────────────────────────────────────┤
-│                  crud.py                     │
-│          (Business Logic Layer)              │
-│   CRUD operations + auto-linking logic       │
-│   Verification workflow + pagination         │
-├─────────────────────────────────────────────┤
-│               schemas.py                     │
-│          (Validation Layer)                  │
-│   Pydantic v2 models + password validation   │
-├─────────────────────────────────────────────┤
-│               models.py                      │
-│          (ORM / Data Layer)                  │
-│   SQLAlchemy models + relationships          │
-├─────────────────────────────────────────────┤
-│              database.py                     │
-│          (Database Connection)               │
-│   PostgreSQL via psycopg2 + SessionLocal     │
-└─────────────────────────────────────────────┘
+```text
+http://localhost
 ```
 
-| Layer              | File          | Penjelasan                                                                 |
-| ------------------ | ------------- | -------------------------------------------------------------------------- |
-| **Routes**         | `main.py`     | Menerima HTTP request dan mengarahkan ke fungsi yang tepat                 |
-| **Authentication** | `auth.py`     | Mengecek siapa yang login (JWT token + password hashing)                   |
-| **Business Logic** | `crud.py`     | Mengolah data: buat, baca, update, hapus + verifikasi donor                |
-| **Validation**     | `schemas.py`  | Memastikan data yang masuk sesuai format (email valid, password kuat, dll) |
-| **ORM/Data**       | `models.py`   | Mendefinisikan struktur tabel database dalam kode Python                   |
-| **Connection**     | `database.py` | Menghubungkan aplikasi ke PostgreSQL                                       |
+### 🔹 Gateway & Monitoring
 
-#### API Endpoints
+| Method | Endpoint | Fungsi |
+| --- | --- | --- |
+| `GET` | `/` | Frontend React |
+| `GET` | `/health` | Health check gateway |
+| `GET` | `/auth/health` | Health check Auth Service |
+| `GET` | `/donor/health` | Health check Donor Service |
+| `GET` | `/auth/metrics` | Metrics Auth Service |
+| `GET` | `/donor/metrics` | Metrics Donor Service |
 
-| Method   | Endpoint                                 | Auth  | Deskripsi                                |
-| -------- | ---------------------------------------- | ----- | ---------------------------------------- |
-| `GET`    | `/health`                                | -     | Health check                             |
-| `GET`    | `/info`                                  | -     | System info & feature list               |
-| `GET`    | `/api/public/blood-stock`                | -     | Stok darah publik per golongan           |
-| `POST`   | `/auth/admin/register`                   | -     | Registrasi admin (maks 1)                |
-| `POST`   | `/auth/admin/login`                      | -     | Login admin, return JWT                  |
-| `POST`   | `/auth/pengguna/register`                | -     | Registrasi pengguna                      |
-| `POST`   | `/auth/pengguna/login`                   | -     | Login pengguna, return JWT               |
-| `POST`   | `/pendonor`                              | -     | Buat data pendonor baru                  |
-| `GET`    | `/pendonor`                              | -     | List pendonor + filter & pagination      |
-| `GET`    | `/pendonor/{pendonor_id}`                | -     | Detail pendonor                          |
-| `PUT`    | `/pendonor/{pendonor_id}`                | -     | Update data pendonor                     |
-| `DELETE` | `/pendonor/{pendonor_id}`                | Admin | Hapus pendonor (admin only)              |
-| `POST`   | `/riwayat-donor`                         | -     | Buat riwayat donor                       |
-| `GET`    | `/riwayat-donor`                         | -     | List riwayat donor                       |
-| `GET`    | `/riwayat-donor/{riwayat_id}`            | -     | Detail riwayat donor                     |
-| `GET`    | `/riwayat-donor/pendonor/{pendonor_id}`  | -     | List riwayat donor per pendonor          |
-| `POST`   | `/riwayat-donor/{riwayat_id}/verifikasi` | Admin | Verifikasi/tolak riwayat donor           |
-| `GET`    | `/pengguna/me`                           | User  | Profil pengguna saat ini                 |
-| `POST`   | `/pengguna/riwayat-donor`                | User  | Buat riwayat donor (linked ke user)      |
-| `GET`    | `/pengguna/riwayat-donor`                | User  | List riwayat donor milik user            |
-| `GET`    | `/pengguna/riwayat-donor/{riwayat_id}`   | User  | Detail riwayat donor milik user          |
-| `PUT`    | `/pengguna/riwayat-donor/{riwayat_id}`   | User  | Update riwayat (jika belum diverifikasi) |
-| `DELETE` | `/pengguna/riwayat-donor/{riwayat_id}`   | User  | Hapus riwayat (jika belum diverifikasi)  |
+### 🔹 Auth Service
 
-> **Catatan:** Endpoint auth juga tersedia dengan prefix `/api/` (contoh: `/api/auth/admin/login`) untuk kompatibilitas dengan frontend melalui Nginx reverse proxy.
+| Method | Endpoint | Fungsi |
+| --- | --- | --- |
+| `POST` | `/auth/register` | Registrasi user umum |
+| `POST` | `/auth/pengguna/register` | Registrasi pengguna |
+| `POST` | `/auth/admin/register` | Registrasi admin |
+| `POST` | `/auth/login` | Login user umum |
+| `POST` | `/auth/pengguna/login` | Login pengguna |
+| `POST` | `/auth/admin/login` | Login admin |
+| `GET` | `/auth/verify` | Verifikasi JWT |
+
+### 🔹 Item/Donor Service
+
+| Method | Endpoint | Fungsi |
+| --- | --- | --- |
+| `GET` | `/api/public/blood-stock` | Stok darah publik |
+| `GET` | `/pendonor/stats` | Statistik pendonor |
+| `POST` | `/pendonor` | Membuat data pendonor |
+| `GET` | `/pendonor` | Daftar pendonor |
+| `GET` | `/pendonor/{id}` | Detail pendonor |
+| `PUT` | `/pendonor/{id}` | Update pendonor |
+| `DELETE` | `/pendonor/{id}` | Hapus pendonor |
+| `POST` | `/riwayat-donor` | Membuat riwayat donor |
+| `GET` | `/riwayat-donor` | Daftar riwayat donor |
+| `GET` | `/riwayat-donor/{id}` | Detail riwayat donor |
+| `POST` | `/riwayat-donor/{id}/verifikasi` | Verifikasi riwayat donor |
+| `GET` | `/pengguna/me` | Profil pengguna login |
+| `GET` | `/pengguna/riwayat-donor` | Riwayat donor milik pengguna |
+| `POST` | `/pengguna/riwayat-donor` | Membuat riwayat donor milik pengguna |
+
+Dokumentasi kontrak API lengkap tersedia di [`docs/api-contract.md`](docs/api-contract.md).
 
 ---
 
-### Frontend Architecture
+## 🔐 Security & Monitoring
 
-Frontend menggunakan **React 18** dengan **Vite** sebagai build tool:
+### Security
 
-```
-┌──────────────────────────────────────────────────┐
-│                    App.jsx                        │
-│              (React Router v6)                    │
-├──────────────────────────────────────────────────┤
-│                                                   │
-│  Public Routes          Protected Routes          │
-│  ┌────────────────┐     ┌──────────────────────┐  │
-│  │ /              │     │ /admin/*  (AdminRoute)│  │
-│  │  LandingPage   │     │  ├─ AdminDashboard   │  │
-│  │ /login         │     │  ├─ DonorList        │  │
-│  │  Login         │     │  └─ VerificationQueue│  │
-│  │ /register      │     ├──────────────────────┤  │
-│  │  DonorRegistr. │     │ /user/*  (UserRoute) │  │
-│  │ /user/register │     │  └─ UserDashboard    │  │
-│  │  UserRegister  │     └──────────────────────┘  │
-│  │ /stock         │                               │
-│  │  PublicStock   │     Layouts                    │
-│  └────────────────┘     ┌──────────────────────┐  │
-│                         │ AdminLayout (sidebar) │  │
-│  Components             │ Header (navbar)       │  │
-│  ┌────────────────┐     └──────────────────────┘  │
-│  │ Header.jsx     │                               │
-│  │ AdminLayout.jsx│                               │
-│  └────────────────┘                               │
-└──────────────────────────────────────────────────┘
-```
+- Password disimpan menggunakan bcrypt
+- JWT digunakan untuk autentikasi pengguna dan admin
+- Secret production disimpan melalui environment variable
+- `.env` tidak di-commit ke repository
+- Auth DB dan Item DB dipisahkan sesuai domain service
+- Gateway meneruskan header `Authorization` ke service tujuan
 
-| Halaman               | Route             | Penjelasan                            |
-| --------------------- | ----------------- | ------------------------------------- |
-| **LandingPage**       | `/`               | Halaman utama dengan info aplikasi    |
-| **Login**             | `/login`          | Form login untuk admin dan user       |
-| **DonorRegistration** | `/register`       | Form pendaftaran pendonor (3 langkah) |
-| **UserRegister**      | `/user/register`  | Form registrasi akun pengguna baru    |
-| **PublicStock**       | `/stock`          | Tabel stok darah publik per golongan  |
-| **AdminDashboard**    | `/admin`          | Dashboard statistik donor (grafik)    |
-| **DonorList**         | `/admin/donors`   | Daftar pendonor + search & filter     |
-| **VerificationQueue** | `/admin/verify`   | Antrian verifikasi data donor         |
-| **UserDashboard**     | `/user/dashboard` | Riwayat donor milik user              |
+### Monitoring & Observability
 
-**Tech stack frontend:**
-
-| Library         | Fungsi                      |
-| --------------- | --------------------------- |
-| React Router v6 | Client-side routing         |
-| Axios           | HTTP client untuk API calls |
-| Tailwind CSS    | Utility-first styling       |
-| Framer Motion   | Animasi & transisi          |
-| Recharts        | Grafik (BarChart, PieChart) |
-| Lucide React    | Icon library                |
-| date-fns        | Format tanggal (locale ID)  |
+- Health check tersedia pada gateway dan service backend
+- Metrics endpoint tersedia untuk Auth Service dan Donor Service
+- Structured logging menggunakan format JSON
+- Correlation ID diteruskan dari gateway ke backend
+- Circuit breaker membantu mencegah cascading failure saat Auth Service bermasalah
 
 ---
 
-### Authentication Flow
+## 🧪 Testing
 
-```
-┌──────────┐         ┌──────────────┐         ┌────────────┐
-│  Client  │         │   FastAPI    │         │ PostgreSQL │
-│ (Browser)│         │   Backend    │         │            │
-└────┬─────┘         └──────┬───────┘         └─────┬──────┘
-     │                      │                       │
-     │  POST /auth/login    │                       │
-     │  {email, password}   │                       │
-     │─────────────────────►│                       │
-     │                      │  SELECT user by email │
-     │                      │──────────────────────►│
-     │                      │◄──────────────────────│
-     │                      │                       │
-     │                      │  Verify bcrypt hash   │
-     │                      │  Generate JWT (HS256) │
-     │                      │  payload: {sub, type} │
-     │                      │  expires: 60 min      │
-     │  {access_token}      │                       │
-     │◄─────────────────────│                       │
-     │                      │                       │
-     │  Store token in      │                       │
-     │  localStorage        │                       │
-     │  (admin_token /      │                       │
-     │   user_token)        │                       │
-     │                      │                       │
-     │  GET /pendonor       │                       │
-     │  Authorization:      │                       │
-     │  Bearer <token>      │                       │
-     │─────────────────────►│                       │
-     │                      │  Decode & validate    │
-     │                      │  JWT token            │
-     │                      │  Check user_type      │
-     │  {data}              │                       │
-     │◄─────────────────────│                       │
-     └──────────────────────┴───────────────────────┘
-```
-
-**Dua role pengguna:**
-
-- **Admin** — Memverifikasi data donor, menghapus pendonor, melihat dashboard statistik
-- **Pengguna (User)** — Mendaftarkan diri sebagai pendonor, mengelola riwayat donor sendiri
-
----
-
-### Database Schema
-
-```
-┌──────────────┐       ┌──────────────────┐       ┌──────────────┐
-│    admin     │       │  riwayat_donor   │       │   pengguna   │
-├──────────────┤       ├──────────────────┤       ├──────────────┤
-│ id_admin PK  │       │ id_riwayat PK    │       │id_pengguna PK│
-│ nama_admin   │       │ id_pendonor FK ──┼──┐    │nama_pengguna │
-│ email (UQ)   │       │ id_pengguna FK ──┼──┼──► │ email (UQ)   │
-│ password     │       │ golongan_darah   │  │    │ password     │
-└──────────────┘       │ status_verifikasi│  │    │ created_at   │
-                       └──────────────────┘  │    └──────────────┘
-                                             │
-                       ┌─────────────────────▼──┐
-                       │       pendonor         │
-                       ├────────────────────────┤
-                       │ id_pendonor PK         │
-                       │ nama_lengkap           │
-                       │ email                  │
-                       │ jenis_kelamin (enum)   │
-                       │ berat_badan            │
-                       │ tinggi_badan           │
-                       │ golongan_darah (enum)  │
-                       │ umur                   │
-                       │ tanggal_lahir          │
-                       │ tanggal_terakhir_donor │
-                       │ total_donor            │
-                       │ alamat                 │
-                       │ no_telepon             │
-                       │ riwayat_kesehatan      │
-                       │ created_at             │
-                       └────────────────────────┘
-
-Relasi:
-  pendonor  1 ──── N  riwayat_donor  (satu pendonor, banyak riwayat)
-  pengguna  1 ──── N  riwayat_donor  (satu pengguna, banyak riwayat)
-```
-
-**Auto-linking logic:**
-
-- Saat pengguna registrasi, jika ada pendonor dengan email yang sama, `riwayat_donor` otomatis dibuat untuk menghubungkan keduanya
-- Saat pendonor dibuat, jika ada pengguna dengan email yang sama, `riwayat_donor` otomatis dibuat
-
----
-
-### Docker Container Architecture
-
-| Container          | Image                    | Base                            | Port Mapping | Fungsi                    |
-| ------------------ | ------------------------ | ------------------------------- | ------------ | ------------------------- |
-| `tracelt-frontend` | `tracelt-frontend:v1-fe` | `node:20-slim` + `nginx:alpine` | `3000:80`    | Serve React SPA via Nginx |
-| `tracelt-backend`  | `tracelt-backend:v1`     | `python:3.12-alpine`            | `8000:8000`  | FastAPI REST API          |
-| `tracelt-db`       | `postgres:15`            | `postgres:15`                   | `5433:5432`  | PostgreSQL database       |
-
-**Network:** `cc-kelompok-a-miracle_default` (bridge) — menghubungkan ketiga container
-**Volume:** `pgdata` — persistent storage untuk data PostgreSQL
-
-**Optimasi Docker Image:**
-
-| Image    | Sebelum | Sesudah | Pengurangan |
-| -------- | ------- | ------- | ----------- |
-| Backend  | ~1.2 GB | 216 MB  | ~82%        |
-| Frontend | ~1.1 GB | 93.8 MB | ~91%        |
-
-Teknik: multi-stage build, Alpine base image, `.dockerignore`, non-root user, healthcheck
-
----
-
-### CI/CD Pipeline
-
-```
-┌──────────┐     ┌──────────────┐     ┌──────────────┐     ┌───────────┐
-│   Push   │     │   GitHub     │     │    Build     │     │  Docker   │
-│  to Git  │────►│   Actions    │────►│  & Test      │────►│   Hub     │
-│          │     │  (Trigger)   │     │  Docker Image│     │  (Push)   │
-└──────────┘     └──────────────┘     └──────────────┘     └───────────┘
-                                             │
-                                             ▼
-                                      ┌──────────────┐
-                                      │   Deploy     │
-                                      │  Railway /   │
-                                      │  Render      │
-                                      └──────────────┘
-```
-
-**Tools:** GitHub Actions untuk CI/CD, Docker Hub untuk image registry, Railway/Render untuk cloud deployment
-
----
-
-### Komunikasi Antar Service
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                     Alur Komunikasi                          │
-│                                                              │
-│  Browser ──HTTP GET──► Nginx (:3000)                         │
-│    │                    │                                    │
-│    │                    └──► Serve React SPA (static files)  │
-│    │                                                         │
-│    │──HTTP REST API──► FastAPI (:8000)                        │
-│    │  (GET/POST/PUT/     │                                   │
-│    │   DELETE + JWT)     │──SQLAlchemy──► PostgreSQL (:5432)  │
-│    │                     │               │                   │
-│    │◄── JSON Response ───┘               │──► pgdata volume  │
-│    │                                     │    (persistent)   │
-└────┴─────────────────────────────────────┴───────────────────┘
-```
-
-**Poin penting:**
-
-1. Browser mengakses frontend (React SPA) melalui Nginx di port 3000
-2. Browser langsung mengirim API request ke backend FastAPI di port 8000
-3. Backend berkomunikasi dengan PostgreSQL menggunakan SQLAlchemy ORM
-4. Data PostgreSQL disimpan secara persistent di Docker volume `pgdata`
-5. Autentikasi menggunakan JWT Bearer token di header Authorization
-
----
-
-## Getting Started Backend
-
-### 🔎 Cek Versi Python (Opsional)
+### Frontend
 
 ```bash
-python --version
-pip --version
+cd frontend
+npm test
+npm run build
 ```
 
-### 📂 Masuk ke Folder Backend
+### Backend Legacy/Core
 
 ```bash
 cd backend
-```
-
-### 📦 Install Dependencies
-
-```bash
 pip install -r requirements.txt
+pytest
 ```
 
-### ▶️ Jalankan Server
+### Integration Test
 
 ```bash
-uvicorn main:app --reload --port 8000
+pip install httpx pytest
+pytest tests/integration -v
 ```
 
-### 🌐 Akses di Browser
+### Smoke Test Docker
 
 ```bash
-http://localhost:8000
+docker compose up -d
+curl http://localhost/health
+curl http://localhost/auth/health
+curl http://localhost/donor/health
+curl http://localhost/api/public/blood-stock
 ```
 
-### 📑 Swagger Documentation
+---
+
+## 🚀 Panduan Menjalankan
+
+### 🐳 Menjalankan dengan Docker Compose
+
+Jalankan dari root repository:
 
 ```bash
-http://localhost:8000/docs
+docker compose up --build -d
 ```
 
-## Getting Started Frontend
+Cek status container:
 
-Buka terminal kemudian jalankan langkah-langkah di bawah ini:
-
-### 📂 Masuk ke folder projek
-
-```
-npm create vite@latest frontend -- --template react
+```bash
+docker compose ps
 ```
 
-### 📑Kemudian masuk ke folder frontend
+Hentikan semua service:
 
+```bash
+docker compose down
 ```
+
+Hapus container dan volume database lokal:
+
+```bash
+docker compose down -v
+```
+
+---
+
+### 💻 Menjalankan Tanpa Docker
+
+Mode ini digunakan jika ingin menjalankan service satu per satu untuk debugging.
+
+#### Auth Service
+
+```powershell
+cd services/auth-service
+pip install -r requirements.txt
+$env:DATABASE_URL="postgresql://postgres:postgres@localhost:5433/auth_db"
+$env:SECRET_KEY="traceit-local-dev-secret"
+$env:SERVICE_NAME="auth-service"
+uvicorn main:app --reload --port 8001
+```
+
+#### Item/Donor Service
+
+```powershell
+cd services/item-service
+pip install -r requirements.txt
+$env:DATABASE_URL="postgresql://postgres:postgres@localhost:5434/item_db"
+$env:AUTH_SERVICE_URL="http://localhost:8001"
+$env:SERVICE_NAME="item-service"
+uvicorn main:app --reload --port 8002
+```
+
+#### Frontend
+
+```bash
 cd frontend
 npm install
-```
-
-### ▶️Jalankan frontend
-
-```
 npm run dev
 ```
 
-## ⚙️ Makefile Commands
+> Untuk QA end-to-end, gunakan Docker Compose karena gateway dan semua service langsung tersambung seperti production-like environment.
 
-Project ini menyediakan beberapa command untuk membantu workflow development:
-
-### 🔍 Lint
-
-Menjalankan pengecekan code style
-
-```bash
-make lint
-```
-
-### 🧪 Test
-
-Menjalankan test (sementara masih placeholder)
-
-```bash
-make test
-```
-
-### 🚀 PR Check
-
-Digunakan sebelum membuat Pull Request:
-
-- Build container
-- Menjalankan test
-
-```bash
-make pr-check
-```
-
-## 📅 Roadmap
-
-| Minggu | Target                 | Status |
-| ------ | ---------------------- | ------ |
-| 1      | Setup & Hello World    | ✅     |
-| 2      | REST API + Database    | ✅     |
-| 3      | React Frontend         | ✅     |
-| 4      | Full-Stack Integration | ✅     |
-| 5-7    | Docker & Compose       | ✅     |
-| 8      | UTS Demo               | ✅     |
-| 9-11   | CI/CD Pipeline         | ✅     |
-| 12-14  | Microservices          | ✅     |
-| 15-16  | Final & UAS            | ⬜     |
+---
 
 ## 📁 Struktur Proyek
+
+Struktur berikut mengikuti file yang sudah masuk Git dan menjadi bagian dari repository GitHub.
 
 ```text
 cc-kelompok-a-miracle/
 ├── .github/
+│   ├── CODEOWNERS
+│   ├── copilot-instructions.md
+│   ├── pull_request_template.md
 │   └── workflows/
-│       └── ci.yml                  # CI/CD pipeline (GitHub Actions)
+│       └── ci.yml
+├── .gitignore
+├── CHANGELOG.md
+├── Makefile
+├── README.md
 ├── backend/
-│   ├── scripts/
-│   │   └── wait-for-db.sh          # Script tunggu database siap
 │   ├── .dockerignore
-│   ├── .env.docker                  # Environment untuk Docker
-│   ├── .env.example                 # Template environment
-│   ├── auth.py                      # Authentication (JWT + bcrypt)
-│   ├── crud.py                      # Business logic (CRUD operations)
-│   ├── database.py                  # Koneksi PostgreSQL
-│   ├── Dockerfile                   # Multi-stage build + healthcheck
-│   ├── main.py                      # FastAPI routes & endpoints
-│   ├── models.py                    # SQLAlchemy ORM models
-│   ├── requirements.txt             # Python dependencies
-│   ├── schemas.py                   # Pydantic validation schemas
-│   ├── setup.sh                     # Script setup lokal
-│   ├── test_db_connection.py        # Test koneksi database
-│   └── test_pagination.py           # Test pagination
-├── docs/
-│   ├── api-test-results.md          # Hasil pengujian API
-│   ├── database-schema.md           # Dokumentasi schema database
-│   ├── docker-architecture.md       # Dokumentasi arsitektur Docker
-│   ├── laporan-CICD-image-optimation.md  # Laporan optimasi image
-│   ├── member-*.md                  # Dokumentasi anggota tim
-│   ├── ui-test-results.md           # Hasil pengujian UI
-│   ├── UTS-demo-langkah.md          # Langkah-langkah demo UTS
-│   └── UTS-demo-script.md           # Script narasi demo UTS
+│   ├── .env.docker
+│   ├── .env.example
+│   ├── .railwayignore
+│   ├── Dockerfile
+│   ├── auth.py
+│   ├── config.py
+│   ├── crud.py
+│   ├── database.py
+│   ├── main.py
+│   ├── models.py
+│   ├── pytest.ini
+│   ├── requirements.txt
+│   ├── ruff.toml
+│   ├── schemas.py
+│   ├── setup.sh
+│   ├── test_db_connection.py
+│   ├── test_pagination.py
+│   ├── scripts/
+│   │   └── wait-for-db.sh
+│   └── tests/
+│       ├── __init__.py
+│       ├── conftest.py
+│       ├── test_auth.py
+│       ├── test_health.py
+│       ├── test_items.py
+│       ├── test_pendonor.py
+│       └── test_riwayat_donor.py
 ├── frontend/
+│   ├── .dockerignore
+│   ├── .env.example
+│   ├── .env.production
+│   ├── .gitignore
+│   ├── .railwayignore
+│   ├── Dockerfile
+│   ├── README.md
+│   ├── eslint.config.js
+│   ├── index.html
+│   ├── metadata.json
+│   ├── nginx.conf
+│   ├── package-lock.json
+│   ├── package.json
 │   ├── public/
-│   │   ├── 404.html                 # Custom error page
-│   │   ├── 50x.html                 # Custom server error page
+│   │   ├── 404.html
+│   │   ├── 50x.html
 │   │   └── vite.svg
 │   ├── src/
+│   │   ├── App.css
+│   │   ├── App.jsx
+│   │   ├── index.css
+│   │   ├── main.jsx
 │   │   ├── assets/
 │   │   │   └── react.svg
 │   │   ├── components/
-│   │   │   ├── AdminLayout.jsx      # Layout sidebar admin
-│   │   │   └── Header.jsx           # Navbar responsive
+│   │   │   ├── AboutPage.jsx
+│   │   │   ├── AdminDashboardCharts.jsx
+│   │   │   ├── AdminLayout.jsx
+│   │   │   ├── AuthServiceBanner.jsx
+│   │   │   ├── ErrorBoundary.jsx
+│   │   │   ├── Header.jsx
+│   │   │   ├── ItemCard.jsx
+│   │   │   ├── ItemForm.jsx
+│   │   │   ├── ItemList.jsx
+│   │   │   ├── LoadingSpinner.jsx
+│   │   │   ├── SearchBar.jsx
+│   │   │   ├── ServiceUnavailable.jsx
+│   │   │   └── __tests__/
+│   │   │       ├── Header.test.jsx
+│   │   │       ├── ItemCard.test.jsx
+│   │   │       ├── ItemForm.test.jsx
+│   │   │       ├── ItemList.test.jsx
+│   │   │       └── SearchBar.test.jsx
+│   │   ├── hooks/
+│   │   │   └── useDarkMode.jsx
 │   │   ├── pages/
-│   │   │   ├── AdminDashboard.jsx   # Dashboard statistik (grafik)
-│   │   │   ├── DonorList.jsx        # Daftar pendonor + search/filter
-│   │   │   ├── DonorRegistration.jsx # Form pendaftaran 3 langkah
-│   │   │   ├── LandingPage.jsx      # Halaman utama
-│   │   │   ├── Login.jsx            # Login admin & user
-│   │   │   ├── PublicStock.jsx      # Stok darah publik
-│   │   │   ├── UserDashboard.jsx    # Dashboard riwayat donor user
-│   │   │   ├── UserRegister.jsx     # Registrasi akun pengguna
-│   │   │   └── VerificationQueue.jsx # Antrian verifikasi admin
+│   │   │   ├── AdminDashboard.jsx
+│   │   │   ├── AdminUsersDashboard.jsx
+│   │   │   ├── DonorList.jsx
+│   │   │   ├── DonorRegistration.jsx
+│   │   │   ├── LandingPage.jsx
+│   │   │   ├── Login.jsx
+│   │   │   ├── PublicStock.jsx
+│   │   │   ├── StatusPage.jsx
+│   │   │   ├── UserDashboard.jsx
+│   │   │   ├── UserRegister.jsx
+│   │   │   └── VerificationQueue.jsx
 │   │   ├── services/
-│   │   │   └── api.js               # Axios API client
-│   │   ├── App.css
-│   │   ├── App.jsx                  # React Router (routing utama)
-│   │   ├── index.css
-│   │   └── main.jsx                 # Entry point React
-│   ├── .dockerignore
-│   ├── .env.example
-│   ├── Dockerfile                   # Multi-stage build (Node + Nginx)
-│   ├── index.html
-│   ├── nginx.conf                   # Nginx config (reverse proxy + SPA)
-│   ├── package.json
+│   │   │   └── api.js
+│   │   └── test/
+│   │       ├── api.test.js
+│   │       └── setup.js
 │   └── vite.config.js
+├── services/
+│   ├── auth-service/
+│   │   ├── Dockerfile
+│   │   ├── database.py
+│   │   ├── logging_config.py
+│   │   ├── logging_middleware.py
+│   │   ├── main.py
+│   │   ├── metrics.py
+│   │   ├── models.py
+│   │   ├── requirements.txt
+│   │   ├── schemas.py
+│   │   └── tests/
+│   │       ├── __init__.py
+│   │       └── test_metrics_alerting.py
+│   ├── item-service/
+│   │   ├── Dockerfile
+│   │   ├── auth_client.py
+│   │   ├── circuit_breaker.py
+│   │   ├── database.py
+│   │   ├── logging_config.py
+│   │   ├── logging_middleware.py
+│   │   ├── main.py
+│   │   ├── metrics.py
+│   │   ├── models.py
+│   │   ├── requirements.txt
+│   │   ├── schemas.py
+│   │   └── tests/
+│   │       ├── __init__.py
+│   │       ├── test_item_stats.py
+│   │       └── test_metrics_alerting.py
+│   ├── gateway/
+│   │   └── nginx.conf
+│   └── shared/
+│       ├── __init__.py
+│       ├── logging_config.py
+│       ├── logging_middleware.py
+│       ├── main.py
+│       ├── metrics.py
+│       └── requirements.txt
+├── tests/
+│   └── integration/
+│       ├── conftest.py
+│       └── test_cross_service.py
+├── docs/
+│   ├── CCMiracle.png
+│   ├── ERD CP.drawio.png
+│   ├── ERD Konseptual.drawio.png
+│   ├── Screenshot 2026-03-15 160027.png
+│   ├── Screenshot 2026-03-15 191934.png
+│   ├── UTS-demo-langkah.md
+│   ├── UTS-demo-script.md
+│   ├── api-test-results.md
+│   ├── architecture.md
+│   ├── database-schema.md
+│   ├── docker-architecture.md
+│   ├── git-workflow.md
+│   ├── image.png
+│   ├── image-1.png
+│   ├── image-2.png
+│   ├── image-3.png
+│   ├── image-4.png
+│   ├── image-5.png
+│   ├── image-6.png
+│   ├── image-7.png
+│   ├── image-8.png
+│   ├── image-9.png
+│   ├── image-10.png
+│   ├── image-11.png
+│   ├── image-12.png
+│   ├── image-13.png
+│   ├── image-14.png
+│   ├── image-15.png
+│   ├── image-16.png
+│   ├── image-17.png
+│   ├── image2.png
+│   ├── laporan-CICD-image-optimation.md
+│   ├── member-Avhilla.md
+│   ├── member-BETRAN.md
+│   ├── member-Chelsy.md
+│   ├── member-YOSAN.md
+│   ├── member-intan.md
+│   ├── milestone1-retrospective.md
+│   ├── milestone2-release.md
+│   ├── production-test.md
+│   ├── release-notes-m2.md
+│   ├── reliability-testing.md
+│   ├── observability-testing.md
+│   ├── testing-guide.md
+│   └── ui-test-results.md
 ├── scripts/
-│   └── docker-run.sh                # Script manual docker run/stop
-├── .gitignore
-├── docker-compose.yml               # Orchestration 3 services
-├── Makefile                         # Shortcut commands (make up/down/logs)
-└── README.md
-```
-
-## 📂 Tabel ERD
-
-![alt text](image-4.png)
-
-## Penjelasan ERD
-
-<div align="justify">
-
-1. Pendonor ↔ Riwayat_Donor (1 to Many)
-   Relasi: Satu Pendonor bisa memiliki banyak Riwayat_Donor.
-   Penjelasan: Setiap kali pendonor melakukan donor darah, data baru dicatat di tabel riwayat. Pendonornya satu, tapi catatan donornya bisa berulang kali.
-   Foreign Key: id_pendonor ada di dalam tabel Riwayat_Donor.
-   Pendonor ↔ Riwayat_Kesehatan (1 to Many)
-
-2. Relasi: Satu Pendonor memiliki banyak catatan Riwayat_Kesehatan.
-   Penjelasan: Pendonor mungkin memiliki riwayat cek kesehatan atau penyakit yang berbeda-beda seiring waktu.
-   Foreign Key: id_pendonor ada di dalam tabel Riwayat_Kesehatan.
-   Pendonor ↔ Gamifikasi (1 to 1)
-
-3. Relasi: Satu Pendonor memiliki satu data Gamifikasi.
-   Penjelasan: Ini adalah tabel profil poin/level. Satu akun pendonor hanya punya satu saldo poin/voucher.
-   Foreign Key: id_pendonor ada di dalam tabel Gamifikasi (bisa juga id_gamifikasi menjadi FK di Pendonor, tapi biasanya ID Pendonor dijadikan referensi unik di tabel Gamifikasi).
-   Admin ↔ Riwayat_Donor (1 to Many)
-
-4. Relasi: Satu Admin dapat memverifikasi banyak Riwayat_Donor.
-   Penjelasan: Proses verifikasi (disetujui/tidak) dilakukan oleh Admin. Meskipun di oval gambar 2 atribut id_admin tidak digambar eksplisit di Riwayat_Donor, relasi "Memverifikasi" menyiratkan bahwa ID Admin perlu disimpan di Riwayat Donor untuk mencatat siapa yang memverifikasi.
-
-</div>
-
-## setup.sh
-
-<div align="justify">
-setup.sh adalah file shell script yang digunakan untuk menjalankan serangkaian perintah secara otomatis pada sistem berbasis Linux atau Unix. File ini biasanya digunakan untuk menyiapkan (setup) lingkungan proyek, seperti menginstal dependensi, membuat virtual environment, atau menjalankan konfigurasi awal aplikasi. Dengan menjalankan setup.sh, pengguna tidak perlu menjalankan perintah satu per satu karena semua langkah instalasi sudah dituliskan dalam satu skrip yang dapat dieksekusi sekaligus.
-</div>
-<br>
-
-**Cara Menjalankan Setup.sh di Windows**
-
-1. Di Terminal Pilih Git Bash
-2. Kmudian Ketikan kode ini lalu tekan enter:
-
-```
-./setup.sh
+│   ├── docker-run.sh
+│   ├── logs.ps1
+│   ├── logs.sh
+│   └── migrate_data.py
+├── image.png
+├── image-1.png
+├── image-2.png
+├── image-3.png
+├── image-4.png
+├── image-5.jpeg
+├── package-lock.json
+├── testingrepo.md
+├── test.txt
+├── tash apply 4b1e286
+├── docker-compose.yml
+├── docker-compose.dev.yml
+└── docker-compose.prod.yml
 ```
 
 ---
 
-## Docker Multi-Container Setup (Modul 6)
+## 👨‍💻 Tim Pengembang
 
-Pada praktikum modul 6, aplikasi TraceIt dijalankan menggunakan 3 container Docker yang saling terhubung dalam satu network.
-
-### Container Services
-
-| Container          | Image                    | Fungsi                 | Port        |
-| ------------------ | ------------------------ | ---------------------- | ----------- |
-| `tracelt-frontend` | `tracelt-frontend:v1-fe` | Frontend React + Nginx | `3000:80`   |
-| `tracelt-backend`  | `tracelt-backend:v1`     | Backend FastAPI        | `8000:8000` |
-| `tracelt-db`       | `postgres:15`            | Database PostgreSQL    | `5432:5432` |
-
-### Network & Volume
-
-- **Network:** `cc-kelompok-a-miracle_default` (bridge) — menghubungkan ketiga container
-- **Volume:** `pgdata` — menyimpan data PostgreSQL secara persist
-
-### Build Docker Images
-
-```bash
-# Build backend
-docker build -t tracelt-backend:v1 ./backend
-
-# Build frontend (multi-stage: Node.js build + Nginx serve)
-docker build -t tracelt-frontend:v1-fe ./frontend
-```
-
-### Menjalankan Container
-
-```bash
-# Buat network
-docker network create cc-kelompok-a-miracle_default
-
-# Jalankan database
-docker run -d --name tracelt-db --network cc-kelompok-a-miracle_default \
-  -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=tracelt \
-  -p 5432:5432 -v pgdata:/var/lib/postgresql/data postgres:15
-
-# Jalankan backend
-docker run -d --name tracelt-backend --network cc-kelompok-a-miracle_default \
-  --env-file ./backend/.env.docker -p 8000:8000 tracelt-backend:v1
-
-# Jalankan frontend
-docker run -d --name tracelt-frontend --network cc-kelompok-a-miracle_default \
-  -p 3000:80 tracelt-frontend:v1-fe
-```
-
-Atau menggunakan script:
-
-```bash
-./scripts/docker-run.sh start
-```
-
-### Akses Service
-
-| Service                | URL                            |
-| ---------------------- | ------------------------------ |
-| Frontend               | `http://localhost:3000`        |
-| Backend API            | `http://localhost:8000`        |
-| Backend Docs (Swagger) | `http://localhost:8000/docs`   |
-| Backend Health Check   | `http://localhost:8000/health` |
-
-### Docker Testing
-
-Pengujian dilakukan dengan langkah berikut:
-
-1. Build image backend dan frontend
-2. Jalankan ketiga container (database, backend, frontend)
-3. Cek status container dengan `docker ps`
-4. Cek log container dengan `docker logs`
-5. Akses frontend di `http://localhost:3000`
-6. Akses backend docs di `http://localhost:8000/docs`
-7. Akses health check di `http://localhost:8000/health`
-8. Cek network dengan `docker network inspect cc-kelompok-a-miracle_default`
-9. Cek volume dengan `docker volume ls`
-
-### Hasil Pengujian
-
-| Pengujian                                   | Hasil                      |
-| ------------------------------------------- | -------------------------- |
-| Build image backend                         | Berhasil                   |
-| Build image frontend                        | Berhasil                   |
-| Container `tracelt-db`                      | Up                         |
-| Container `tracelt-backend`                 | Up (healthy)               |
-| Container `tracelt-frontend`                | Up                         |
-| Akses `http://localhost:3000`               | Berhasil                   |
-| Akses `http://localhost:8000/docs`          | Berhasil                   |
-| Health check `http://localhost:8000/health` | Berhasil                   |
-| Docker network                              | Ketiga container terhubung |
-| Docker volume `pgdata`                      | Terdeteksi                 |
-
-### Image Size
-
-| Image              | Tag     | Size    |
-| ------------------ | ------- | ------- |
-| `tracelt-backend`  | `v1`    | 216 MB  |
-| `tracelt-frontend` | `v1-fe` | 93.8 MB |
-
-Frontend menggunakan multi-stage build sehingga ukuran image jauh lebih kecil dibanding menggunakan Node.js penuh (~1 GB).
-
-### Docker Hub
-
-Image yang telah di-push ke Docker Hub:
-
-| Image    | Docker Hub                     |
-| -------- | ------------------------------ |
-| Frontend | `USERNAME/tracelt-frontend:v1` |
-| Backend  | `USERNAME/tracelt-backend:v1`  |
-
-> Ganti `USERNAME` dengan username Docker Hub masing-masing anggota yang melakukan push.
-
-### Dokumentasi Arsitektur
-
-Dokumentasi arsitektur Docker secara lengkap tersedia di [`docs/docker-architecture.md`](docs/docker-architecture.md), mencakup diagram Mermaid, port mapping, network, volume, environment variables, dan alur komunikasi antar service.
-
-### Diagram Arsitektur Docker
-
-![Docker Architecture](docs/docker-architecture-diagram.png)
-
-**Penjelasan Diagram:**
-
-- **User/Browser** mengakses frontend via `localhost:3000` dan backend API via `localhost:8000`
-- **tracelt-frontend** (Nginx + React) berjalan di container port 80, di-map ke host port 3000
-- **tracelt-backend** (FastAPI) berjalan di container port 8000, menerima env vars dari `.env.docker`
-- **tracelt-db** (PostgreSQL 15) berjalan di container port 5432, data disimpan di named volume `pgdata`
-- Ketiga container terhubung dalam Docker network `cc-kelompok-a-miracle_default`
-- Frontend container hanya menyajikan file React via Nginx. Request API dilakukan oleh browser user ke `localhost:8000`, bukan dari frontend container langsung ke backend
+| Nama | NIM | Peran | Kontribusi Utama |
+| --- | --- | --- | --- |
+| Debora Intania Subekti | 10231029 | Lead Backend | Auth flow, endpoint FastAPI, business logic backend |
+| Avhilla Catton Andalucia | 10231021 | Lead Container / DevOps | Docker Compose, Dockerfile, gateway, konfigurasi service |
+| Chelsy Olivia | 10231025 | Lead CI/CD & Deploy | GitHub Actions, deployment, release validation |
+| Yosan Pratiwi | 10231091 | Lead Frontend | React UI, dashboard user/admin, halaman status |
+| Betran | 10231023 | Lead QA & Docs | Testing, API docs, release notes, final checklist |
 
 ---
 
-## CI/CD — Optimasi Docker Image & Push ke Docker Hub (Modul 9-11)
+## 🗺️ Roadmap
 
-### Perbandingan Ukuran Image: Sebelum vs Sesudah Optimasi
+| Minggu | Target | Status |
+| --- | --- | --- |
+| 1-4 | Foundation, REST API, database, frontend awal | ✅ Selesai |
+| 5-7 | Docker dan containerization | ✅ Selesai |
+| 8 | UTS demo milestone 1 | ✅ Selesai |
+| 9-11 | CI/CD dan cloud deployment | ✅ Selesai |
+| 12-14 | Microservices, reliability, monitoring | ✅ Selesai |
+| 15 | Final polish, security, dokumentasi UAS | ✅ Selesai |
+| 16 | UAS demo final | ⏳ Siap presentasi |
 
-#### Backend (`tracelt-backend`)
+---
 
-| Aspek              | Sebelum Optimasi            | Sesudah Optimasi (v2)              |
-| ------------------ | --------------------------- | ---------------------------------- |
-| **Base Image**     | `python:3.12` (full Debian) | `python:3.12-alpine`               |
-| **Build Strategy** | Single-stage                | Multi-stage (builder + production) |
-| **Ukuran Image**   | ~1.2 GB                     | **216 MB**                         |
-| **.dockerignore**  | Tidak ada                   | Ada                                |
-| **User**           | root                        | non-root (`appuser`)               |
-| **Healthcheck**    | Tidak ada                   | Ada                                |
+## 📌 Dokumentasi Pendukung
 
-#### Frontend (`tracelt-frontend`)
+| Dokumen | Isi |
+| --- | --- |
+| [`docs/api-contract.md`](docs/api-contract.md) | Kontrak API Auth Service dan Item/Donor Service |
+| [`docs/release-notes-m3.md`](docs/release-notes-m3.md) | Release notes final version `3.0.0` |
+| [`docs/final-checklist.md`](docs/final-checklist.md) | Checklist akhir sebelum UAS |
+| [`docs/architecture.md`](docs/architecture.md) | Detail arsitektur microservices |
+| [`docs/reliability-testing.md`](docs/reliability-testing.md) | Pengujian retry, timeout, circuit breaker |
+| [`docs/observability-testing.md`](docs/observability-testing.md) | Pengujian logging, metrics, dan correlation ID |
+| [`docs/production-test.md`](docs/production-test.md) | Catatan QA production |
 
-| Aspek                     | Sebelum Optimasi             | Sesudah Optimasi (v1)           |
-| ------------------------- | ---------------------------- | ------------------------------- |
-| **Base Image**            | `node:20` (full Debian)      | `node:20-slim` + `nginx:alpine` |
-| **Build Strategy**        | Single-stage (Node.js serve) | Multi-stage (build + Nginx)     |
-| **Ukuran Image**          | ~1.1 GB                      | **93.8 MB**                     |
-| **node_modules di final** | Ya (~500 MB+)                | Tidak                           |
-| **.dockerignore**         | Tidak ada                    | Ada                             |
+---
 
-#### Ringkasan Pengurangan
+## ✅ Status Akhir
 
-| Image     | Sebelum     | Sesudah     | Pengurangan |
-| --------- | ----------- | ----------- | ----------- |
-| Backend   | ~1.2 GB     | **216 MB**  | **~82%**    |
-| Frontend  | ~1.1 GB     | **93.8 MB** | **~91%**    |
-| **Total** | **~2.3 GB** | **~310 MB** | **~87%**    |
-
-### Teknik Optimasi yang Diterapkan
-
-| Teknik             | Backend | Frontend | Keterangan                               |
-| ------------------ | ------- | -------- | ---------------------------------------- |
-| Multi-stage build  | Ya      | Ya       | Memisahkan build dan runtime             |
-| Alpine base image  | Ya      | Ya       | Image minimal (~5-50 MB vs ~100-1000 MB) |
-| `.dockerignore`    | Ya      | Ya       | Mengurangi build context                 |
-| Non-root user      | Ya      | -        | Security best practice                   |
-| Healthcheck        | Ya      | -        | Monitoring container health              |
-| No cache pip/npm   | Ya      | Ya       | `--no-cache-dir`                         |
-| Layer optimization | Ya      | Ya       | Mengurutkan COPY untuk cache efficiency  |
-
-### Push ke Docker Hub
-
-Image yang telah dioptimasi di-push ke Docker Hub:
-
-```bash
-# Tag image
-docker tag tracelt-backend:v1 <DOCKERHUB_USERNAME>/backend:v2
-docker tag tracelt-frontend:v1-fe <DOCKERHUB_USERNAME>/frontend:v1
-
-# Push ke Docker Hub
-docker push <DOCKERHUB_USERNAME>/backend:v2
-docker push <DOCKERHUB_USERNAME>/frontend:v1
-```
-
-| Image    | Tag  | Docker Hub                         | Ukuran  |
-| -------- | ---- | ---------------------------------- | ------- |
-| Backend  | `v2` | `<DOCKERHUB_USERNAME>/backend:v2`  | 216 MB  |
-| Frontend | `v1` | `<DOCKERHUB_USERNAME>/frontend:v1` | 93.8 MB |
-
-> Ganti `<DOCKERHUB_USERNAME>` dengan username Docker Hub tim.
-
-### Cara Pull & Jalankan dari Docker Hub
-
-```bash
-# Pull image
-docker pull <DOCKERHUB_USERNAME>/backend:v2
-docker pull <DOCKERHUB_USERNAME>/frontend:v1
-
-# Jalankan
-docker run -d --name backend -p 8000:8000 --env-file backend/.env.docker <DOCKERHUB_USERNAME>/backend:v2
-docker run -d --name frontend -p 3000:80 <DOCKERHUB_USERNAME>/frontend:v1
-```
-
-> Dokumentasi lengkap optimasi image tersedia di [`docs/laporan-cicd-image-optimization.md`](docs/laporan-cicd-image-optimization.md)
-
-## Dokumentasi Week 1
-
-![alt text](image-1.png)
-![alt text](image.png)
-
-## Dokumentasi Week 2
-
-![alt text](image-2.png)
-
-## Dokumentasi week 3
-
-![alt text](image-3.png)
-
-## Dokumentasi sebelum UTS
-
-![alt text](image-5.jpeg)
+TraceIt sudah berada pada tahap final polish untuk UAS. Sistem dapat dijalankan secara lokal menggunakan Docker Compose, memiliki dokumentasi API, release notes, checklist QA, serta observability dasar untuk mendukung proses debugging dan presentasi akhir.
