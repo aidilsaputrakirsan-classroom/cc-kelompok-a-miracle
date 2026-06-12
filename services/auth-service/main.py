@@ -10,6 +10,8 @@ import os
 from datetime import datetime, timedelta, timezone
 from fastapi import FastAPI, Depends, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 import bcrypt
 import jwt
@@ -106,12 +108,26 @@ def _do_login(login_data: LoginRequest, db: Session, user_type: str) -> TokenRes
 # ===================== ENDPOINTS =====================
 # endpoint ini memang berbeda dengan full endpoint yang ada di folder backend
 @app.get("/health")
-def health_check():
-    return {
-        "status": "healthy",
-        "service": "auth-service",
-        "version": "2.0.0",
-    }
+def health_check(db: Session = Depends(get_db)):
+    db_status = "connected"
+    try:
+        db.execute(text("SELECT 1"))
+    except Exception:
+        db_status = "disconnected"
+    
+    overall = "healthy" if db_status == "connected" else "unhealthy"
+    
+    return JSONResponse(
+        content={
+            "status": overall,
+            "service": "auth-service",
+            "version": "2.0.0",
+            "dependencies": {
+                "database": {"status": db_status}
+            }
+        },
+        status_code=200 if overall == "healthy" else 503
+    )
 
 # Register user baru ke dalam sistem.
 @app.post("/register", response_model=UserResponse, status_code=201)
