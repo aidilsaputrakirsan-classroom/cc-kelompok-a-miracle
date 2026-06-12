@@ -21,7 +21,7 @@ const services = [
     name: 'Gateway',
     icon: '🚪',
     healthUrl: `${API_URL}/health`,
-    metricsUrl: null,
+    metricsUrl: `${API_URL}/metrics`,
     description: 'Status gateway utama dan koneksi API.',
   },
   {
@@ -340,16 +340,32 @@ export default function StatusPage({ inAdminLayout = false }) {
     if (isGenerating) return;
     setIsGenerating(true);
     try {
-      // Hit health endpoints to populate metrics counters in all services
-      await Promise.all(services.map((svc) => fetch(svc.healthUrl, { cache: 'no-store' }).catch(() => null)));
-      // Fetch fresh metrics immediately after so numbers update on screen
+      // Hit health + metrics + public business endpoints agar semua layanan terekam di tabel
+      const publicEndpoints = [
+        `${API_URL}/api/public/blood-stock`,
+        `${API_URL}/health`,
+        `${API_URL}/auth/health`,
+        `${API_URL}/donor/health`,
+        `${API_URL}/metrics`,
+        `${API_URL}/auth/metrics`,
+        `${API_URL}/donor/metrics`,
+      ];
+      await Promise.all(publicEndpoints.map((url) => fetch(url, { cache: 'no-store' }).catch(() => null)));
+
       await fetchServiceStatus();
-      const entries = services.map((svc) => ({
+
+      const paths = publicEndpoints.map((url) => url.replace(API_URL, ''));
+      const serviceFor = (p) => {
+        if (p.startsWith('/auth/')) return 'Auth Service';
+        if (p.startsWith('/donor/')) return 'Donor Service';
+        return 'Gateway';
+      };
+      const entries = paths.map((p) => ({
         timestamp: new Date().toLocaleTimeString(),
-        service: svc.name,
-        path: svc.healthUrl.replace(API_URL, ''),
+        service: serviceFor(p),
+        path: p,
         level: 'INFO',
-        message: `Health request recorded — ${svc.name}`,
+        message: `Traffic generated — ${p}`,
         correlationId: createRandomId(),
         status: 200,
       }));
