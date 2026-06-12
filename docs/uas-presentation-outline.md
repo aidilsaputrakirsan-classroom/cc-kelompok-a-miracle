@@ -28,11 +28,11 @@
 - Week 12-14: Microservices (2 services FastAPI + 2 DB + 1 Nginx Gateway + Frontend) → [diagram arsitektur microservices akhir]
 
 ## Slide 4: Tech Stack & Infrastructure (🎤 Speaker: Avhilla - Lead Container | Durasi: 2 menit)
-- Diagram arsitektur final: [Diagram: Frontend -> Nginx Gateway -> Auth Service & Library Service -> Auth DB & Item DB]
+- Diagram arsitektur final: [Diagram: Frontend -> Nginx Gateway -> Auth Service & Donor Service -> Auth DB & Item DB]
 - Jumlah containers, services, endpoints:
-  - 5 Containers (`frontend`, `gateway`, `auth-service`, `donor-service`, `postgres-db`)
-  - 4 Services Utama (React Frontend, Nginx Gateway, 2 FastAPI Backend / Monolith Gateway, PostgreSQL)
-  - ~22 Endpoints (Authentication, Donors Management, Riwayat Donor, Public Blood Stock, System Status/Telemetry)
+  - 6 Containers: `tracelt-frontend`, `tracelt-gateway`, `tracelt-auth-service`, `tracelt-item-service`, `tracelt-auth-db`, `tracelt-item-db`
+  - 6 Services Utama: React Frontend, Nginx Gateway, 2 FastAPI Microservices (Auth Service + Donor Service), 2 PostgreSQL Database (auth-db + item-db)
+  - ~29 Endpoints (Authentication, Donors Management, Riwayat Donor, Public Blood Stock, System Status/Telemetry)
 - CI/CD pipeline flow: GitHub Actions (`make lint`, `make test`) → Build Docker Image / Deploy ke Railway
 - Monitoring & observability: Endpoint `/auth/health`, `/donor/health`, dan *structured logging* Docker (format JSON).
 
@@ -86,7 +86,7 @@ Bagian ini dibacakan secara estafet (*round-robin*) sesuai dengan domain kendala
 **Persiapan Awal:** Pastikan aplikasi sudah berjalan lokal (*Docker*) dan siapkan *tab* GitHub repositori Anda di *browser*.
 
 1. **Akses Beranda (Open App):**
-   - **Aksi:** Buka browser dan akses `http://localhost:3000`.
+   - **Aksi:** Buka browser dan akses `http://localhost` (Docker) atau `http://localhost:5173` (dev). Aplikasi berjalan melalui Nginx Gateway di port 80 yang meneruskan request ke frontend container.
    - **Penjelasan:** "Ini halaman utama TraceLT. Pengunjung biasa dapat mencari stok darah sukarela secara real-time."
 
 2. **Registrasi Akun Baru (Register):**
