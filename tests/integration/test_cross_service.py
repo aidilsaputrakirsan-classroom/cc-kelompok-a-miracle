@@ -31,6 +31,25 @@ def test_item_service_health(gateway_url):
     assert data["status"] in ["healthy", "degraded"]
 
 
+def test_item_service_metrics_via_gateway(gateway_url):
+    """Donor Service metrics harus bisa diakses lewat gateway."""
+    response = httpx.get(f"{gateway_url}/donor/metrics")
+
+    assert response.status_code == 200, response.text
+    data = response.json()
+    assert data["service"] == "item-service"
+    assert "last_minute" in data
+    assert "alert_threshold_percent" in data["last_minute"]
+
+
+def test_public_blood_stock_api_routes_to_item_service(gateway_url):
+    """Public blood stock API harus diproxy gateway ke Item Service."""
+    response = httpx.get(f"{gateway_url}/api/public/blood-stock")
+
+    assert response.status_code == 200, response.text
+    assert "blood_stock" in response.json()
+
+
 def test_register_login_flow(gateway_url):
     """Test 4: Full flow register → login → get token."""
     import time

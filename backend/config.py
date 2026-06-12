@@ -31,8 +31,13 @@ class Settings:
             "sqlite:///./tracelt.db",
         )
 
-        # Auth
-        self.SECRET_KEY: str = os.getenv("SECRET_KEY", "dev-secret-key-change-in-production")
+        # Auth — SECRET_KEY wajib di-set via env var; fallback hanya untuk development
+        _secret = os.getenv("SECRET_KEY", "")
+        if not _secret or _secret in ("CHANGE_ME_USE_RANDOM_STRING_MIN_32_CHARS", "dev-secret-key-change-in-production"):
+            if self.ENVIRONMENT == "production":
+                raise RuntimeError("SECRET_KEY wajib di-set di environment production. Gunakan nilai acak minimal 32 karakter.")
+            _secret = "dev-secret-only-NOT-for-production"
+        self.SECRET_KEY: str = _secret
         self.ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
 
         # CORS — allow_credentials=False sehingga "*" aman dipakai (JWT Bearer, bukan cookie)

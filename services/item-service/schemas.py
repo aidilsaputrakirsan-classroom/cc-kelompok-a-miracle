@@ -35,12 +35,13 @@ class PendonorCreate(BaseModel):
     umur: int = Field(..., ge=17, le=120)
     tanggal_lahir: date
     tanggal_terakhir_donor: Optional[date] = None
-    total_donor: int = Field(default=0, ge=0)
-    alamat: str = Field(..., min_length=5)
+    total_donor: int = Field(default=0, ge=0, le=200)
+    alamat: str = Field(..., min_length=5, max_length=500)
     no_telepon: str = Field(..., min_length=8, max_length=30)
-    riwayat_kesehatan: Optional[str] = None
+    riwayat_kesehatan: Optional[str] = Field(None, max_length=2000)
 
     @field_validator("no_telepon")
+    @classmethod
     def validate_no_telepon(cls, v: str) -> str:
         if not re.match(r"^[0-9+\-\s]+$", v):
             raise ValueError("Nomor telepon hanya boleh berisi angka, +, -, spasi")
@@ -57,10 +58,10 @@ class PendonorUpdate(BaseModel):
     umur: Optional[int] = Field(None, ge=17, le=120)
     tanggal_lahir: Optional[date] = None
     tanggal_terakhir_donor: Optional[date] = None
-    total_donor: Optional[int] = Field(None, ge=0)
-    alamat: Optional[str] = Field(None, min_length=5)
+    total_donor: Optional[int] = Field(None, ge=0, le=200)
+    alamat: Optional[str] = Field(None, min_length=5, max_length=500)
     no_telepon: Optional[str] = Field(None, min_length=8, max_length=30)
-    riwayat_kesehatan: Optional[str] = None
+    riwayat_kesehatan: Optional[str] = Field(None, max_length=2000)
 
 
 class PendonorResponse(BaseModel):
