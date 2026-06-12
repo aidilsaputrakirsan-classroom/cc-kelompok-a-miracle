@@ -105,8 +105,11 @@ export const AdminDashboardCharts = ({ bloodData, genderData, isDark }) => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pb-10">
       <div className="bg-white p-8 rounded-2xl border border-slate-100 shadow-sm dark:bg-slate-900 dark:border-slate-800 transition-colors">
-        <div className="flex items-center justify-between mb-8">
-          <h2 className="text-lg font-bold text-slate-900 dark:text-white">Distribusi Golongan Darah</h2>
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white">Distribusi Golongan Darah</h2>
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Donor terverifikasi saja</p>
+          </div>
           <PieChartIcon className="w-5 h-5 text-slate-400 dark:text-slate-500" />
         </div>
         <div className="h-[300px]">
@@ -133,8 +136,11 @@ export const AdminDashboardCharts = ({ bloodData, genderData, isDark }) => {
       </div>
 
       <div className="bg-white p-8 rounded-2xl border border-slate-100 shadow-sm dark:bg-slate-900 dark:border-slate-800 transition-colors">
-        <div className="flex items-center justify-between mb-8">
-          <h2 className="text-lg font-bold text-slate-900 dark:text-white">Proporsi Jenis Kelamin</h2>
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white">Proporsi Jenis Kelamin</h2>
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Donor terverifikasi saja</p>
+          </div>
           <TrendingUp className="w-5 h-5 text-slate-400 dark:text-slate-500" />
         </div>
         <div className="h-[300px] flex items-center justify-center">

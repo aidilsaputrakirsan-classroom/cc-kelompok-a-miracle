@@ -1,8 +1,15 @@
-from fastapi import Depends, FastAPI, HTTPException, Query
+import time
+
+from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 from sqlalchemy import inspect, text
 from sqlalchemy.orm import Session
+
+from metrics import metrics
 
 import crud
 from auth import create_access_token, get_current_admin, get_current_pengguna
@@ -35,11 +42,15 @@ try:
 except Exception as _e:
     _logging.getLogger(__name__).warning(f"DB tidak tersedia saat startup: {_e}")
 
+limiter = Limiter(key_func=get_remote_address, enabled=settings.ENVIRONMENT != "test")
+
 app = FastAPI(
     title="TraceIt API",
     description="REST API backend sesuai ERD: admin, pengguna, pendonor, riwayat_donor",
     version="1.0.0",
 )
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 
 def _ensure_backend_schema_compatibility() -> None:
@@ -110,11 +121,25 @@ app.add_middleware(
 )
 
 
+@app.middleware("http")
+async def request_logging_middleware(request: Request, call_next):
+    start = time.perf_counter()
+    response = await call_next(request)
+    duration_ms = (time.perf_counter() - start) * 1000
+    metrics.record_request(
+        method=request.method,
+        path=request.url.path,
+        status_code=response.status_code,
+        duration_ms=duration_ms,
+    )
+    return response
+
+
 def raise_http_from_crud_error(error: ValueError) -> None:
     status_code = 409 if isinstance(error, crud.ConflictError) else 400
     raise HTTPException(status_code=status_code, detail=str(error))
 
-# ==================== HEALTH CHECK ====================
+# ==================== HEALTH & METRICS ====================
 
 @app.get("/health")
 def health_check(db: Session = Depends(get_db)):
@@ -123,6 +148,7 @@ def health_check(db: Session = Depends(get_db)):
         "status": "healthy",
         "service": "backend",
         "version": "1.0.0",
+        "uptime_seconds": round(time.time() - metrics.start_time, 1),
     }
 
     try:
@@ -136,6 +162,81 @@ def health_check(db: Session = Depends(get_db)):
     return JSONResponse(content=health, status_code=status_code)
 
 
+_AUTH_SEGS  = ("/auth/", "/api/auth/", "/pengguna/", "/api/pengguna/")
+_DONOR_SEGS = ("/donor/", "/pendonor", "/riwayat-donor", "/api/pendonor", "/api/riwayat")
+
+
+def _service_metrics(service_name: str, prefixes: tuple | None) -> dict:
+    """
+    Filter endpoint stats by prefix dan hitung ulang total per partisi.
+    prefixes=None → gateway (semua endpoint yang BUKAN auth/donor).
+    Ini mencegah double-counting di status page.
+    """
+    data = metrics.get_metrics()
+    all_service_segs = _AUTH_SEGS + _DONOR_SEGS
+
+    if prefixes is None:
+        filtered = {k: v for k, v in data["endpoints"].items()
+                    if not any(seg in k for seg in all_service_segs)}
+    else:
+        filtered = {k: v for k, v in data["endpoints"].items()
+                    if any(seg in k for seg in prefixes)}
+
+    total_reqs = sum(v["count"] for v in filtered.values())
+    total_errs = sum(v["errors"] for v in filtered.values())
+    err_rate   = round(total_errs / total_reqs * 100, 2) if total_reqs > 0 else 0
+
+    return {
+        "service":             service_name,
+        "uptime_seconds":      data["uptime_seconds"],
+        "total_requests":      total_reqs,
+        "total_errors":        total_errs,
+        "error_rate_percent":  err_rate,
+        "latency":             data["latency"],
+        "endpoints":           filtered,
+    }
+
+
+@app.get("/metrics")
+def get_metrics():
+    """Gateway metrics — endpoint non-auth/non-donor saja (agar tidak double-count di status page)."""
+    return JSONResponse(content=_service_metrics("backend", prefixes=None))
+
+
+@app.get("/auth/health")
+def auth_health():
+    """Health check subsistem autentikasi."""
+    return JSONResponse(content={
+        "status":         "healthy",
+        "service":        "auth-service",
+        "version":        "1.0.0",
+        "uptime_seconds": round(time.time() - metrics.start_time, 1),
+    })
+
+
+@app.get("/auth/metrics")
+def auth_metrics():
+    """Metrics endpoint autentikasi — total dihitung dari endpoint auth saja."""
+    return JSONResponse(content=_service_metrics("auth-service", _AUTH_SEGS))
+
+
+@app.get("/donor/health")
+def donor_health():
+    """Health check subsistem pendonor."""
+    return JSONResponse(content={
+        "status":         "healthy",
+        "service":        "donor-service",
+        "version":        "1.0.0",
+        "uptime_seconds": round(time.time() - metrics.start_time, 1),
+    })
+
+
+@app.get("/donor/metrics")
+def donor_metrics():
+    """Metrics endpoint pendonor — total dihitung dari endpoint donor saja."""
+    return JSONResponse(content=_service_metrics("donor-service", _DONOR_SEGS))
+
+
 @app.get("/api/public/blood-stock", response_model=PublicBloodStockResponse)
 def get_public_blood_stock(db: Session = Depends(get_db)):
     return crud.get_public_blood_stock(db=db)
@@ -145,7 +246,8 @@ def get_public_blood_stock(db: Session = Depends(get_db)):
 
 @app.post("/auth/admin/register", response_model=AdminResponse, status_code=201)
 @app.post("/api/auth/admin/register", response_model=AdminResponse, status_code=201)
-def register_admin(admin_data: AdminCreate, db: Session = Depends(get_db)):
+@limiter.limit("3/minute")
+def register_admin(request: Request, admin_data: AdminCreate, db: Session = Depends(get_db)):
     admin = crud.create_admin(db=db, admin_data=admin_data)
     if not admin:
         raise HTTPException(status_code=400, detail="Admin sudah terdaftar. Sistem hanya mengizinkan satu admin")
@@ -154,7 +256,8 @@ def register_admin(admin_data: AdminCreate, db: Session = Depends(get_db)):
 
 @app.post("/auth/admin/login", response_model=TokenResponse)
 @app.post("/api/auth/admin/login", response_model=TokenResponse)
-def login_admin(login_data: LoginRequest, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+def login_admin(request: Request, login_data: LoginRequest, db: Session = Depends(get_db)):
     admin = crud.authenticate_admin(db=db, email=login_data.email, password=login_data.password)
     if not admin:
         raise HTTPException(status_code=401, detail="Email atau password admin salah")
@@ -169,7 +272,8 @@ def login_admin(login_data: LoginRequest, db: Session = Depends(get_db)):
 
 @app.post("/auth/pengguna/register", response_model=PenggunaResponse, status_code=201)
 @app.post("/api/auth/pengguna/register", response_model=PenggunaResponse, status_code=201)
-def register_pengguna(pengguna_data: PenggunaCreate, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+def register_pengguna(request: Request, pengguna_data: PenggunaCreate, db: Session = Depends(get_db)):
     pengguna = crud.create_pengguna(db=db, pengguna_data=pengguna_data)
     if not pengguna:
         raise HTTPException(status_code=400, detail="Email pengguna sudah terdaftar")
@@ -178,7 +282,8 @@ def register_pengguna(pengguna_data: PenggunaCreate, db: Session = Depends(get_d
 
 @app.post("/auth/pengguna/login", response_model=TokenResponse)
 @app.post("/api/auth/pengguna/login", response_model=TokenResponse)
-def login_pengguna(login_data: LoginRequest, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+def login_pengguna(request: Request, login_data: LoginRequest, db: Session = Depends(get_db)):
     pengguna = crud.authenticate_pengguna(db=db, email=login_data.email, password=login_data.password)
     if not pengguna:
         raise HTTPException(status_code=401, detail="Email atau password pengguna salah")

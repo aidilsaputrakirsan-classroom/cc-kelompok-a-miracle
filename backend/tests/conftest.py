@@ -1,6 +1,9 @@
 """
 Konfigurasi test — setup database test terpisah dari database utama.
 """
+import os
+os.environ["ENVIRONMENT"] = "test"  # harus sebelum import main agar rate limiter di-disable
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine

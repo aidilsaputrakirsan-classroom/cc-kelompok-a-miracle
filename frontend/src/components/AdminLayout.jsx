@@ -25,10 +25,10 @@ function cn(...inputs) {
   return twMerge(clsx(inputs));
 }
 
-const SidebarItem = ({ icon: Icon, label, path, active, collapsed }) => (
+const SidebarItem = ({ icon: Icon, label, path, active, collapsed, badge }) => (
   <Link
     to={path}
-    title={collapsed ? label : undefined}
+    title={collapsed ? `${label}${badge > 0 ? ` (${badge} menunggu)` : ''}` : undefined}
     className={cn(
       'flex items-center rounded-xl transition-all duration-200 group',
       collapsed ? 'justify-center px-2 py-3' : 'gap-3 px-4 py-3',
@@ -37,13 +37,26 @@ const SidebarItem = ({ icon: Icon, label, path, active, collapsed }) => (
         : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200'
     )}
   >
-    <Icon className={cn(
-      'w-5 h-5 shrink-0',
-      active
-        ? 'text-indigo-800 dark:text-indigo-400'
-        : 'text-slate-400 group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-slate-300'
-    )} />
-    {!collapsed && <span className="truncate">{label}</span>}
+    {/* Icon with dot badge when collapsed */}
+    <div className="relative shrink-0">
+      <Icon className={cn(
+        'w-5 h-5',
+        active
+          ? 'text-indigo-800 dark:text-indigo-400'
+          : 'text-slate-400 group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-slate-300'
+      )} />
+      {badge > 0 && collapsed && (
+        <span className="absolute -top-1 -right-1 min-w-[14px] h-[14px] px-0.5 bg-amber-500 text-white text-[8px] font-black rounded-full flex items-center justify-center leading-none shadow-sm">
+          {badge > 9 ? '9+' : badge}
+        </span>
+      )}
+    </div>
+    {!collapsed && <span className="truncate flex-1">{label}</span>}
+    {!collapsed && badge > 0 && (
+      <span className="ml-auto px-2 py-0.5 bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-400 text-[10px] font-black rounded-full leading-none shrink-0 border border-amber-200 dark:border-amber-900/40">
+        {badge}
+      </span>
+    )}
   </Link>
 );
 
@@ -53,6 +66,7 @@ export const AdminLayout = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDark, toggleDarkMode]                = useDarkMode();
   const [authIsDown, setAuthIsDown]             = useState(false);
+  const [pendingCount, setPendingCount]         = useState(0);
   const [isCollapsed, setIsCollapsed]           = useState(
     () => localStorage.getItem('admin_sidebar_collapsed') === 'true'
   );
@@ -61,6 +75,21 @@ export const AdminLayout = () => {
     const unsub = apiService.subscribeToAuthStatus((isDown) => setAuthIsDown(isDown));
     return () => unsub();
   }, []);
+
+  // Fetch pending verification count; re-run on every route change so badge stays fresh
+  useEffect(() => {
+    const fetchPending = async () => {
+      try {
+        const res = await apiService.getPendingVerifications({ limit: 1 });
+        setPendingCount(res.data.total ?? 0);
+      } catch {
+        // silently ignore — badge just won't update
+      }
+    };
+    fetchPending();
+    const interval = setInterval(fetchPending, 30_000);
+    return () => clearInterval(interval);
+  }, [location.pathname]);
 
   const toggleCollapsed = () => {
     setIsCollapsed((prev) => {
@@ -74,7 +103,7 @@ export const AdminLayout = () => {
     { icon: PieChartIcon, label: 'Statistik',         path: '/admin' },
     { icon: Activity,    label: 'Status Sistem',      path: '/admin/status' },
     { icon: Users,       label: 'Dashboard Pendonor', path: '/admin/donors' },
-    { icon: CheckCircle, label: 'Verifikasi',          path: '/admin/verify' },
+    { icon: CheckCircle, label: 'Verifikasi',          path: '/admin/verify', badge: pendingCount },
   ];
 
   const handleLogout = () => {
@@ -92,18 +121,6 @@ export const AdminLayout = () => {
         style={{ width: sidebarW }}
         className="hidden lg:flex flex-col bg-white border-r border-indigo-900/15 fixed h-full z-30 overflow-hidden transition-[width] duration-300 ease-in-out dark:bg-slate-900 dark:border-indigo-700/20"
       >
-        {/* Toggle button — right edge */}
-        <button
-          onClick={toggleCollapsed}
-          className="absolute -right-3 top-7 z-10 w-6 h-6 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center shadow-md hover:shadow-lg transition-all hover:scale-110"
-          title={isCollapsed ? 'Perluas sidebar' : 'Perkecil sidebar'}
-        >
-          {isCollapsed
-            ? <ChevronRight className="w-3 h-3 text-slate-500 dark:text-slate-400" />
-            : <ChevronLeft  className="w-3 h-3 text-slate-500 dark:text-slate-400" />
-          }
-        </button>
-
         {/* Logo */}
         <div className={`flex items-center ${isCollapsed ? 'justify-center pt-5 pb-4 px-2' : 'gap-3 pt-6 pb-2 px-4'} shrink-0`}>
           <Droplets className="w-8 h-8 text-indigo-800 dark:text-indigo-400 shrink-0" />
@@ -163,6 +180,19 @@ export const AdminLayout = () => {
         </div>
       </aside>
 
+      {/* ── Sidebar toggle — fixed sibling so overflow-hidden on aside never clips it */}
+      <button
+        onClick={toggleCollapsed}
+        style={{ left: `calc(${sidebarW} - 12px)`, transition: 'left 300ms ease-in-out' }}
+        className="hidden lg:flex fixed top-7 z-40 w-6 h-6 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 items-center justify-center shadow-md hover:shadow-lg hover:scale-110 transition-transform"
+        title={isCollapsed ? 'Perluas sidebar' : 'Perkecil sidebar'}
+      >
+        {isCollapsed
+          ? <ChevronRight className="w-3 h-3 text-slate-500 dark:text-slate-400" />
+          : <ChevronLeft  className="w-3 h-3 text-slate-500 dark:text-slate-400" />
+        }
+      </button>
+
       {/* ── Mobile Header ───────────────────────────────── */}
       <div className="lg:hidden fixed top-0 left-0 right-0 bg-white border-b border-indigo-900/15 z-50 px-4 py-3 flex items-center justify-between dark:bg-slate-900 dark:border-indigo-700/20">
         <div className="flex items-center gap-2">
@@ -216,8 +246,7 @@ export const AdminLayout = () => {
 
       {/* ── Main Content ─────────────────────────────────── */}
       <main
-        style={{ marginLeft: `max(0px, ${sidebarW})` }}
-        className="flex-1 p-6 lg:p-10 pt-20 lg:pt-10 min-h-screen flex flex-col transition-[margin-left] duration-300 ease-in-out"
+        className={`flex-1 p-4 sm:p-6 lg:p-10 pt-20 lg:pt-10 min-h-screen flex flex-col transition-[margin-left] duration-300 ease-in-out ${isCollapsed ? 'lg:ml-16' : 'lg:ml-64'}`}
       >
         <AnimatePresence>
           {authIsDown && (
