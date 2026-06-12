@@ -1,3 +1,5 @@
+import time
+
 from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -6,6 +8,8 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 from sqlalchemy import inspect, text
 from sqlalchemy.orm import Session
+
+from metrics import metrics
 
 import crud
 from auth import create_access_token, get_current_admin, get_current_pengguna
@@ -117,11 +121,25 @@ app.add_middleware(
 )
 
 
+@app.middleware("http")
+async def request_logging_middleware(request: Request, call_next):
+    start = time.perf_counter()
+    response = await call_next(request)
+    duration_ms = (time.perf_counter() - start) * 1000
+    metrics.record_request(
+        method=request.method,
+        path=request.url.path,
+        status_code=response.status_code,
+        duration_ms=duration_ms,
+    )
+    return response
+
+
 def raise_http_from_crud_error(error: ValueError) -> None:
     status_code = 409 if isinstance(error, crud.ConflictError) else 400
     raise HTTPException(status_code=status_code, detail=str(error))
 
-# ==================== HEALTH CHECK ====================
+# ==================== HEALTH & METRICS ====================
 
 @app.get("/health")
 def health_check(db: Session = Depends(get_db)):
@@ -130,6 +148,7 @@ def health_check(db: Session = Depends(get_db)):
         "status": "healthy",
         "service": "backend",
         "version": "1.0.0",
+        "uptime_seconds": round(time.time() - metrics.start_time, 1),
     }
 
     try:
@@ -141,6 +160,81 @@ def health_check(db: Session = Depends(get_db)):
 
     status_code = 200 if health["status"] == "healthy" else 503
     return JSONResponse(content=health, status_code=status_code)
+
+
+_AUTH_SEGS  = ("/auth/", "/api/auth/", "/pengguna/", "/api/pengguna/")
+_DONOR_SEGS = ("/donor/", "/pendonor", "/riwayat-donor", "/api/pendonor", "/api/riwayat")
+
+
+def _service_metrics(service_name: str, prefixes: tuple | None) -> dict:
+    """
+    Filter endpoint stats by prefix dan hitung ulang total per partisi.
+    prefixes=None → gateway (semua endpoint yang BUKAN auth/donor).
+    Ini mencegah double-counting di status page.
+    """
+    data = metrics.get_metrics()
+    all_service_segs = _AUTH_SEGS + _DONOR_SEGS
+
+    if prefixes is None:
+        filtered = {k: v for k, v in data["endpoints"].items()
+                    if not any(seg in k for seg in all_service_segs)}
+    else:
+        filtered = {k: v for k, v in data["endpoints"].items()
+                    if any(seg in k for seg in prefixes)}
+
+    total_reqs = sum(v["count"] for v in filtered.values())
+    total_errs = sum(v["errors"] for v in filtered.values())
+    err_rate   = round(total_errs / total_reqs * 100, 2) if total_reqs > 0 else 0
+
+    return {
+        "service":             service_name,
+        "uptime_seconds":      data["uptime_seconds"],
+        "total_requests":      total_reqs,
+        "total_errors":        total_errs,
+        "error_rate_percent":  err_rate,
+        "latency":             data["latency"],
+        "endpoints":           filtered,
+    }
+
+
+@app.get("/metrics")
+def get_metrics():
+    """Gateway metrics — endpoint non-auth/non-donor saja (agar tidak double-count di status page)."""
+    return JSONResponse(content=_service_metrics("backend", prefixes=None))
+
+
+@app.get("/auth/health")
+def auth_health():
+    """Health check subsistem autentikasi."""
+    return JSONResponse(content={
+        "status":         "healthy",
+        "service":        "auth-service",
+        "version":        "1.0.0",
+        "uptime_seconds": round(time.time() - metrics.start_time, 1),
+    })
+
+
+@app.get("/auth/metrics")
+def auth_metrics():
+    """Metrics endpoint autentikasi — total dihitung dari endpoint auth saja."""
+    return JSONResponse(content=_service_metrics("auth-service", _AUTH_SEGS))
+
+
+@app.get("/donor/health")
+def donor_health():
+    """Health check subsistem pendonor."""
+    return JSONResponse(content={
+        "status":         "healthy",
+        "service":        "donor-service",
+        "version":        "1.0.0",
+        "uptime_seconds": round(time.time() - metrics.start_time, 1),
+    })
+
+
+@app.get("/donor/metrics")
+def donor_metrics():
+    """Metrics endpoint pendonor — total dihitung dari endpoint donor saja."""
+    return JSONResponse(content=_service_metrics("donor-service", _DONOR_SEGS))
 
 
 @app.get("/api/public/blood-stock", response_model=PublicBloodStockResponse)
