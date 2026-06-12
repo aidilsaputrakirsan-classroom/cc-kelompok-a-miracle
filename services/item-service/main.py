@@ -433,3 +433,5 @@ def get_metrics():
         "service": "item-service",
         **metrics.get_metrics(),
     }
+
+# 
