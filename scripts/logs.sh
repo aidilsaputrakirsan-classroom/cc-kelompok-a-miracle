@@ -8,8 +8,8 @@ case "$1" in
     docker compose logs -f auth-service item-service
     ;;
   errors)
-    echo "❌ Showing ERROR logs only..."
-    docker compose logs auth-service item-service 2>&1 | grep '"level":"ERROR"'
+    echo "❌ Showing ERROR/CRITICAL logs only..."
+    docker compose logs auth-service item-service 2>&1 | grep -E '"level"[[:space:]]*:[[:space:]]*"(ERROR|CRITICAL)"' || true
     ;;
   trace)
     if [ -z "$2" ]; then
@@ -25,7 +25,7 @@ case "$1" in
     curl -s http://localhost/auth/metrics | python3 -m json.tool
     echo ""
     echo "--- Item Service ---"
-    curl -s http://localhost/items/metrics | python3 -m json.tool
+    curl -s http://localhost/donor/metrics | python3 -m json.tool
     ;;
   *)
     echo "Usage: ./scripts/logs.sh {all|errors|trace <id>|metrics}"

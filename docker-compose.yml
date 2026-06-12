@@ -1,6 +1,6 @@
 # ============================================================
 # Docker Compose — Tracelt Microservices
-# Komputasi Awan — SI ITK
+# Komputasi Awan — SI ITK (Modul 14 Ready)
 # ============================================================
 # Usage:
 #   docker compose up -d          # Start semua services
@@ -62,6 +62,12 @@ services:
       CORS_ORIGINS: "http://localhost,http://localhost:5173,http://127.0.0.1,http://localhost:80"
       SERVICE_NAME: auth-service
       LOG_LEVEL: INFO
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        tag: "auth-service"
     depends_on:
       auth-db:
         condition: service_healthy
@@ -94,7 +100,7 @@ services:
       driver: "json-file"
       options:
         max-size: "10m"
-        max-files: "3"
+        max-file: "3"
         tag: "item-service"
     depends_on:
       item-db:
