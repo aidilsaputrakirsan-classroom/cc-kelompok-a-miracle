@@ -16,8 +16,8 @@ switch ($Command.ToLower()) {
         docker compose logs -f auth-service item-service gateway
     }
     "errors" {
-        Write-Host "Showing ERROR logs only..." -ForegroundColor Red
-        docker compose logs auth-service item-service 2>&1 | Select-String '"level":"ERROR"' -ErrorAction SilentlyContinue
+        Write-Host "Showing ERROR/CRITICAL logs only..." -ForegroundColor Red
+        docker compose logs auth-service item-service 2>&1 | Select-String '"level"\s*:\s*"(ERROR|CRITICAL)"' -ErrorAction SilentlyContinue
     }
     "trace" {
         if ([string]::IsNullOrEmpty($TraceId)) {
@@ -41,7 +41,7 @@ switch ($Command.ToLower()) {
 
         try {
             Write-Host "`n--- Donor Service Metrics ---" -ForegroundColor Green
-            Invoke-WebRequest -Uri "http://localhost/pendonor/metrics" -UseBasicParsing -ErrorAction Stop | 
+            Invoke-WebRequest -Uri "http://localhost/donor/metrics" -UseBasicParsing -ErrorAction Stop |
             Select-Object -ExpandProperty Content | ConvertFrom-Json | ConvertTo-Json -Depth 4
         } catch {
             Write-Host "Failed to get Donor Metrics" -ForegroundColor Yellow
