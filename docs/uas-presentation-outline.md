@@ -72,11 +72,11 @@
   - *Kesimpulan Pelajaran:* "Pelajaran terbesar bagi tim Miracle adalah menyelaraskan koordinasi antar-disiplin backend, frontend, kontainerisasi, dan deployment. Pentingnya standardisasi skema, dokumentasi API Contract, dan uji kegagalan sistem agar platform TraceLT dapat dinilai andal dan scalable."
 
 ## Slide 7: Team Contributions (🎤 Speaker: Semua Anggota / Round-robin | Durasi: 1.5 menit)
-- Debora Intania Subekti — Lead Backend — Pemecahan logic, skema database, autentikasi JWT & bcrypt, monolith metrics & health telemetry — [60 commits, 11 PRs]
-- Avhilla Catton Andalucia — Lead Container — Setup kontainerisasi Docker/Compose, optimasi multi-stage build frontend/backend — [45 commits, 12 PRs]
-- Chelsy Olivia — Lead CI/CD & Deploy — Setup workflow GitHub Actions, automated testing pipeline, deploy ke Railway — [38 commits, 10 PRs]
-- Yosan Pratiwi — Lead Frontend — Redesign halaman status observabilitas, integrasi UI dengan backend API, dynamic chart Recharts — [28 commits, 8 PRs]
-- Betran — Lead QA & Docs — Uji coba API Swagger, penulisan dokumen laporan QA, api-test-results, dan ERD — [24 commits, 9 PRs]
+- Debora Intania Subekti — Lead Backend — Pemecahan logic, skema database, autentikasi JWT & bcrypt, monolith metrics & health telemetry — [85 commits, 11 PRs]
+- Avhilla Catton Andalucia — Lead Container — Setup kontainerisasi Docker/Compose, optimasi multi-stage build frontend/backend — [55 commits, 12 PRs]
+- Chelsy Olivia — Lead CI/CD & Deploy — Setup workflow GitHub Actions, automated testing pipeline, deploy ke Railway — [57 commits, 10 PRs]
+- Yosan Pratiwi — Lead Frontend — Redesign halaman status observabilitas, integrasi UI dengan backend API, dynamic chart Recharts — [54 commits, 8 PRs]
+- Betran — Lead QA & Docs — Uji coba API Swagger, penulisan dokumen laporan QA, api-test-results, dan ERD — [37 commits, 9 PRs]
 
 ---
 
