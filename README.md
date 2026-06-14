@@ -205,47 +205,59 @@ Semua endpoint lokal diakses melalui API Gateway:
 http://localhost
 ```
 
-### 🔹 Gateway & Monitoring
+### Endpoint Summary
 
-| Method | Endpoint | Fungsi |
-| --- | --- | --- |
-| `GET` | `/` | Frontend React |
-| `GET` | `/health` | Health check gateway |
-| `GET` | `/auth/health` | Health check Auth Service |
-| `GET` | `/donor/health` | Health check Donor Service |
-| `GET` | `/auth/metrics` | Metrics Auth Service |
-| `GET` | `/donor/metrics` | Metrics Donor Service |
+| Category               | Total Endpoint |
+| ---------------------- | -------------: |
+| Swagger/Monolith Total |             32 |
+| Micro API Total        |             29 |
+| Auth Service           |              9 |
+| Item/Donor Service     |             20 |
 
-### 🔹 Auth Service
+### Notes
 
-| Method | Endpoint | Fungsi |
-| --- | --- | --- |
-| `POST` | `/auth/register` | Registrasi user umum |
-| `POST` | `/auth/pengguna/register` | Registrasi pengguna |
-| `POST` | `/auth/admin/register` | Registrasi admin |
-| `POST` | `/auth/login` | Login user umum |
-| `POST` | `/auth/pengguna/login` | Login pengguna |
-| `POST` | `/auth/admin/login` | Login admin |
-| `GET` | `/auth/verify` | Verifikasi JWT |
+- Total endpoint pada Micro API adalah 29 endpoint, terdiri dari 9 endpoint pada Auth Service dan 20 endpoint pada Item/Donor Service.
+- Jumlah 32 endpoint yang terlihat pada Swagger UI merupakan total endpoint pada Swagger/monolith secara keseluruhan, sehingga tidak seluruhnya dihitung sebagai endpoint Micro API.
+- Endpoint gateway/monolith tambahan seperti `/`, `/health`, `/metrics`, `/info`, atau alias `/api/auth/*` tidak dimasukkan ke hitungan Micro API.
 
-### 🔹 Item/Donor Service
+### Auth Service Endpoints
 
-| Method | Endpoint | Fungsi |
-| --- | --- | --- |
-| `GET` | `/api/public/blood-stock` | Stok darah publik |
-| `GET` | `/pendonor/stats` | Statistik pendonor |
-| `POST` | `/pendonor` | Membuat data pendonor |
-| `GET` | `/pendonor` | Daftar pendonor |
-| `GET` | `/pendonor/{id}` | Detail pendonor |
-| `PUT` | `/pendonor/{id}` | Update pendonor |
-| `DELETE` | `/pendonor/{id}` | Hapus pendonor |
-| `POST` | `/riwayat-donor` | Membuat riwayat donor |
-| `GET` | `/riwayat-donor` | Daftar riwayat donor |
-| `GET` | `/riwayat-donor/{id}` | Detail riwayat donor |
-| `POST` | `/riwayat-donor/{id}/verifikasi` | Verifikasi riwayat donor |
-| `GET` | `/pengguna/me` | Profil pengguna login |
-| `GET` | `/pengguna/riwayat-donor` | Riwayat donor milik pengguna |
-| `POST` | `/pengguna/riwayat-donor` | Membuat riwayat donor milik pengguna |
+| No | Method | Endpoint                  | Description                  |
+| -: | ------ | ------------------------- | ---------------------------- |
+|  1 | `GET`  | `/auth/health`            | Health check Auth Service    |
+|  2 | `POST` | `/auth/register`          | Registrasi user umum         |
+|  3 | `POST` | `/auth/pengguna/register` | Registrasi pengguna          |
+|  4 | `POST` | `/auth/admin/register`    | Registrasi admin             |
+|  5 | `POST` | `/auth/login`             | Login user umum              |
+|  6 | `POST` | `/auth/pengguna/login`    | Login pengguna               |
+|  7 | `POST` | `/auth/admin/login`       | Login admin                  |
+|  8 | `GET`  | `/auth/verify`            | Verifikasi JWT               |
+|  9 | `GET`  | `/auth/metrics`           | Metrics Auth Service         |
+
+### Item/Donor Service Endpoints
+
+| No | Method   | Endpoint                                   | Description                         |
+| -: | -------- | ------------------------------------------ | ----------------------------------- |
+|  1 | `GET`    | `/donor/health`                            | Health check Item/Donor Service     |
+|  2 | `GET`    | `/api/public/blood-stock`                  | Stok darah publik                   |
+|  3 | `GET`    | `/pendonor/stats`                          | Statistik pendonor                  |
+|  4 | `POST`   | `/pendonor`                                | Membuat data pendonor               |
+|  5 | `GET`    | `/pendonor`                                | Daftar pendonor                     |
+|  6 | `GET`    | `/pendonor/{pendonor_id}`                  | Detail pendonor                     |
+|  7 | `PUT`    | `/pendonor/{pendonor_id}`                  | Update pendonor                     |
+|  8 | `DELETE` | `/pendonor/{pendonor_id}`                  | Hapus pendonor                      |
+|  9 | `POST`   | `/riwayat-donor`                           | Membuat riwayat donor               |
+| 10 | `GET`    | `/riwayat-donor`                           | Daftar riwayat donor                |
+| 11 | `GET`    | `/riwayat-donor/pendonor/{pendonor_id}`    | Riwayat donor berdasarkan pendonor  |
+| 12 | `GET`    | `/riwayat-donor/{riwayat_id}`              | Detail riwayat donor                |
+| 13 | `POST`   | `/riwayat-donor/{riwayat_id}/verifikasi`   | Verifikasi riwayat donor            |
+| 14 | `GET`    | `/pengguna/me`                             | Profil pengguna login               |
+| 15 | `POST`   | `/pengguna/riwayat-donor`                  | Membuat riwayat donor milik user    |
+| 16 | `GET`    | `/pengguna/riwayat-donor`                  | Daftar riwayat donor milik user     |
+| 17 | `GET`    | `/pengguna/riwayat-donor/{riwayat_id}`     | Detail riwayat donor milik user     |
+| 18 | `PUT`    | `/pengguna/riwayat-donor/{riwayat_id}`     | Update riwayat donor milik user     |
+| 19 | `DELETE` | `/pengguna/riwayat-donor/{riwayat_id}`     | Hapus riwayat donor milik user      |
+| 20 | `GET`    | `/donor/metrics`                           | Metrics Item/Donor Service          |
 
 Dokumentasi kontrak API lengkap tersedia di [`docs/api-contract.md`](docs/api-contract.md).
 
