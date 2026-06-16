@@ -25,3 +25,6 @@ moduls/
 
 # Panduan lokal
 .panduan/
+
+CHAGELOG.md
+.frontend/package-lock.json

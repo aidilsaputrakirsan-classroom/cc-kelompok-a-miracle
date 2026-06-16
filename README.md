@@ -1,3 +1,5 @@
+#hhhh
+
 # 🩸 TraceIt — Platform Pendataan Donor Darah
 
 [![CI/CD Pipeline](https://github.com/aidilsaputrakirsan-classroom/cc-kelompok-a-miracle/actions/workflows/ci.yml/badge.svg)](https://github.com/aidilsaputrakirsan-classroom/cc-kelompok-a-miracle/actions/workflows/ci.yml)
@@ -140,14 +142,14 @@ flowchart TD
 
 ### 🔹 Komponen Utama
 
-| Komponen | Container | Fungsi |
-| --- | --- | --- |
-| **Frontend** | `tracelt-frontend` | Menyediakan UI React untuk pengguna dan admin |
-| **API Gateway** | `tracelt-gateway` | Routing request frontend dan API ke service tujuan |
-| **Auth Service** | `tracelt-auth-service` | Register, login, verifikasi JWT, health check, metrics |
+| Komponen               | Container              | Fungsi                                                     |
+| ---------------------- | ---------------------- | ---------------------------------------------------------- |
+| **Frontend**           | `tracelt-frontend`     | Menyediakan UI React untuk pengguna dan admin              |
+| **API Gateway**        | `tracelt-gateway`      | Routing request frontend dan API ke service tujuan         |
+| **Auth Service**       | `tracelt-auth-service` | Register, login, verifikasi JWT, health check, metrics     |
 | **Item/Donor Service** | `tracelt-item-service` | Pendonor, riwayat donor, stok darah, profile user, metrics |
-| **Auth DB** | `tracelt-auth-db` | Database khusus data autentikasi |
-| **Item DB** | `tracelt-item-db` | Database khusus data pendonor dan riwayat donor |
+| **Auth DB**            | `tracelt-auth-db`      | Database khusus data autentikasi                           |
+| **Item DB**            | `tracelt-item-db`      | Database khusus data pendonor dan riwayat donor            |
 
 ### 🔹 Karakteristik Sistem
 
@@ -166,34 +168,34 @@ TraceIt dibangun menggunakan teknologi modern berbasis web dan cloud-native deve
 
 ### 🎨 Frontend
 
-| Teknologi | Fungsi | Penjelasan |
-| --- | --- | --- |
-| **React** | UI Framework | Membangun antarmuka pengguna berbasis komponen |
-| **Vite** | Build Tool | Menjalankan development server dan build frontend dengan cepat |
-| **React Router** | Routing | Mengatur halaman landing, login, admin, user, dan status |
-| **Axios** | HTTP Client | Menghubungkan frontend dengan API Gateway |
-| **Tailwind CSS** | Styling | Membantu styling UI responsif dan konsisten |
+| Teknologi        | Fungsi       | Penjelasan                                                     |
+| ---------------- | ------------ | -------------------------------------------------------------- |
+| **React**        | UI Framework | Membangun antarmuka pengguna berbasis komponen                 |
+| **Vite**         | Build Tool   | Menjalankan development server dan build frontend dengan cepat |
+| **React Router** | Routing      | Mengatur halaman landing, login, admin, user, dan status       |
+| **Axios**        | HTTP Client  | Menghubungkan frontend dengan API Gateway                      |
+| **Tailwind CSS** | Styling      | Membantu styling UI responsif dan konsisten                    |
 
 ### ⚙️ Backend
 
-| Teknologi | Fungsi | Penjelasan |
-| --- | --- | --- |
-| **FastAPI** | API Framework | Menyediakan REST API untuk Auth Service dan Item/Donor Service |
-| **SQLAlchemy** | ORM | Mengelola model dan query database PostgreSQL |
-| **Pydantic** | Validation | Memvalidasi request dan response schema |
-| **Uvicorn** | ASGI Server | Menjalankan aplikasi FastAPI |
-| **bcrypt + JWT** | Auth | Hash password dan token-based authentication |
+| Teknologi        | Fungsi        | Penjelasan                                                     |
+| ---------------- | ------------- | -------------------------------------------------------------- |
+| **FastAPI**      | API Framework | Menyediakan REST API untuk Auth Service dan Item/Donor Service |
+| **SQLAlchemy**   | ORM           | Mengelola model dan query database PostgreSQL                  |
+| **Pydantic**     | Validation    | Memvalidasi request dan response schema                        |
+| **Uvicorn**      | ASGI Server   | Menjalankan aplikasi FastAPI                                   |
+| **bcrypt + JWT** | Auth          | Hash password dan token-based authentication                   |
 
 ### 🗄️ Database & Infrastructure
 
-| Teknologi | Fungsi | Penjelasan |
-| --- | --- | --- |
-| **PostgreSQL 15** | Database | Menyimpan data auth, pendonor, dan riwayat donor |
-| **Nginx** | API Gateway | Reverse proxy dan routing antar-service |
-| **Docker** | Containerization | Membungkus service agar konsisten dijalankan |
-| **Docker Compose** | Orchestration | Menjalankan semua container dalam satu command |
-| **GitHub Actions** | CI/CD | Menjalankan pipeline otomatis |
-| **Railway** | Deployment | Platform cloud untuk deployment production |
+| Teknologi          | Fungsi           | Penjelasan                                       |
+| ------------------ | ---------------- | ------------------------------------------------ |
+| **PostgreSQL 15**  | Database         | Menyimpan data auth, pendonor, dan riwayat donor |
+| **Nginx**          | API Gateway      | Reverse proxy dan routing antar-service          |
+| **Docker**         | Containerization | Membungkus service agar konsisten dijalankan     |
+| **Docker Compose** | Orchestration    | Menjalankan semua container dalam satu command   |
+| **GitHub Actions** | CI/CD            | Menjalankan pipeline otomatis                    |
+| **Railway**        | Deployment       | Platform cloud untuk deployment production       |
 
 ---
 
@@ -222,42 +224,42 @@ http://localhost
 
 ### Auth Service Endpoints
 
-| No | Method | Endpoint                  | Description                  |
-| -: | ------ | ------------------------- | ---------------------------- |
-|  1 | `GET`  | `/auth/health`            | Health check Auth Service    |
-|  2 | `POST` | `/auth/register`          | Registrasi user umum         |
-|  3 | `POST` | `/auth/pengguna/register` | Registrasi pengguna          |
-|  4 | `POST` | `/auth/admin/register`    | Registrasi admin             |
-|  5 | `POST` | `/auth/login`             | Login user umum              |
-|  6 | `POST` | `/auth/pengguna/login`    | Login pengguna               |
-|  7 | `POST` | `/auth/admin/login`       | Login admin                  |
-|  8 | `GET`  | `/auth/verify`            | Verifikasi JWT               |
-|  9 | `GET`  | `/auth/metrics`           | Metrics Auth Service         |
+|  No | Method | Endpoint                  | Description               |
+| --: | ------ | ------------------------- | ------------------------- |
+|   1 | `GET`  | `/auth/health`            | Health check Auth Service |
+|   2 | `POST` | `/auth/register`          | Registrasi user umum      |
+|   3 | `POST` | `/auth/pengguna/register` | Registrasi pengguna       |
+|   4 | `POST` | `/auth/admin/register`    | Registrasi admin          |
+|   5 | `POST` | `/auth/login`             | Login user umum           |
+|   6 | `POST` | `/auth/pengguna/login`    | Login pengguna            |
+|   7 | `POST` | `/auth/admin/login`       | Login admin               |
+|   8 | `GET`  | `/auth/verify`            | Verifikasi JWT            |
+|   9 | `GET`  | `/auth/metrics`           | Metrics Auth Service      |
 
 ### Item/Donor Service Endpoints
 
-| No | Method   | Endpoint                                   | Description                         |
-| -: | -------- | ------------------------------------------ | ----------------------------------- |
-|  1 | `GET`    | `/donor/health`                            | Health check Item/Donor Service     |
-|  2 | `GET`    | `/api/public/blood-stock`                  | Stok darah publik                   |
-|  3 | `GET`    | `/pendonor/stats`                          | Statistik pendonor                  |
-|  4 | `POST`   | `/pendonor`                                | Membuat data pendonor               |
-|  5 | `GET`    | `/pendonor`                                | Daftar pendonor                     |
-|  6 | `GET`    | `/pendonor/{pendonor_id}`                  | Detail pendonor                     |
-|  7 | `PUT`    | `/pendonor/{pendonor_id}`                  | Update pendonor                     |
-|  8 | `DELETE` | `/pendonor/{pendonor_id}`                  | Hapus pendonor                      |
-|  9 | `POST`   | `/riwayat-donor`                           | Membuat riwayat donor               |
-| 10 | `GET`    | `/riwayat-donor`                           | Daftar riwayat donor                |
-| 11 | `GET`    | `/riwayat-donor/pendonor/{pendonor_id}`    | Riwayat donor berdasarkan pendonor  |
-| 12 | `GET`    | `/riwayat-donor/{riwayat_id}`              | Detail riwayat donor                |
-| 13 | `POST`   | `/riwayat-donor/{riwayat_id}/verifikasi`   | Verifikasi riwayat donor            |
-| 14 | `GET`    | `/pengguna/me`                             | Profil pengguna login               |
-| 15 | `POST`   | `/pengguna/riwayat-donor`                  | Membuat riwayat donor milik user    |
-| 16 | `GET`    | `/pengguna/riwayat-donor`                  | Daftar riwayat donor milik user     |
-| 17 | `GET`    | `/pengguna/riwayat-donor/{riwayat_id}`     | Detail riwayat donor milik user     |
-| 18 | `PUT`    | `/pengguna/riwayat-donor/{riwayat_id}`     | Update riwayat donor milik user     |
-| 19 | `DELETE` | `/pengguna/riwayat-donor/{riwayat_id}`     | Hapus riwayat donor milik user      |
-| 20 | `GET`    | `/donor/metrics`                           | Metrics Item/Donor Service          |
+|  No | Method   | Endpoint                                 | Description                        |
+| --: | -------- | ---------------------------------------- | ---------------------------------- |
+|   1 | `GET`    | `/donor/health`                          | Health check Item/Donor Service    |
+|   2 | `GET`    | `/api/public/blood-stock`                | Stok darah publik                  |
+|   3 | `GET`    | `/pendonor/stats`                        | Statistik pendonor                 |
+|   4 | `POST`   | `/pendonor`                              | Membuat data pendonor              |
+|   5 | `GET`    | `/pendonor`                              | Daftar pendonor                    |
+|   6 | `GET`    | `/pendonor/{pendonor_id}`                | Detail pendonor                    |
+|   7 | `PUT`    | `/pendonor/{pendonor_id}`                | Update pendonor                    |
+|   8 | `DELETE` | `/pendonor/{pendonor_id}`                | Hapus pendonor                     |
+|   9 | `POST`   | `/riwayat-donor`                         | Membuat riwayat donor              |
+|  10 | `GET`    | `/riwayat-donor`                         | Daftar riwayat donor               |
+|  11 | `GET`    | `/riwayat-donor/pendonor/{pendonor_id}`  | Riwayat donor berdasarkan pendonor |
+|  12 | `GET`    | `/riwayat-donor/{riwayat_id}`            | Detail riwayat donor               |
+|  13 | `POST`   | `/riwayat-donor/{riwayat_id}/verifikasi` | Verifikasi riwayat donor           |
+|  14 | `GET`    | `/pengguna/me`                           | Profil pengguna login              |
+|  15 | `POST`   | `/pengguna/riwayat-donor`                | Membuat riwayat donor milik user   |
+|  16 | `GET`    | `/pengguna/riwayat-donor`                | Daftar riwayat donor milik user    |
+|  17 | `GET`    | `/pengguna/riwayat-donor/{riwayat_id}`   | Detail riwayat donor milik user    |
+|  18 | `PUT`    | `/pengguna/riwayat-donor/{riwayat_id}`   | Update riwayat donor milik user    |
+|  19 | `DELETE` | `/pengguna/riwayat-donor/{riwayat_id}`   | Hapus riwayat donor milik user     |
+|  20 | `GET`    | `/donor/metrics`                         | Metrics Item/Donor Service         |
 
 Dokumentasi kontrak API lengkap tersedia di [`docs/api-contract.md`](docs/api-contract.md).
 
@@ -611,41 +613,41 @@ cc-kelompok-a-miracle/
 
 ## 👨‍💻 Tim Pengembang
 
-| Nama | NIM | Peran | Kontribusi Utama |
-| --- | --- | --- | --- |
-| Debora Intania Subekti | 10231029 | Lead Backend | Auth flow, endpoint FastAPI, business logic backend |
+| Nama                     | NIM      | Peran                   | Kontribusi Utama                                         |
+| ------------------------ | -------- | ----------------------- | -------------------------------------------------------- |
+| Debora Intania Subekti   | 10231029 | Lead Backend            | Auth flow, endpoint FastAPI, business logic backend      |
 | Avhilla Catton Andalucia | 10231021 | Lead Container / DevOps | Docker Compose, Dockerfile, gateway, konfigurasi service |
-| Chelsy Olivia | 10231025 | Lead CI/CD & Deploy | GitHub Actions, deployment, release validation |
-| Yosan Pratiwi | 10231091 | Lead Frontend | React UI, dashboard user/admin, halaman status |
-| Betran | 10231023 | Lead QA & Docs | Testing, API docs, release notes, final checklist |
+| Chelsy Olivia            | 10231025 | Lead CI/CD & Deploy     | GitHub Actions, deployment, release validation           |
+| Yosan Pratiwi            | 10231091 | Lead Frontend           | React UI, dashboard user/admin, halaman status           |
+| Betran                   | 10231023 | Lead QA & Docs          | Testing, API docs, release notes, final checklist        |
 
 ---
 
 ## 🗺️ Roadmap
 
-| Minggu | Target | Status |
-| --- | --- | --- |
-| 1-4 | Foundation, REST API, database, frontend awal | ✅ Selesai |
-| 5-7 | Docker dan containerization | ✅ Selesai |
-| 8 | UTS demo milestone 1 | ✅ Selesai |
-| 9-11 | CI/CD dan cloud deployment | ✅ Selesai |
-| 12-14 | Microservices, reliability, monitoring | ✅ Selesai |
-| 15 | Final polish, security, dokumentasi UAS | ✅ Selesai |
-| 16 | UAS demo final | ⏳ Siap presentasi |
+| Minggu | Target                                        | Status             |
+| ------ | --------------------------------------------- | ------------------ |
+| 1-4    | Foundation, REST API, database, frontend awal | ✅ Selesai         |
+| 5-7    | Docker dan containerization                   | ✅ Selesai         |
+| 8      | UTS demo milestone 1                          | ✅ Selesai         |
+| 9-11   | CI/CD dan cloud deployment                    | ✅ Selesai         |
+| 12-14  | Microservices, reliability, monitoring        | ✅ Selesai         |
+| 15     | Final polish, security, dokumentasi UAS       | ✅ Selesai         |
+| 16     | UAS demo final                                | ⏳ Siap presentasi |
 
 ---
 
 ## 📌 Dokumentasi Pendukung
 
-| Dokumen | Isi |
-| --- | --- |
-| [`docs/api-contract.md`](docs/api-contract.md) | Kontrak API Auth Service dan Item/Donor Service |
-| [`docs/release-notes-m3.md`](docs/release-notes-m3.md) | Release notes final version `3.0.0` |
-| [`docs/final-checklist.md`](docs/final-checklist.md) | Checklist akhir sebelum UAS |
-| [`docs/architecture.md`](docs/architecture.md) | Detail arsitektur microservices |
-| [`docs/reliability-testing.md`](docs/reliability-testing.md) | Pengujian retry, timeout, circuit breaker |
-| [`docs/observability-testing.md`](docs/observability-testing.md) | Pengujian logging, metrics, dan correlation ID |
-| [`docs/production-test.md`](docs/production-test.md) | Catatan QA production |
+| Dokumen                                                          | Isi                                             |
+| ---------------------------------------------------------------- | ----------------------------------------------- |
+| [`docs/api-contract.md`](docs/api-contract.md)                   | Kontrak API Auth Service dan Item/Donor Service |
+| [`docs/release-notes-m3.md`](docs/release-notes-m3.md)           | Release notes final version `3.0.0`             |
+| [`docs/final-checklist.md`](docs/final-checklist.md)             | Checklist akhir sebelum UAS                     |
+| [`docs/architecture.md`](docs/architecture.md)                   | Detail arsitektur microservices                 |
+| [`docs/reliability-testing.md`](docs/reliability-testing.md)     | Pengujian retry, timeout, circuit breaker       |
+| [`docs/observability-testing.md`](docs/observability-testing.md) | Pengujian logging, metrics, dan correlation ID  |
+| [`docs/production-test.md`](docs/production-test.md)             | Catatan QA production                           |
 
 ---
 
