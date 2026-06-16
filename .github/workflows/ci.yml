@@ -138,14 +138,24 @@ jobs:
         run: |
           cp .env.example .env 2>/dev/null || echo "SECRET_KEY=supersecretkeychangeme123" > .env
           docker compose up -d --build
+          docker compose ps
 
       - name: ⏳ Wait for services
         run: |
           echo "Waiting for services to be ready..."
-          sleep 25
-          curl --retry 8 --retry-delay 4 --retry-all-errors --fail http://localhost/health || echo "⚠️ Gateway health check skipped"
-          curl --retry 5 --retry-delay 3 --fail http://localhost:8001/health || echo "⚠️ Auth service skipped"
-          curl --retry 5 --retry-delay 3 --fail http://localhost:8002/health || echo "⚠️ Item service skipped"
+          docker compose ps
+
+          echo "Checking Gateway health..."
+          curl --retry 15 --retry-delay 4 --retry-all-errors --fail http://localhost/health
+
+          echo "Checking Auth Service through Gateway..."
+          curl --retry 10 --retry-delay 3 --retry-all-errors --fail http://localhost/auth/health
+
+          echo "Checking Donor Service through Gateway..."
+          curl --retry 10 --retry-delay 3 --retry-all-errors --fail http://localhost/donor/health
+
+          echo "Checking Donor metrics through Gateway..."
+          curl --retry 5 --retry-delay 3 --retry-all-errors --fail http://localhost/donor/metrics
 
       - name: 🧪 Run integration tests
         run: |
@@ -157,12 +167,6 @@ jobs:
             echo "✅ No integration test files yet. Placeholder test passed."
           fi
 
-      - name: 🛑 Stop services
-        if: always()
-        run: docker compose down -v
-
-
-        # === EXPORT DOCKER LOGS (Tugas Lead CI/CD) ===
       - name: 📋 Export Docker Logs
         if: always()
         run: |
@@ -187,6 +191,10 @@ jobs:
           name: docker-logs-${{ github.sha }}
           path: logs/
           retention-days: 14
+
+      - name: 🛑 Stop services
+        if: always()
+        run: docker compose down -v
   
 
   # ================================
