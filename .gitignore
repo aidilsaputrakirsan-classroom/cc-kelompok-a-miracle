@@ -1,15 +1,8 @@
 # Python
 __pycache__/
 *.pyc
-.venv/
+venv/
 .env
-
-# Test artifacts
-backend/.coverage
-backend/test.db
-backend/htmlcov/
-backend/.pytest_cache/
-backend/tests/__pycache__/
 
 # Node
 node_modules/
@@ -30,3 +23,5 @@ docs/changelog.md
 modul/
 moduls/
 
+# Panduan lokal
+.panduan/
